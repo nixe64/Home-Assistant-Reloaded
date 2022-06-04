@@ -1,0 +1,7 @@
+{
+    "name": "Amazon Polly",
+    "content_in_root": false,
+    "zip_release": true,
+    "render_readme": false,
+    "homeassistant": "0.37"
+}

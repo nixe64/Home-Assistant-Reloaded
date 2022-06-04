@@ -1,0 +1,217 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "auf Entwicklungserver bereitstellen",
+            "type": "shell",
+            "command": "scp -r ${workspaceFolder}/custom_components/  homeassistant@smart-home:develop/home-assistant/",
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Mit Black formatieren",
+            "type": "shell",
+            "command": "script/run-in-env.sh black --fast custom_components/ tests/",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "format source code",
+            "type": "shell",
+            "command": "script/run-in-env.sh black --fast ${file}",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Pre-Commit Tests ausführen",
+            "type": "shell",
+            "command": "script/run-in-env.sh pre-commit run",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Mit Bandit überprüfen",
+            "type": "shell",
+            "command": "script/run-in-env.sh bandit -qr --format=custom -c=tests/bandit.yaml custom_components/",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Mit Codespell überprüfen",
+            "type": "shell",
+            "command": "script/run-in-env.sh codespell custom_components/ tests/",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Mit Flake8 überprüfen",
+            "type": "shell",
+            "command": "script/run-in-env.sh flake8 custom_components/ tests/",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Mit Mypy überprüfen",
+            "type": "shell",
+            "command": "script/run-in-env.sh mypy custom_components/ tests/",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Sortierung der Imports überprüfen",
+            "type": "shell",
+            "command": "script/run-in-env.sh isort custom_components/ tests/",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Imports sortieren",
+            "type": "shell",
+            "command": "script/run-in-env.sh isort ${file}",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Implementierung überprüfen",
+            "type": "shell",
+            "command": "script/run-in-env.sh pytest tests/",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "script/run-in-env.sh pylint --rcfile=.pylint custom_components/ tests/",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "compile",
+            "type": "shell",
+            "command": "script/run-in-env.sh pylint --rcfile=.pylint ${file}",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "YAMLint",
+            "type": "shell",
+            "command": "script/run-in-env.sh yamllint ${file}",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Rechtschreibung (aktuelle Datei)",
+            "type": "shell",
+            "command": "typos ${file}",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Rechtschreibprüfung",
+            "type": "shell",
+            "command": "typos",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+    ],
+}

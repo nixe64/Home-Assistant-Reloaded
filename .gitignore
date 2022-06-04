@@ -1,0 +1,6 @@
+__pycache__
+.venv/
+.secrets
+*-badge.md
+
+.gitsecret/keys/random_seed
