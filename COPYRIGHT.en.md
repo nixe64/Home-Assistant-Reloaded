@@ -3,7 +3,7 @@
 [![Version][version-badge]][version-url]
 [![License][license-badge]][gpl]
 
-### Home Assistant Blueprint
+### The Next Generation (of Home Assistant)
 
 Copyright © 2022, Andreas Nixdorf.
 
@@ -52,7 +52,7 @@ liability accompanies a copy of the Program in return for a fee.
 
 ### Copyrights / Attribution
 
-This repository template is a derivative of a Home Assistant Blueprint.
+This Smart Home Controller is a derivative of a Home Assistant.
 
 [Home Assistant Blueprints][project-url]<br/>
 Copyright © home-assistant.io<br/>

@@ -3,7 +3,7 @@
 [![Version][version-badge]][version-url]
 [![License][license-badge]][gpl]
 
-### Home Assistant Blueprint
+### Die Nächste Generation (von Home Assistant)
 
 Copyright © 2022, Andreas Nixdorf.
 
@@ -49,9 +49,9 @@ Sollten der o.a. Gewährleistungsausschluß und die o.a. Haftungsbegrenzung aufg
 
 ### Urheberrechtslizenzen / Namensnennungen
 
-Diese Repository-Vorlage ist eine Weiterentwicklung eines Home Assistant Blueprints.
+Dieser Smart-Home Controller ist eine Weiterentwicklung von Home Assistant.
 
-[Home Assistant Blueprints][project-url]<br/>
+[Home Assistant][project-url]<br/>
 Copyright © home-assistant.io<br/>
 Veröffentlicht mit Urheberrecht gemäß der [Apache Lizenz Version 2.0][apache].
 <br/><br/>
@@ -187,3 +187,5 @@ Copyright ©  2022, Andreas Nixdorf, GPLv3<br/>
 [code]: docs/images/vscode.svg
 [code-url]: https://commons.wikimedia.org/w/index.php?curid=79495290
 [code-orig]: https://upload.wikimedia.org/wikipedia/commons/9/9a/Visual_Studio_Code_1.35_icon.svg
+
+https://upload.wikimedia.org/wikipedia/commons/1/15/Star_Trek_The_Next_Generation_Logo.svg

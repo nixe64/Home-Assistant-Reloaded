@@ -6,7 +6,7 @@
 [![Bugs][bugs-badge]][bugs-url]
 -->
 
-### Home Assistant Blueprint
+### Die Nächste Generation (von Home Assistant)
 <br/>
 
 [![Logo][logo]][project-url]
