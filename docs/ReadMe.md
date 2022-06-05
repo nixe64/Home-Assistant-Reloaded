@@ -45,7 +45,7 @@ Lizensiert gemäß der [Allgemeinen Öffentlichen GNU-Lizenz v3.0][license-url].
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[logo]: images/hassio-icon.png
+[logo]: images/logo.svg
 [project-url]: https://homeassistant.io
 
 [license-badge]: images/license.de.svg
