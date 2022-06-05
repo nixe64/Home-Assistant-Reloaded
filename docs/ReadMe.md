@@ -15,8 +15,8 @@ Hausautomation. Sie basiert auf Home Assistent, dem zurecht beliebten zentralen
 Steuerungssystem in einem Smart Home oder Smart House. Wie Home Assistent ist 
 sie ebenfalls als kostenlose und quelloffene Software konzipiert, die in den 
 wesentlichen Teilen in Python entwickelt wird und deren Hauptaugenmerk auf 
-lokaler Steuerung und Privatspäre liegt. Da ich mich allerdings in der C / 
-C++ / C# - Entwicklung mehr zuhause fühle, werden viele unterstützende 
+lokaler Steuerung und Privatspäre liegt. Da ich mich allerdings in der c / 
+c++ / C# - Entwicklung mehr zuhause fühle, werden viele unterstützende 
 Bibliotheken eher in C++ entwickelt werden. Aus dem gleichen Grund werde ich auch
 das eher auf einer "Modulhierarchie" bestehende Grundgerüst auf eine Klassenhierarchie
 umstellen (so gut es Python eben zulässt), wo jedem, der sich mit 
@@ -33,7 +33,11 @@ Wie heißt es doch im Handwerk so treffend: Nicht das Werkzeug macht den
 Handwerker aus, sondern ein guter Handwerker erzielt mit jedem Werkzeug
 das gewünschte Ergebnis. Wobei selbstverständlich das beste Ergebnis nur
 zustande kommt, wenn dem guten Handwerker auch das beste Werkzeug zur 
-Verfügung steht.
+Verfügung steht (also in diesem speziellen Fall, die Lieblingssprache). 
+Aber die vollständige Umsetzung in c++ würde den Kreis derjenigen, die
+das Projekt interessant und einsetzbar halten zu sehr einschränken.
+Python wurde aus gutem Grund für die Entwicklung von Home Assistant
+verwendet und daran möchte ich auch nichts ändern.
 
 ### Warum ein "neues Home Assistent", wenn das Existierende so gut ist?
 
