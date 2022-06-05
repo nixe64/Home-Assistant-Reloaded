@@ -48,6 +48,21 @@ Ich bin vermutlich zu alt, um die vermehrt aufkommende Grund-Philosophie vieler
 Entwickler, das (vor allem optischer) Schein wichtiger ist, als ein 
 durchdachtes Grundgerüst, das auch späteren Anforderungen gerecht wird und 
 leicht, ohne das das ganze Gebäude in sich zusammenfällt, erweitert werden kann. 
+Das macht viel Arbeit und das Schlimmste an der Geschichte scheint für
+heutige Entwickler zu sein, das es niemanden auffällt. Ein System, das
+reibungslos (oder fast reibungslos) funktioniert, wird "als selbstverständlich"
+hin genommen. Dafür erntet man keine Anerkennung oder Likes oder Follower,
+UNMÖGLICH. WOFÜR MACHE ICH DAS DANN ÜBERHAUPT. Also ich mache das, weil
+ich mich darüber freue, wenn meine Arbeit als ganzes eingesetzt oder verwendet
+wird. Es reicht völlig, das ich weiß, wieviel Detail-Arbeit da drin steckt,
+um es so einfach wirken zu lassen. Dafür erwarte ich keine Anerkennung oder
+welche Wärung heutzutage sonst so gängig ist (siehe vorherige Aufzählung).
+Mir macht es Spass Probleme zu lösen, das reicht mir völlig, um diese
+"undankbare" Arbeit für mich und in erster Linie nur für mich, in Angriff
+zu nehmen. Und es würde mich sehr freuen, wenn es noch ein paar ähnliche 
+Denkende gibt, die es in erster Linie für sich auf sich nehmen, aber natürlich
+auch für die Entwicklung dieses Projekts, etwas dazu beizutragen.
+
 Wie der Zufall es will, lese ich gerade auch ein Buch ("Hacking - Der umfassende 
 Praxis-Guide", von Eric Arnberg und Daniel Schmid, erschienen im mitp-Verlag, 
 2. Auflage von 2022), da ich mich schon etwas länger für "Ethisches Hacken", 
@@ -57,7 +72,7 @@ mehr zu den Tätigkeiten, die in der Gesellschaft überhaupt und auch
 bei heutigen Entwicklern nicht mehr angesagt sind. Ich bin halt von gestern "und das ist 
 auch gut so", um ein geklautes Zitat zu verwenden (ähm, natürlich ist das Zitat nur "ausgeliehen", 
 hier werden keine Straftaten oder Aufforderungen zu Straftaten geduldet. Mist, immer diese
-selbst auferlegten Regeln, wo soll das nur hin führen). Darin wird ebenfalls auf diese 
+selbst auferlegten Regeln, wo soll das noch hin führen). Darin wird ebenfalls auf diese 
 um sich greifende Unsitte (meine persönliche Einschätzung) eingegangen, wenn 
 auch in einem ganz anderen Zusammenhang. Die Autoren nennen diejenigen, die 
 ohne jegliches (oder zumindest mit wenig) Grundwissen, mit wenigen Klicks coole 
@@ -141,7 +156,7 @@ funktioniert, wie er angedacht ist. Nun, um ehrlich zu sein, bei meinen
 bisherigen Projekten wurde dieser Aspekt von mir etwas vernachlässigt und es 
 existierten häufig nur die unbedingt notwendigen Tests. Aber nachdem ich mich 
 lange aus der Software-Entwicklung zurückgezogen hatte, wollte ich es "endlich 
-mal" nach allen Regeln der Kunst angehen. Warum auch nicht, es ist nur noch 
+mal" nach allen Regeln der Kunst angehen. Warum auch nicht, es ist nur noch ein
 Hobby und ich habe keine Deadline, zu der irgendwas fertig sein muss. Nun, du 
 vermutest es vermutlich bereits, auch diese Idee war nicht ganz so gut, wie sie 
 sich zuerst anhört. Beim ersten Versuch, einen Minimal-Test für meine Version 
@@ -211,11 +226,11 @@ Das suboptimale (schon wieder neudeutsch für "hirnlose") bei der Lösung,
 wie sie in Home Assistant umgesetzt wurde, ist mal wieder, das alle 
 Voraussetzungen, um es sauber zu implementieren vorhanden sind. Einige oder viele scheinen aber zu
 meinen, das Regeln (wie das vorhandene Event-Benachrichtigungssystem) nur für alte, graue, bald austerbende Entwickler:innen
-(also uns nichtwissenden Dinosaurien der Software-Entwicklung) geschafft wurden. Sie
+(also für uns nichtwissenden Dinosaurien der Software-Entwicklung) geschafft wurden. Sie
 scheinen sich in ihrer kreativen Freiheit so sehr eingeschränkt zu fühlen, das 
 solche wohl definierten, vorhandenen Schnittstellen nur etwas für Nichts-Könner zu sein scheinen.
 Und anschließend wundern sie sich über die (nur bei Nicht-Denkenden) nicht zu erwartenden Nebeneffekte. 
-Aber vermutlich nicht mal das. Der Effekt stimmt, der Rest interessiert nicht.
+Aber vermutlich nicht mal das. Der erhoffte Effekt konnte mit einem "coolen" Hack realisert werden, der Rest interessiert nicht mehr.
 Ein Hoch auf die Evolution und kreative Freihet (oder wie heisst das korrekt, wenn sich das Hirn überproportional
 zur Größe zur selbst wahrgenommenen Genialität verkleinert?).
 
@@ -247,7 +262,7 @@ des erwarteten laufenden System, die Frage, ob der Rechner neu gestartet werden 
 So entstand bei uns, den "unter DOS und Windows Leidenden und von Ihnen Geschädigten" die gängige Umschreibung für Windows:
 *"Sie haben die Position Ihres Mauszeigers verändert. Möchten Sie Windows jetzt neu starten, um die Änderung zu übernehmen?"*,
 was natürlich stark übertrieben, aber eben auch nur übertrieben, war. Es hat scheinbar nicht viel dazu gefehlt, 
-damit diese Übertreibung Realität geworden wäre, so oft wie man aufgefordert wurde, den Rechner neu zu starten, weil ...
+damit diese Übertreibung Realität geworden wäre, so oft wie man aufgefordert wurde, den Rechner neu zu starten, weil ... gemacht wurde.
 
 Dieses Vorgehen wurde von den späteren "Errungenschaften" der Software-Industrie, wie Google (nachdem es die Werbung als
 Einnahmequelle für sich entdeckt hatte), Facebook, WhatsApp, Twitter und wie die angeblich unverzichtbaren Tools der heutigen
@@ -269,7 +284,7 @@ unserer Tochter hören und dem ganzen etwas skeptischer gegenüber stehen sollen
 der Aussicht, mein Hobby auch zu meinem Beruf machen zu können. Und da ich durch meine Begeisterung
 für diese Technik nicht nur dazu beigetragen habe, das die "Digital Natives", wie sich selbst gerne etwas zu überheblich
 nennen, überhaupt etwas haben, von dem sie behaupten können, sie könnten als Einzige wirklich damit umgehen, 
-weil sie damit groß geworden sind, sondern dafür auch einen hohen Preis bezahlt habe (aber nicht nur ich, sondern vor allem
+weil sie damit groß geworden sind, sondern dafür auch einen hohen Preis bezahlt habe (aber in erste Linie nicht ich, sondern vor allem
 unsere Tochter, die viel zu kurz kam, weil ich "ständig die Welt retten" musste oder wollte), nehme ich mir das Recht,
 das Ganze auch mal kritisch zu beleuchten, einfach heraus. Wem es nicht passt, der muss es ja nicht
 lesen. Telegram verbreitet bestimmt gerade schon die nächste Verschwörungstheorie, die mehr Aufmerksamkeit verdient,
@@ -297,7 +312,7 @@ er an der Entwicklung des Projekts mitwirken möchte), dachte ich, meine Beiträ
 wenn auch nicht ausgereift, wären zumindest als Inspiration für die "Wissenden", 
 die sich in den Tiefen des System besser auskennen, willkommen. 
 So wirklich erfreut, das ihnen jemand ins Handwerk pfuscht (so mein Eindruck), 
-war bei Home Assistant aber niemand. Ganz im Gegenteil. Sie vermittelten mir eher 
+war bei Home Assistant allerdings niemand. Ganz im Gegenteil. Sie vermittelten mir eher 
 den Eindruck, dass der Versuch meine Erkenntnisse zu teilen, um damit das Projekt 
 voran zu bringen, genauso willkommen sind, wie eine Schmeissfliege auf der 
 Frühstücksmarmelade (vielleicht verdient Nabu Casa an der  "Home Assistant Cloud" zu gut, 
