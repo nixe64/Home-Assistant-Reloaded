@@ -55,7 +55,9 @@ also den Test (in diesem Fall) meiner eigenen Schutzmaßnahmen gegen Angriffe
 jeglicher Art von Aussen interessiere. Ich weiß, lesen gehört heutzutage nicht 
 mehr zu den Tätigkeiten, die in der Gesellschaft überhaupt und auch 
 bei heutigen Entwicklern nicht mehr angesagt sind. Ich bin halt von gestern "und das ist 
-gut so", um ein geklautes Zitat zu verwenden. Darin wird ebenfalls auf diese 
+auch gut so", um ein geklautes Zitat zu verwenden (ähm, natürlich ist das Zitat nur "ausgeliehen", 
+hier werden keine Straftaten oder Aufforderungen zu Straftaten geduldet. Mist, immer diese
+selbst auferlegten Regeln, wo soll das nur hin führen). Darin wird ebenfalls auf diese 
 um sich greifende Unsitte (meine persönliche Einschätzung) eingegangen, wenn 
 auch in einem ganz anderen Zusammenhang. Die Autoren nennen diejenigen, die 
 ohne jegliches (oder zumindest mit wenig) Grundwissen, mit wenigen Klicks coole 
@@ -76,7 +78,7 @@ Cloud-Services verzichten kann (falls man es wünscht).
 
 Allerdings muss man nur ein wenig an der Oberfläche kratzen (also in den 
 Quellcode schauen), damit sich einem die Haare sträuben (zumindest, wenn 
-man lange in der Software-Entwicklung tätig war und kaum noch über Haare verfügt, 
+man lange in der Software-Entwicklung tätig war und obwohl kaum noch Haare übrig sind, 
 die sich noch sträuben können). Natürlich muss man nicht wie 
 ich Informatik studiert haben, um an einem Open-Source-Projekt mitzuwirken. 
 Genau das macht die Open-Source-Community ja zu einem so großartigem Ort, wo 
@@ -96,7 +98,7 @@ zur Verfügung stehen, wenn man nie glaubt, man wäre der Perfektion so
 nahe, das es nichts mehr zu "assimilieren" gibt, um diesem Ziel näher zu
 kommenn (Die Borg-Queen lässt schön grüßen.)
 
-#### Hintergrund und meine ganz persönliche Motivation für dieses Projekt
+### Hintergrund und meine ganz persönliche Motivation für dieses Projekt
 
 Eigentlich wollte ich "nur" meinen ganz persönlichen "Jarvis" als Integration 
 in Home Assistant realisieren, da mir *"die Tante von Google"* etwas zu 
@@ -155,8 +157,8 @@ Vorhaben in die Tat umzusetzen? Ich jedenfalls nicht. Also nach allen gängigen
 Regeln in Open-Source-Projekten erstmal den Fehler melden (worauf ich bis heute 
 keine Rückmeldung habe). Ich bin ja auch nicht ganz auf den Kopf gefallen (schon wieder meine Selbstwahrnehmung), 
 deshalb auch schon mal selbst nach einer Lösung suchen (obwohl ich mich 
-garnicht so tief mit den "Verstrickungen" und "Schichten" auseinander setzen 
-wollte, es sollte eigentlich doch nur eine bereits existierende Integration 
+garnicht so tief mit den "Verstrickungen" und "Schichten" in Home Assistant auseinander setzen 
+wollte, es sollte doch eigentlich nur eine bereits existierende Integration 
 "aufgepeppt" werden). Um es abzukürzen: **"Schichten"** oder ähnliches gibt es in 
 **Home Assistant nicht**. Selbst die (so sollte man annehmen) tiefsten Schichten, 
 von den Home Assistant Entwicklern selbst vielversprechend ***core*** genant, 
@@ -171,7 +173,7 @@ Imports führt.
 
 Das Prinzip ist leicht ausgesprochen oder aufgeschrieben, 
 nämlich **teile und herrsche**, aber es lässt sich häufig nicht so einfach 
-umsetzen wie aufschreiben (mal wieder geklaut, aber die Quelle ist 
+umsetzen wie aufschreiben (mal wieder geklaut, ähm ausgeliehen, aber die Quelle ist 
 seit über 2000 Jahren tot und kann sich nicht mehr gegen Copyright-Verstösse 
 wehren und überlebende Rechtsnachfolger existieren auch nicht mehr - ein Hoch 
 auf Asterix und Obelix, die ihm die Stirn geboten haben). Es erfordert vor 
@@ -227,7 +229,9 @@ zu zweifeln began (vor allem im Grundstudium bestand ein Informatikstudium mal z
 Aber zum Glück war ich zu diesem Zeitpunkt bereits nicht mehr darauf angewiesen, beruflich mit Windows zu arbeiten.
 Bei diesen früheren Versionen von Windows also,
 die selbst, wie bereits PC-DOS und Microsoft-DOS 1.0 bis 6.22, Quick-And-Dirty 
-entwickelt wurden (mal wieder mein persönliches Urteil), fingen die Entwickler und vor allem unser geliebter Bill (Gates) 
+entwickelt wurden (mal wieder mein persönliches, vermutlich nicht ganz faires Urteil. Um solche "Fehlurteile" zu verhindern,
+existiert in zivilisierten Gesellschaften ein Rechtssystem, in dem Geschädigte nicht als Richter fungieren können), 
+fingen die Entwickler und vor allem unser geliebter Bill (Gates) 
 nach meiner Einschätzung als
 Erste damit an, Effekt und Optik wichtiger zu nehmen als die ihnen zugedachte und zugeschriebene
 Funktionalität. Das führte zu den von uns so heiss geliebten BSDs (Blue Screens of Death - oder auf deutch: 
@@ -235,14 +239,14 @@ Blauen Bildschirmen des Todes). Für nicht so Geschichtskundige - Windows zeigte
 (weiße Schrift auf blauem Grund, deshalb BSD), um danach den Dienst einzustellen (meistens direkt vorm Abspeichern
 der Arbeit, die damit nochmal gemacht werden durfte). Dann konnte man erst einmal in Ruhe Kaffee trinken gehen,
 und wenn man Glück hatte, lief Windows bereits wieder, nachdem der erforderliche Neustart durchgeführt wurde.
-Wer sich allerdings zu sehr über die verloren gegangene Arbeit aufregte und beim Neustart nicht so genau hin gesehen hatte, 
-wurde prompt mit einer zweiten Tasse Kaffee belohnt, weil er/sie vergessen hatte, den Neustart zu bestätigen und statt
+Wer sich allerdings zu sehr über die verloren gegangene Arbeit geärgert hat und beim Neustart nicht so genau hin gesehen hatte, 
+wurde prompt mit einer zweiten Tasse Kaffee "belohnt", weil er/sie vergessen hatte, den Neustart zu bestätigen und statt
 des erwarteten laufenden System, die Frage, ob der Rechner neu gestartet werden soll, präsentiert bekam.
 (Ob die von Tschibo oder anderen Kaffee-Röstern damals schon eine Provision bekommen haben? Heute wäre das bestimmt der Fall!) 
 
-So entstand bei uns, den "unter DOS und Windows Leidenden und von Ihnen Gequälten" die gängige Umschreibung für Windows:
+So entstand bei uns, den "unter DOS und Windows Leidenden und von Ihnen Geschädigten" die gängige Umschreibung für Windows:
 *"Sie haben die Position Ihres Mauszeigers verändert. Möchten Sie Windows jetzt neu starten, um die Änderung zu übernehmen?"*,
-was natürlich stark übertrieben, aber eben nur übertrieben, war. Es hat scheinbar nicht viel dazu gefehlt, 
+was natürlich stark übertrieben, aber eben auch nur übertrieben, war. Es hat scheinbar nicht viel dazu gefehlt, 
 damit diese Übertreibung Realität geworden wäre, so oft wie man aufgefordert wurde, den Rechner neu zu starten, weil ...
 
 Dieses Vorgehen wurde von den späteren "Errungenschaften" der Software-Industrie, wie Google (nachdem es die Werbung als
@@ -260,7 +264,7 @@ Vermutlich regen sich jetzt bei vielen Widerstände. Wie kann der nur... So ein 
 zurückgebliebene "analoge" Fuzzie ein ... Nun, ich war auch mal jung und habe mit meiner Begeisterung für die sich
 bietenden Möglichkeiten der neuen Technik und vollem Einsatz im Rahmen meiner Möglichkeiten dafür gesorgt, das die
 Technik sich so entwickelt hat, wie sie es nun einmal getan hat (selbstverständlich war ich dabei nicht massgeblich, 
-sondern nur einer von vielen). Rückblickend hätte ich früher auf die Warnungen meiner damaligen Freundin und Mutter
+sondern nur einer von vielen). Rückblickend hätte ich wohl früher auf die Warnungen meiner damaligen Freundin und Mutter
 unserer Tochter hören und dem ganzen etwas skeptischer gegenüber stehen sollen. Aber ich war blind vor Begeisterung und
 der Aussicht, mein Hobby auch zu meinem Beruf machen zu können. Und da ich durch meine Begeisterung
 für diese Technik nicht nur dazu beigetragen habe, das die "Digital Natives", wie sich selbst gerne etwas zu überheblich
@@ -297,7 +301,7 @@ war bei Home Assistant aber niemand. Ganz im Gegenteil. Sie vermittelten mir ehe
 den Eindruck, dass der Versuch meine Erkenntnisse zu teilen, um damit das Projekt 
 voran zu bringen, genauso willkommen sind, wie eine Schmeissfliege auf der 
 Frühstücksmarmelade (vielleicht verdient Nabu Casa an der  "Home Assistant Cloud" zu gut, 
-um den Open-Source Gedanken noch Ernst zu nehmen).
+um den Open-Source Gedanken noch Ernst zu nehmen?).
 
 #### Hurra! Ich habe mein Open-Source-Projekt gefunden
 
