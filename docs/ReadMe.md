@@ -68,7 +68,7 @@ was die Anerkennung der coolen Hacks angeht).
 
 #### Wo bleibt denn der Respekt, vor den Mitgliedern der Community?
 
-Ich möchte hier ganz klar stellen, dass es mir nicht darum geht, jemanden zu 
+Ich möchte hier ganz deutlich klar stellen, dass es mir nicht darum geht, jemanden zu 
 verunglimpfen oder madig zu machen. Die Home Assistant Community hat trotz 
 aller Schwächen am Grundkonzept ein großartiges Werk geschaffen, das aus meiner 
 Sicht die beste z.Zt. existierende Umsetzung einer Hausautomation ist, die auf 
@@ -196,19 +196,20 @@ nennt die Art, wie ich Home Assistant installiert habe und betreibe "Home Assist
 zugleich intern ein Modul "core", das als *Kernel* von Home Assistant angesehen werden kann. 
 
 Ausser also zu definieren, welche Aufgaben der *Kernel* von Home Assistant hat,
-würde man natürlich damit auch gleich festlegen, welche Aufgaben er nicht hat 
+würde man damit natürlich auch gleich festlegen, welche Aufgaben er nicht hat 
 (eben alles, was nicht ausdrücklich als Aufgabe definiert wurde) und wie bestimmte 
 *Ereignisse* an höherliegende Schichten weitergeleitet werden, weil der *Kernel* sozusagen
 weiß oder erahnt, das die "höherliegenden Schichten" etwas Einblick in den *Kernel* benötigtigen,
 damit sie sinnvoll und reibungslos funktionieren können. Es ist natürlich nicht der Kernel, 
-das das "erahnt", sondern es sind die Software-Entwickler (zumindest die, die sich selbst zurecht so nennen),
+der das "erahnt", sondern es sind die Software-Entwickler (zumindest die, die sich selbst zurecht so nennen),
 die wissen, das die "höheren Schichten" Infos vom Kernel benötigen und das das am Besten über das Auslösen
 von *Events* funktioniert, weil der *Kernel* hierbei keine Infos über seine Umgebung benötigt, und dadurch
 unabhängig vom "Wissen" über das restliche System (also ohne zirkuläre Imports) implementiert werden kann. 
 Das suboptimale (schon wieder neudeutsch für "hirnlose") bei der Lösung, 
 wie sie in Home Assistant umgesetzt wurde, ist mal wieder, das alle 
 Voraussetzungen, um es sauber zu implementieren vorhanden sind. Einige oder viele scheinen aber zu
-meinen, das Regeln (wie das vorhandene Event-Benachrichtigungssystem) nur für alte, graue, bald austerbende Entwickler:innen sind. Sie
+meinen, das Regeln (wie das vorhandene Event-Benachrichtigungssystem) nur für alte, graue, bald austerbende Entwickler:innen
+(also uns nichtwissenden Dinosaurien der Software-Entwicklung) geschafft wurden. Sie
 scheinen sich in ihrer kreativen Freiheit so sehr eingeschränkt zu fühlen, das 
 solche wohl definierten, vorhandenen Schnittstellen nur etwas für Nichts-Könner zu sein scheinen.
 Und anschließend wundern sie sich über die (nur bei Nicht-Denkenden) nicht zu erwartenden Nebeneffekte. 
@@ -234,7 +235,7 @@ Blauen Bildschirmen des Todes). Für nicht so Geschichtskundige - Windows zeigte
 (weiße Schrift auf blauem Grund, deshalb BSD), um danach den Dienst einzustellen (meistens direkt vorm Abspeichern
 der Arbeit, die damit nochmal gemacht werden durfte). Dann konnte man erst einmal in Ruhe Kaffee trinken gehen,
 und wenn man Glück hatte, lief Windows bereits wieder, nachdem der erforderliche Neustart durchgeführt wurde.
-Wer sich zu sehr über die verloren gegangene Arbeit aufregte und beim Neustart nicht so genau hin gesehen hatte, 
+Wer sich allerdings zu sehr über die verloren gegangene Arbeit aufregte und beim Neustart nicht so genau hin gesehen hatte, 
 wurde prompt mit einer zweiten Tasse Kaffee belohnt, weil er/sie vergessen hatte, den Neustart zu bestätigen und statt
 des erwarteten laufenden System, die Frage, ob der Rechner neu gestartet werden soll, präsentiert bekam.
 (Ob die von Tschibo oder anderen Kaffee-Röstern damals schon eine Provision bekommen haben? Heute wäre das bestimmt der Fall!) 
@@ -260,7 +261,7 @@ zurückgebliebene "analoge" Fuzzie ein ... Nun, ich war auch mal jung und habe m
 bietenden Möglichkeiten der neuen Technik und vollem Einsatz im Rahmen meiner Möglichkeiten dafür gesorgt, das die
 Technik sich so entwickelt hat, wie sie es nun einmal getan hat (selbstverständlich war ich dabei nicht massgeblich, 
 sondern nur einer von vielen). Rückblickend hätte ich früher auf die Warnungen meiner damaligen Freundin und Mutter
-unserer Tochter hören sollen und dem ganzen etwas skeptischer gegenüber stehen. Aber ich war blind vor Begeisterung und
+unserer Tochter hören und dem ganzen etwas skeptischer gegenüber stehen sollen. Aber ich war blind vor Begeisterung und
 der Aussicht, mein Hobby auch zu meinem Beruf machen zu können. Und da ich durch meine Begeisterung
 für diese Technik nicht nur dazu beigetragen habe, das die "Digital Natives", wie sich selbst gerne etwas zu überheblich
 nennen, überhaupt etwas haben, von dem sie behaupten können, sie könnten als Einzige wirklich damit umgehen, 
@@ -284,10 +285,11 @@ der Code wäre in einem "Produktiv-System" nicht mehr zu verwenden gewesen, da
 ich viele Stellen zur Vermeidung der zirkulären Imports nur auskommentieren 
 konnte. Schließlich wollte ich nicht das ganze System durchforsten und überarbeiten. Das sollten 
 ruhig die machen, die sich damit auskennen und z.T. seit Jahren in der Home 
-Assistant Community aktiv sind. Da Home Assistant (zumindest in ihrer eigenen
+Assistant Community aktiv sind. Da Home Assistant selbst von Mitwirkenden fordert, 
+das neue Integrationen mit entsprechenden Tests auf Funktionalität geprüft werden, 
+**bevor** man einen Pull Request startet (zumindest steht es so in ihrer
 Dokumentationen für Entwickler, aber wer ausser mir liest so'n Quatsch auch, wenn
-er an der Entwicklung des Projekts mitwirken möchte) fordert, das neue Integrationen mit Tests 
-(konkret pytest - Tests) auf Herz und Nieren geprüft werden, dachte ich, meine Beiträge, 
+er an der Entwicklung des Projekts mitwirken möchte), dachte ich, meine Beiträge, 
 wenn auch nicht ausgereift, wären zumindest als Inspiration für die "Wissenden", 
 die sich in den Tiefen des System besser auskennen, willkommen. 
 So wirklich erfreut, das ihnen jemand ins Handwerk pfuscht (so mein Eindruck), 
@@ -303,7 +305,7 @@ Aber was soll's. So habe ich wenigstens das gefunden, wonach ich so lange
 gesucht habe. Ein Projekt, wo ich mich austoben und meiner Kreativität freien 
 Lauf lassen kann. Schöner wäre es natürlich gewesen, Teil einer größeren 
 Entwickler-Community zu sein. Aber dieses Projekt muss ja nicht auf Dauer von mir alleine 
-gestemmt werden. Vielleicht findet sich der/die Eine oder der/die Andere, die 
+gestemmt werden. Vielleicht findet sich ja der/die Eine oder der/die Andere, die 
 ebenfalls Spass an Herausforderungen hat. Und Herausforderungen sind bei diesem 
 Mammut-Vorhaben genug zu sehen und noch mehr werden sich im Laufe der Zeit 
 ergeben.
