@@ -37,7 +37,7 @@ Assistant wunschlos glücklich sein. Tolle Oberfläche, sehr aktive Community,
 sehr umfassende Unterstützung von smarten Geräten, ... Was will man mehr?
 
 Nun, ich persönlich bin der Meinung, das ein Gebäude, das (softwaretechnisch) 
-auf wackeligen Beinen steht, nicht besonders stabil ist und nicht wirklich 
+auf wackeligen Beinen steht, nicht besonders stabil und nicht wirklich 
 dafür geeignet ist, um sich dort bei einem Erdbeben in Sicherheit zu bringen. 
 Ich bin vermutlich zu alt, um die vermehrt aufkommende Grund-Philosophie vieler 
 Entwickler, das (vor allem optischer) Schein wichtiger ist, als ein 
@@ -51,8 +51,8 @@ jeglicher Art von Aussen interessiere. Ich weiß, lesen gehört heutzutage nicht
 mehr zu den Tätigkeiten, die in der Gesellschaft überhaupt und scheinbar auch 
 bei heutigen Entwicklern angesagt sind, ich bin halt von gestern "und das ist 
 gut so", um ein geklautes Zitat zu verwenden. Darin wird ebenfalls auf diese 
-um sich greifende Unsitte (meine persönliche Einschätzung) eingegangen (wenn 
-auch in einem ganz anderen Zusammenhang). Die Autoren nennen diejenigen, die 
+um sich greifende Unsitte (meine persönliche Einschätzung) eingegangen, wenn 
+auch in einem ganz anderen Zusammenhang. Die Autoren nennen diejenigen, die 
 ohne jegliches (oder zumindest mit wenig) Grundwissen, mit wenigen Klicks coole 
 Hacks zaubern (oder es zumindest glauben), nicht zu Unrecht "Script-Iddies". 
 Wie die Autoren des Buches möchtet ich deshalb alle an der Mitwirkung 
@@ -70,7 +70,8 @@ Cloud-Services verzichten kann (falls man es wünscht).
 
 Allerdings muss man nur ein wenig an der Oberfläche kratzen (also in den 
 Quellcode schauen), damit sich einem die Haare sträuben (zumindest, wenn 
-man lange in der Software-Entwicklung tätig war). Natürlich muss man nicht wie 
+man lange in der Software-Entwicklung tätig war und kaum noch über Haare verfügt, 
+die sich noch sträuben können). Natürlich muss man nicht wie 
 ich Informatik studiert haben, um an einem Open-Source-Projekt mitzuwirken. 
 Genau das macht die Open-Source-Community ja zu einem so großartigem Ort, wo 
 genauso viel Platz für "Anfänger" ist, wie für "Fortgeschrittene". Aber wenn 
@@ -79,7 +80,7 @@ wie sie sich weiter entwickeln und dadurch ihre Ideen besser umsetzen können,
 verkümmert aus meiner Sicht ein wichtiger Teil dessen, was diese Community 
 leisten kann (und sich selbst offiziell auch auf die Fahnen geschrieben hat):
  **Andere inspirieren**, 
-sei es nun die Inspiration für das gemeinsame Projekt oder die Inspiration, 
+sei es nun die Inspiration bei der gemeinsamen Mitwirkung an einem Projekt oder die Inspiration, 
 sich selbst zu verbessern. 
 
 #### Hintergrund und meine ganz persönliche Motivation für dieses Projekt
@@ -89,7 +90,7 @@ in Home Assistant realisieren, da mir *"die Tante von Google"* etwas zu
 geschwätzig ist (Sorry, Google. Ansonsten bin ich auch mit dem 
 Google-Assistenten zufrieden). Da mir ebenfalls die Stimme von *"Tante Google"* 
 auf die Dauer "zu nervig" wurde, brauchte ich also als Erstes eine geeignete 
-Text-To-Speech Integration. Nichts einfacher als das (dachte ich zumindest). 
+Text-To-Speech Integration. Nichts einfacher als das, dachte ich zumindest. 
 Home Assistant hat bereits seit langem eine Integration um Amazon Polly als 
 TTS-Service verwenden zu können und bei Polly habe ich auch eine Stimme 
 gefunden, die ich als Stimme für "Jarvis" angemessen hielt. Der Service von 
@@ -120,13 +121,13 @@ es macht ja Spass ein grossartiges Projekt voran zu bringen.
 Und schliesslich hatte ich die beste Idee aller Zeiten (weil ich es nicht 
 anders kenne): Zu jeder Zeile Code, die ich für die Entwicklung von "Jarvis" 
 schreiben wollte, sollte ein Test existieren, der überprüft, das "Jarvis" so 
-funktioniert, wie es angedacht ist. Nun, um ehrlich zu sein, bei meinen 
+funktioniert, wie er angedacht ist. Nun, um ehrlich zu sein, bei meinen 
 bisherigen Projekten wurde dieser Aspekt von mir etwas vernachlässigt und es 
 existierten häufig nur die unbedingt notwendigen Tests. Aber nachdem ich mich 
 lange aus der Software-Entwicklung zurückgezogen hatte, wollte ich es "endlich 
 mal" nach allen Regeln der Kunst angehen. Warum auch nicht, es ist nur noch 
 Hobby und ich habe keine Deadline, zu der irgendwas fertig sein muss. Nun, du 
-vermutest es vermutlich bereits, auch diese Idee war nicht ganz so gut, wie es 
+vermutest es vermutlich bereits, auch diese Idee war nicht ganz so gut, wie sie 
 sich zuerst anhört. Beim ersten Versuch, einen Minimal-Test für meine Version 
 der "Amazon Polly" Integration zu schreiben, konnte Home Assistant aufgrund 
 zirkulärer Imports nicht importiert werden. Tests waren damit ausgeschlossen.
@@ -138,7 +139,7 @@ zugebenerweise "not amused", wie es auf neudeutsch so schön heisst. Aber wer
 lässt sich schon von so ein paar Anfangsschwierigkeiten davon abbringen, sein 
 Vorhaben in die Tat umzusetzen? Ich jedenfalls nicht. Also nach allen gängigen 
 Regeln in Open-Source-Projekten erstmal den Fehler melden (worauf ich bis heute 
-keine Rückmeldung habe). Ich bin ja auch nicht ganz auf den Kopf gefallen (schon wieder meine persönliche Meinung), 
+keine Rückmeldung habe). Ich bin ja auch nicht ganz auf den Kopf gefallen (schon wieder meine Selbstwahrnehmung), 
 deshalb auch schon mal selbst nach einer Lösung suchen (obwohl ich mich 
 garnicht so tief mit den "Verstrickungen" und "Schichten" auseinander setzen 
 wollte, es sollte eigentlich doch nur eine bereits existierende Integration 
@@ -154,12 +155,12 @@ Imports führt.
 
 Das Prinzip ist leicht ausgesprochen oder aufgeschrieben, 
 nämlich **teile und herrsche**, aber es lässt sich häufig nicht so einfach 
-umsetzen wie aufschreiben. Es erfordert vor allem Eines: Die **Disziplin**, sich an 
-die festgelegten Schnittstellen zu halten (mal wieder geklaut, aber die Quelle ist 
+umsetzen wie aufschreiben (mal wieder geklaut, aber die Quelle ist 
 seit über 2000 Jahren tot und kann sich nicht mehr gegen Copyright-Verstösse 
 wehren und überlebende Rechtsnachfolger existieren auch nicht mehr - ein Hoch 
-auf Asterix und Obelix, die ihm die Stirn geboten haben). Nun, in der 
-Software-Entwicklung geht es anders als bei Caesar nicht um die Beherrschung 
+auf Asterix und Obelix, die ihm die Stirn geboten haben). Es erfordert vor 
+allem Eines: Die **Disziplin**, sich an die festgelegten Schnittstellen zu halten.
+Nun, in der Software-Entwicklung geht es anders als bei Caesar nicht um die Beherrschung 
 fremder Völker, sondern um die Beherrschung einer Problemstellung (zumindest 
 in den meisten Software-Projekten. Ob Amazon und Microsoft das auch 
 unterschreiben würden????). Wenn man es schafft, eine Problemstellung 
@@ -183,7 +184,11 @@ würde man natürlich damit auch gleich festlegen, welche Aufgaben er nicht hat
 (eben alles, was nicht ausdrücklich als Aufgabe definiert wurde) und wie besimmte 
 *Ereignisse* an höherliegende Schichten weitergeleitet werden, weil der *Kernel* sozusagen
 weiß oder erahnt, das die "höherliegenden Schichten" etwas Einblick in den *Kernel* benötigtigen,
-damit sie sinnvoll und reibungslos funktionieren können. Das suboptimale (schon wieder neudeutsch für 
+damit sie sinnvoll und reibungslos funktionieren können. Es ist natürlich nicht der Kernel, 
+das das "erahnt", sondern es sind die Software-Entwickler (zumindest die, die sich selbst zurecht so nennen),
+die wissen, das die "höheren Schichten" Infos vom Kernel benötigen und das das am Besten über das Auslösen
+von *Events* funktioniert, weil der *Kernel* hierbei keine Infos über seine Umgebung benötigt, und dadurch
+unabhängig vom "Wissen" über das restliche System wird. Das suboptimale (schon wieder neudeutsch für 
 "hirnlose") bei der Lösung, wie sie in Home Assistant umgesetzt wurde, ist mal wieder, das alle 
 Voraussetzungen, um es sauber zu implementieren vorhanden sind. Einige oder viele scheinen aber zu
 meinen, das Regeln (wie das vorhandene Event-Benachrichtigungssystem) nur für alte, graue, bald austerbende Entwickler sind. Sie
@@ -195,13 +200,31 @@ Ein Hoch auf die Evolution und kreative Freihet (oder wie heisst das korrekt, we
 zur Größe zur selbst wahrgenommenen Genialität verkleinert?).
 
 Microsoft Windows hatte lange mit den gleichen Schwierigkeiten zu kämpfen, 
-selbst, wie bereits PC-DOS und Microsoft-DOS 1.0 bis 6.22, Quick-And-Dirty 
-entwickelt (mal wieder meine persönliches Urteil), führte das zu den 
-von uns so heiss geliebten BSDs (Blue Screens of Death - oder auf deutch: 
-Blauen Bildschirmen des Todes). Wer nicht weiß, worauf ich anspiele möge Wiki 
-oder eine andere Geschichtssammlung oder Dokumentation über die Anfänge der
-Computer-Industrie befragen, wenn er/sie es verstehen möchte. So gesehen mein 
-Kompliment an die Home Assistant Community. Ich habe noch nichts gesehen, das 
+und wie ich Microsoft einschätze hat es das noch immer, aber ich arbeite
+zum Glück nur noch mit Linux und kann mir über den aktuellen Stand von Windows 
+Version HauMichTot kein Urteil mehr erlauben. Als sie mit den merkwürdigen
+Erhhöhung der Versionsnummern begannen (2.0, 3.1, 3.11, 4.0, 95, 98, 2000, 2002, 7!!!!!, 8)
+war ich zum Glück nicht mehr darauf angewiesen, mit Windows zu arbeiten.
+Bei diesen früheren Versionen von Windows also,
+die selbst, wie bereits PC-DOS und Microsoft-DOS 1.0 bis 6.22, Quick-And-Dirty 
+entwickelt wurden (mal wieder mein persönliches Urteil), fingen nach meiner Einschätzung als
+Erste damit an, Effekt und Optik wichtiger zu nehmen als die ihnen zugedachte und zugeschriebene
+Funktionalität. Das führte zu den von uns so heiss geliebten BSDs (Blue Screens of Death - oder auf deutch: 
+Blauen Bildschirmen des Todes). Für nicht so Geschichtskundige - Windows zeigte häufig einen Fehlerbildschirm,
+(weiße Schrift auf blauem Grund, deshalb BSD), um danach den Dienst einzustellen (meistens direkt vorm Abspeichern
+der Arbeit, die damit nochmal gemacht werden durfte). Dann konnte man erst einmal in Ruhe Kaffee trinken gehen,
+und wenn man Glück hatte, lief Windows bereits wieder, nachdem der erforderliche Neustart durchgeführt wurde.
+Wer sich zu sehr über die verloren gegangene Arbeit aufregte und beim Neustart nicht so genau hin gesehen hatte, 
+wurde prompt mit einer zweiten Tasse Kaffee belohnt, weil er/sie vergessen hatte, den Neustart zu bestätigen und statt
+des erwarteten laufenden System, die Frage, ob der Rechner neu gestartet werden soll, präsentiert bekam.
+(Ob die von Tschibo oder anderen Kaffee-Röstern damals schon eine Provision bekommen haben? Heute wäre das bestimmt der Fall!) 
+So entstand bei uns "Unter DOS und Windows Leidenden und von Ihnen Gequälten" die gängige Umschreibung für Windows:
+*"Sie haben die Position Ihres Mauszeigers verändert. Möchten Sie Windows jetzt neu starten, um die Änderung zu übernehmen?"*,
+was natürlich stark übertrieben, aber eben nur übertrieben, war. Es hat scheinbar nicht viel dazu gefehlt, 
+damit diese Übertreibung Realität geworden wäre, so oft wie man aufgefordert wurde, den Rechner neu zu starten, weil ...
+
+Nach diesem nicht vorgesehenem Ausflug in die Anfänge der Software-Industrie, zurück zum eigentlichen Thema: Home Assistant.
+So gesehen mein Kompliment an die Home Assistant Community. Ich habe noch nichts gesehen, das 
 einem BSD ähnelt und bisher hat Home Assistant immer tadellos funktioniert.
 
 #### Endlich die Lösung?
@@ -212,16 +235,16 @@ ich viele Stellen zur Vermeidung der zirkulären Imports nur auskommentieren
 konnte. Schließlich wollte ich nicht das ganze System durchforsten. Das sollten 
 ruhig die machen, die sich damit auskennen und z.T. seit Jahren in der Home 
 Assistant Community aktiv sind. Da Home Assistant (zumindest in ihrer eigenen
-Dokumentation für Entwickler) fordert, das neue Integrationen mit Tests 
-(konkret pytest - Tests) auf Herz und Nieren geprüft werden (sehr vernünftig und 
-lobenswert), dachte ich, meine Beiträge, wenn auch nicht ausgereift, wären
-zumindest als Inspiration für die "Wissenden", die sich in den Tiefen des 
-System besser auskennen, willkommen. So wirklich erfreut, das ihnen jemand ins 
-Handwerk pfuscht (so mein Eindruck), war bei Home Assistant aber niemand. Ganz 
-im Gegenteil. Sie vermittelten mir eher den Eindruck, dass der Versuch meine 
-Erkenntnisse zu teilen, um damit das Projekt voran zu bringen, genauso 
-willkommen sind, wie eine Schmeissfliege auf der Frühstücksmarmelade 
-(vielleicht verdient Nabu Casa an der  "Home Assistant Cloud" zu gut, 
+Dokumentationen für Entwickler, aber war ausser mir liest so'n Quatsch auch, wenn
+er an der Entwicklung des Projekts mitwirken möchte) fordert, das neue Integrationen mit Tests 
+(konkret pytest - Tests) auf Herz und Nieren geprüft werden, dachte ich, meine Beiträge, 
+wenn auch nicht ausgereift, wären zumindest als Inspiration für die "Wissenden", 
+die sich in den Tiefen des System besser auskennen, willkommen. 
+So wirklich erfreut, das ihnen jemand ins Handwerk pfuscht (so mein Eindruck), 
+war bei Home Assistant aber niemand. Ganz im Gegenteil. Sie vermittelten mir eher 
+den Eindruck, dass der Versuch meine Erkenntnisse zu teilen, um damit das Projekt 
+voran zu bringen, genauso willkommen sind, wie eine Schmeissfliege auf der 
+Frühstücksmarmelade (vielleicht verdient Nabu Casa an der  "Home Assistant Cloud" zu gut, 
 um den Open-Source Gedanken noch Ernst zu nehmen).
 
 #### Hurra! Ich habe mein Open-Source-Projekt gefunden
