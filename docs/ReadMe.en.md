@@ -41,7 +41,7 @@ However, I would like to express my gratitude to my friend for her understanding
 
 ### License
 
-Licensed under the [GNU General Public License v3.0][license-url].
+Licensed under the [GNU General Public License v3][license-url].
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
