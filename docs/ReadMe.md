@@ -17,7 +17,7 @@ sie ebenfalls als kostenlose und quelloffene Software konzipiert, die in den
 wesentlichen Teilen in Python entwickelt wird und deren Hauptaugenmerk auf 
 lokaler Steuerung und Privatspäre liegt. Da ich mich allerdings in der c / 
 c++ / C# - Entwicklung mehr zuhause fühle, werden viele unterstützende 
-Bibliotheken eher in C++ entwickelt werden. Aus dem gleichen Grund werde ich auch
+Bibliotheken eher in c++ entwickelt werden. Aus dem gleichen Grund werde ich auch
 das eher auf einer "Modulhierarchie" bestehende Grundgerüst auf eine Klassenhierarchie
 umstellen (so gut es Python eben zulässt), wo jedem, der sich mit 
 Klassenhierarchien etwas auskennt aber auch "Einsteigern", relativ schnell klar
@@ -85,7 +85,7 @@ Wie die Autoren des Buches möchtet ich deshalb alle an der Mitwirkung
 Interessierten, die ohne viel Hintergrundwissen und Engagement "ein paar 
 oberflächliche Tricks" lernen oder lehren möchten, darauf aufmerksam machen, 
 das sie andere Projekte bestimmt interessanter finden werden (und vielversprechender,
-was die Anerkennung der coolen Hacks angeht).
+was die Anerkennung der "coolen Hacks" angeht).
 
 #### Wo bleibt denn der Respekt, vor den Mitgliedern der Community?
 
@@ -230,10 +230,10 @@ Das suboptimale (schon wieder neudeutsch für "hirnlose") bei der Lösung,
 wie sie in Home Assistant umgesetzt wurde, ist mal wieder, das alle 
 Voraussetzungen, um es sauber zu implementieren vorhanden sind. Einige oder viele scheinen aber zu
 meinen, das Regeln (wie das vorhandene Event-Benachrichtigungssystem) nur für alte, graue, bald austerbende Entwickler:innen
-(also für uns nichtwissenden Dinosaurien der Software-Entwicklung) geschafft wurden. Sie
+(also für uns nichtwissende Dinosaurier der Software-Entwicklung) geschaffen wurden. Sie
 scheinen sich in ihrer kreativen Freiheit so sehr eingeschränkt zu fühlen, das 
 solche wohl definierten, vorhandenen Schnittstellen nur etwas für Nichts-Könner zu sein scheinen.
-Und anschließend wundern sie sich über die (nur bei Nicht-Denkenden) nicht zu erwartenden Nebeneffekte. 
+Und anschließend wundern sie sich tatsächlich über die (nur bei Nicht-Denkenden) nicht zu erwartenden Nebeneffekte. 
 Aber vermutlich nicht mal das. Der erhoffte Effekt konnte mit einem "coolen" Hack realisert werden, der Rest interessiert nicht mehr.
 Ein Hoch auf die Evolution und kreative Freihet (oder wie heisst das korrekt, wenn sich das Hirn überproportional
 zur Größe zur selbst wahrgenommenen Genialität verkleinert?).
@@ -264,9 +264,12 @@ des erwarteten laufenden System, die Frage, ob der Rechner neu gestartet werden 
 (Ob die von Tschibo oder anderen Kaffee-Röstern damals schon eine Provision bekommen haben? Heute wäre das bestimmt der Fall!) 
 
 So entstand bei uns, den "unter DOS und Windows Leidenden und von Ihnen Geschädigten" die gängige Umschreibung für Windows:
-*"Sie haben die Position Ihres Mauszeigers verändert. Möchten Sie Windows jetzt neu starten, um die Änderung zu übernehmen?"*,
+*"Sie haben die Position Ihres Mauszeigers verändert. Möchten Sie Windows jetzt neu starten, um die Änderungen zu übernehmen?"*,
 was natürlich stark übertrieben, aber eben auch nur übertrieben, war. Es hat scheinbar nicht viel dazu gefehlt, 
-damit diese Übertreibung Realität geworden wäre, so oft wie man aufgefordert wurde, den Rechner neu zu starten, weil ... gemacht wurde.
+damit diese Übertreibung Realität geworden wäre, so oft wie man aufgefordert wurde, den Rechner neu zu starten, weil ... gemacht wurde,
+und Windows mal wieder neu gestartet werden musste, um die Änderungen zu übernehmen. Plug-And-Play, auch so ein typisches Microsoft
+Versprechen, das lange nur so hieß" war zur großen Zeit der BSDs (soweit ich mich erinnere) noch nicht angedacht oder denkbar,
+weil auch die USB-Schnittstelle erst noch erfunden werden musste.
 
 Dieses Vorgehen wurde von den späteren "Errungenschaften" der Software-Industrie, wie Google (nachdem es die Werbung als
 Einnahmequelle für sich entdeckt hatte), Facebook, WhatsApp, Twitter und wie die angeblich unverzichtbaren Tools der heutigen
@@ -274,12 +277,12 @@ Gesellschaft sonst so heißen auf die Spitze getrieben, weil jeder massiv mit al
 ganz so legalen) Tricks versucht, die 5 Sekunden Aufmerksamkeit zu erhaschen, die von heutigen "Usern" dieser Dienste maximal
 noch zu erwarten sind. Danach klingelt ja schon der nächste "Dienst an der Menschheit" an und verlangt Aufmerksamkeit
 (Quatsch, bietet selbstlos die neuesten Informationen, die für das Überleben der Menschheit als Ganzes und des
-Dienstes als *beinaher* **selbstloser, kostenloser Service** - zumindest offiziel - ins Besondere von so entscheidender Bedeutung sind), 
+Dienstes als *beinahe* **selbstloser, kostenloser Service** - zumindest offiziel - ins Besondere von so entscheidender Bedeutung sind), 
 wie z.B. das 100.000.000 (für alle bei denen Mathe schon etwas zurückliegt, das einhundertmillionste) Katzenvideo an,
 das nun endlich und endgültig die Menschheit vorm Untergang bewahren wird. GOTT SEI DANK! Sagt den Aposteln von *Nostradamus* 
 Bescheid, der erwarte Weltuntergang findet (mal wieder) nicht statt!
 
-Vermutlich regen sich jetzt bei vielen Widerstände. Wie kann der nur... So ein Unverschämheit... Was bildet sich dieser
+Vermutlich regen sich jetzt bei vielen zu Recht Widerstände. Wie kann der nur... So ein Unverschämheit... Was bildet sich dieser
 zurückgebliebene "analoge" Fuzzie ein ... Nun, ich war auch mal jung und habe mit meiner Begeisterung für die sich
 bietenden Möglichkeiten der neuen Technik und vollem Einsatz im Rahmen meiner Möglichkeiten dafür gesorgt, das die
 Technik sich so entwickelt hat, wie sie es nun einmal getan hat (selbstverständlich war ich dabei nicht massgeblich, 
@@ -327,11 +330,26 @@ um den Open-Source Gedanken noch Ernst zu nehmen?).
 Aber was soll's. So habe ich wenigstens das gefunden, wonach ich so lange 
 gesucht habe. Ein Projekt, wo ich mich austoben und meiner Kreativität freien 
 Lauf lassen kann. Schöner wäre es natürlich gewesen, Teil einer größeren 
-Entwickler-Community zu sein. Aber dieses Projekt muss ja nicht auf Dauer von mir alleine 
-gestemmt werden. Vielleicht findet sich ja der/die Eine oder der/die Andere, die 
-ebenfalls Spass an Herausforderungen hat. Und Herausforderungen sind bei diesem 
-Mammut-Vorhaben genug zu sehen und noch mehr werden sich im Laufe der Zeit 
-ergeben.
+Entwickler-Community zu sein. Aber ich bin Teil einer viel größeren Community,
+die den Open-Source-Gedanken ernst nimmt und verinnerlicht hat. Dadurch muss
+ich dieses Projekt (hoffentlich) nicht auf Dauer alleine 
+stemmen. Vielleicht findet sich ja der/die Eine oder der/die Andere, die 
+ebenfalls Spass an Herausforderungen hat und dem/der es in erster Linie nicht
+auf die Anerkennung durch Likes, Follower oder die Anzahl der Forks ankommt, sondern die damit
+zufrieden sind, das das Projekt irgendwann wie gewünscht funktioniert und sich
+die investierte Arbeit dadurch "rentiert", das man weiss an einem Projekt mitgewirkt zu haben,
+das lange, ohne ständige Änderungen an den Grundlagen, eingesetzt werden kann. 
+(Noch so eine weit verbreite "Unsitte" der heutigen Zeit, die mal wieder, wer
+hätte es gedacht, vor allem Microsoft zu verdanken ist. Nur weil ein Projekt 
+nicht alle 5 Minuten ein Update durchführt, heißt es nicht, das das Projekt
+tot und wertlos ist. Es bedeutet vielmehr, das sich die Mitwirkenden von Anfang
+an die Mühe gemacht haben, soweit es möglich ist, alle denkbaren 
+Szenarien bei der Umsetzung zu berücksichtigen, um diese ständigen
+"zwingend erforderlichen" Sicherheitsupdates zu vermeiden. Aber das nimmt
+natürlich Zeit in Anspruch und man kann nicht durch
+"coole Hacks" schnell die Umwelt beeindrucken, sondern braucht Geduld (auch wenn es schwer fällt)
+und den Glauben an die Fähigkeiten der Mitwirkenden, die irgendwann
+zum gewünschten Ergebnis führen, aber garantiert nicht "beeindruckend schnell".)
 
 ### Verbesserungsvorschläge / Fehlerberichte / Serviceanfragen
 
