@@ -12,19 +12,23 @@
 
 Hier kommst sie - die nächste Entwicklungstufe der 
 Hausautomation. Sie basiert auf Home Assistent, dem zurecht beliebten zentralen
-Steuerungssystem in einem Smart Home oder Smart House. Wie Home Assistent ist 
+Steuerungssystem in einem Smart Home oder Smart House. 
+
+Wie Home Assistent ist 
 sie ebenfalls als kostenlose und quelloffene Software konzipiert, die in den 
 wesentlichen Teilen in Python entwickelt wird und deren Hauptaugenmerk auf 
 lokaler Steuerung und Privatspäre liegt. Da ich mich allerdings in der c / 
 c++ / c# - Entwicklung mehr zuhause fühle, werden viele unterstützende 
 Bibliotheken eher in c++ entwickelt werden. Aus dem gleichen Grund werde ich auch
 das eher auf einer "Modulhierarchie" bestehende Grundgerüst auf eine Klassenhierarchie
-umstellen (so gut es Python eben zulässt), wo jedem, der sich mit 
-Klassenhierarchien etwas auskennt aber auch "Einsteigern", relativ schnell klar
-wird, welche Klasse welche Aufgaben übernimmt, welche Teile der "Schnittstelle" 
-von allen benutzt werden dürfen und welche Teile nur innerhab der Klasse für die 
-Implementierung der Funktionalität vorhanden sind und eben **NICHT** von allen 
-aufgerufen werden dürfen. Leider unterstützt Python die Verwendung von 
+umstellen (so gut es Python eben zulässt).
+
+Dadurch solle jedem, der sich mit Klassenhierarchien etwas auskennt aber auch 
+"Einsteigern", relativ schnell klar werden, welche Klasse welche Aufgaben übernimmt, 
+welche Teile der "Schnittstelle"  von allen benutzt werden dürfen und welche Teile 
+nur innerhab der Klasse für die Implementierung der Funktionalität vorhanden sind.
+
+Leider unterstützt Python die Verwendung von 
 (Achtung, C++ - Code) ```private``` oder ```protected``` in Klassen nicht,
 so das ich "nur" darauf vertrauen kann, das die nicht öffentlichen Teile der 
 Implementierung, von denen, die dieses Projekt für sinnvoll und interessant
@@ -62,7 +66,7 @@ Open-Source-Gedanke nur noch zu Werbezwecken propagiert, aber nicht
 mehr Ernst genommen wird.) Da ich nicht das 5. Rad am Wagen sein will,
 bleibt mir also nur meine Vision eines zuverlässigen zentralen 
 Steuerungssystems selbst zu realisiern und zu hoffen, das ein
-paar Gleichgesinnte meinen Ansatz für interessant genug finden, um
+paar Gleichgesinnte meinen Ansatz für interessant genug halten, um
 das Projekt durch ihre Mitwirkung voran zu bringen.
 
 ### Verbesserungsvorschläge / Fehlerberichte / Serviceanfragen
