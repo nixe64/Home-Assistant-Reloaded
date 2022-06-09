@@ -46,14 +46,14 @@ Assistant wunschlos glücklich sein. Tolle Oberfläche, sehr aktive Community,
 sehr umfassende Unterstützung von smarten Geräten, ... Was will man mehr?
 
 Leider habe ich einen zweiten Blick (in den Quellcode) riskieren müssen, da ich
-bei der Entwicklung einer neuen Integration für Home Assistant (mein "Jarvis für Zuhause")
+bei der Entwicklung einer neuen Integration für Home Assistant (mein *"Jarvis für Zuhause"*)
 gescheitert bin! Home Assistant konnte aufgrund zirkulärer Imports nicht
 von "Jarvis" importiert werden. Mein Bug-Report an Home Assistant verlief
 im Sande. Ich konnte meine "Entwicklungsversion" von Home Assistant immerhin
 so weit patchen, dass die von mir benötigten Teile "ohne meckern" importiert
 und "Jarvis" so mit pyTest - Tests geprüft werden konnte.
 
-Der Versuch meine gewonnenen Informationen bei der Home Assistant Community
+Der Versuch meine gewonnenen Erkenntnisse bei der Home Assistant Community
 "an den Mann" zu bringen und damit das Projekt (wenn auch nur ein wenig)
 besser zu machen war genauso willkommen, wie eine Schmeissfliege auf der 
 Frühstücksmarmelade (vermutlich verdient Nabu Casa an der 
@@ -63,7 +63,7 @@ mehr Ernst genommen wird.) Da ich nicht das 5. Rad am Wagen sein will,
 bleibt mir also nur meine Vision eines zuverlässigen zentralen 
 Steuerungssystems selbst zu realisiern und zu hoffen, das ein
 paar Gleichgesinnte meinen Ansatz für interessant genug finden, um
-den ein oder anderen Beitrag zur Umsetzung beitragen.
+das Projekt durch ihre Mitwirkung voran zu bringen.
 
 ### Verbesserungsvorschläge / Fehlerberichte / Serviceanfragen
 

@@ -138,6 +138,12 @@ Copyright ©  2022, Andreas Nixdorf, GPLv3<br/>
 <https://code.visualstudio.com/brand>.<br/>
  Recht zur freien Nutzung (Public Domain).
 
+[![tng][tng]][tng-url]<br/>
+Star Trek - The Next Generation - Logo<br/>
+Copyright ©  2022, Andreas Nixdorf, GPLv3<br/>
+[Original][tng-orig]: Copyright ©  Paramount Domestic Television<br/>
+Recht zur freien Nutzung (Public Domain)
+
 <!-------------------------------------------------------------------------------------------------------------------------------------->
 
 [canada]: docs/images/canada.svg
@@ -187,5 +193,8 @@ Copyright ©  2022, Andreas Nixdorf, GPLv3<br/>
 [code]: docs/images/vscode.svg
 [code-url]: https://commons.wikimedia.org/w/index.php?curid=79495290
 [code-orig]: https://upload.wikimedia.org/wikipedia/commons/9/9a/Visual_Studio_Code_1.35_icon.svg
+[tng]: docs/images/star-trek-logo.svg
+[tng-url]: https://commons.wikimedia.org/wiki/File:Star_Trek_The_Next_Generation_Logo.svg
+[tng-orig]: https://upload.wikimedia.org/wikipedia/commons/1/15/Star_Trek_The_Next_Generation_Logo.svg
 
-https://upload.wikimedia.org/wikipedia/commons/1/15/Star_Trek_The_Next_Generation_Logo.svg
+
