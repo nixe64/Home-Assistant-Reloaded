@@ -24,6 +24,7 @@ License][gpl] along with this program.  If not, see
 http://www.gnu.org/licenses/.
 
 ##
+<br/>
 
 This applies to all documents and/or source code files that do not contain a copyright notice to the contrary. At this time, only the **Code of Conduct for Contributors** is published in derogation of the GPLv3 guidelines. Like *Mozilla's Guidelines for Contributing to the Community*, which served as a basis and inspiration, it is published according to the guidelines of the Creative Commons Attribution-ShareAlike 4.0 International Public License.
 
@@ -52,7 +53,6 @@ connection with the Program, unless a warranty or assumption of
 liability accompanies a copy of the Program in return for a fee.
 
 ##
-<br/>
 
 ### Copyrights / Attribution
 

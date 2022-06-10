@@ -25,6 +25,7 @@ Sie sollten ein Exemplar der [Allgemeinen Öffentlichen GNU-Lizenz][gpl] zusamme
 mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.org/licenses/>.
 
 ##
+<br>
 
 Dies gilt für alle Dokumente und/oder Quellcode-Dateien, die keinen anders lauteten Copyright-Vermerk beinhalten. Zur Zeit wird nur der **Verhaltenscodex für Mitwirkende** abweichend von den Richtlinien der GPLv3 veröffentlicht. Wie *Mozilla's Richtlinien für das Mitwirken in der Community*, die als Basis und Inspiration dienten, wird er gemäß den Richtlinien der Creative Commons Namensnennung - Share Alike 4.0 Internationalen Offentlchen Lizenz veröffentlicht.
 
@@ -49,7 +50,6 @@ In keinem Fall, außer wenn durch geltendes Recht gefordert oder schriftlich zug
 Sollten der o.a. Gewährleistungsausschluß und die o.a. Haftungsbegrenzung aufgrund ihrer Bedingungen gemäß lokalem Recht unwirksam sein, sollen Bewertungsgerichte dasjenige lokale Recht anwenden, das einer absoluten Aufhebung jeglicher zivilen Haftung in Zusammenhang mit der Vorlage am nächsten kommt, es sei denn, der Vorlage lag eine entgeltliche Garantieerklärung oder Haftungsübernahme bei. 
 
 ##
-<br/>
 
 ### Urheberrechtslizenzen / Namensnennungen
 
