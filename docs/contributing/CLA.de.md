@@ -25,7 +25,7 @@ Ich verstehe und stimme zu, dass dieses Projekt und der Beitrag öffentlich sind
 
 ### Urheberrecht und Namensnennungen
 
-Der Text dieser Lizenz ist unter der [Creative Commons][cc-url] Attribution-ShareAlike 3.0 Unported License verfügbar. Es basiert auf dem [Entwickler-Ursprungszertifikat][dco-url] von Linux.
+Der Text dieser Lizenz wird gemäß der [Creative Commons Attribution-ShareAlike Lizenz][cc-url] zur freien Nutzung / Modifizierung veröffentlicht. Es basiert auf dem [Entwickler-Ursprungszertifikat][dco-url] von Linux.
 
 ### Unterzeichnung
 
@@ -48,5 +48,5 @@ Diese Lizenzvereinbarung kann nicht explizit unterzeichnet werden, da ich kein E
 [bugs-badge]: https://img.shields.io/github/issues/nixe64/Home-Assistant-Blueprint/bug.svg?label=Fehlerberichte&color=informational
 [bugs-url]: https://github.com/nixe64/Home-Assistant-Blueprint/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3Abug
 
-[cc-url]: http://creativecommons.org/licenses/by-sa/3.0/
+[cc-url]: ../License.cc-by-sa.de.md
 [dco-url]: http://elinux.org/Developer_Certificate_Of_Origin

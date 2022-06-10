@@ -24,7 +24,7 @@ I understand and agree that this project and the contribution are public and tha
 
 ### Copyright and Attribution
 
-The text of this license is available under the [Creative Commons][cc-url] Attribution-ShareAlike 3.0 Unported License.  It is based on the Linux [Developer Certificate Of Origin][dco-url].
+The text of this license is published under the terms of the [Creative Commons Attribution-ShareAlike license][cc-url].  It is based on the Linux [Developer Certificate Of Origin][dco-url].
 
 ### Signing
 
@@ -47,5 +47,5 @@ This license agreement cannot be signed explicitly as I do not have an Enterpris
 [bugs-badge]: https://img.shields.io/github/issues/nixe64/Home-Assistant-Blueprint/bug.svg?label=Fehlerberichte&color=informational
 [bugs-url]: https://github.com/nixe64/Home-Assistant-Blueprint/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3Abug
 
-[cc-url]: http://creativecommons.org/licenses/by-sa/3.0/
+[cc-url]: ../License.cc-by-sa.en.md
 [dco-url]: http://elinux.org/Developer_Certificate_Of_Origin

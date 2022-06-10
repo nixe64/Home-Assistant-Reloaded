@@ -214,7 +214,7 @@ Wir möchten alle ermutigen, Fragen zu den Richtlinien zu stellen. Wenn Du eine 
 
 ### Urheberrecht und Namensnennungen
 
-Diese Richtlinien werden unter der Creative Commons Attribution-ShareAlike Lizenz veröffentlicht.
+Diese Richtlinien werden unter der [Creative Commons Attribution-ShareAlike Lizenz][license-url] veröffentlicht.
 
 Sie wurden mit Modifizierungen an den ursprünglichen Community-Participation-Richtlinien von Mozilla, dem Ubuntu Code of Conduct, Mozillas View Source Conference Code of Conduct und dem Rust Language Code of Conduct abgeändert, die auf dem Stumptown Syndicates Citizen Code of Conduct basieren. Zusätzlicher Text wurde dem LGBTQ in Technology Code of Conduct und dem WisCon Code of Conduct entnommen. 
 

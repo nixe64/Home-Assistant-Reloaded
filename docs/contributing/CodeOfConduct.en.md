@@ -1,6 +1,6 @@
 <a href="CodeOfConduct.en.md"><img src="../images/en.svg" valign="top" align="right"/></a>
 <a href="CodeOfConduct.de.md"><img src="../images/de.svg" valign="top" align="right"/></a>
-[![Version][version-badge]][version-url]
+<!--[![Version][version-badge]][version-url]-->
 [![License][license-badge]][license-url]
 <!--
 [![Bugs][bugs-badge]][bugs-url]
@@ -211,7 +211,7 @@ Everyone is encouraged to ask questions about these guidelines. If you are organ
 
 ### Copyright and Attribution
 
-These guidelines are published under the Creative Commons Attribution-ShareAlike license. 
+These guidelines are published under the [Creative Commons Attribution-ShareAlike license][license-url]. 
 
 They have been adapted with modifications from Mozilla’s original Community Participation Guidelines, the Ubuntu Code of Conduct, Mozilla’s View Source Conference Code of Conduct, and the Rust Language Code of Conduct, which are based on Stumptown Syndicate’s Citizen Code of Conduct. Additional text from the LGBTQ in Technology Code of Conduct and the WisCon code of conduct.
 
