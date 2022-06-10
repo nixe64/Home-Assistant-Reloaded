@@ -12,11 +12,15 @@
 
 By making a contribution to this project, I certify that:
 
-1. The contribution was created in whole or in part by me and I have the right to submit it under the GNU General Public License; or
-2. The contribution is based upon previous work that, to the best of my knowledge, is covered under an appropriate open source license and I have the right under that license to submit that work with modifications, whether created in whole or in part by me, under the GNU General Public License; or
-3. The contribution was provided directly to me by some other person who certified (a), (b) or (c) and I have not modified it.
-4. I understand and agree that this project and the contribution are public and that a record of the contribution (including all personal information I submit with it) is maintained indefinitely and may be redistributed consistent with this project or the open source license(s) involved.
-
+<ol type="a"><li>
+The contribution was created in whole or in part by me and I have the right to submit it under the GNU General Public License; or
+</li><li>
+The contribution is based upon previous work that, to the best of my knowledge, is covered under an appropriate open source license and I have the right under that license to submit that work with modifications, whether created in whole or in part by me, under the GNU General Public License; or
+</li><li>
+The contribution was provided directly to me by some other person who certified (a), (b) or (c) and I have not modified it.
+</li><li>
+I understand and agree that this project and the contribution are public and that a record of the contribution (including all personal information I submit with it) is maintained indefinitely and may be redistributed consistent with this project or the open source license(s) involved.
+</li></ol>
 
 ### Copyrights / Attribution
 
@@ -28,10 +32,6 @@ This license agreement cannot be signed explicitly as I do not have an Enterpris
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-
-<style type="text/css">
-    ol { list-style-type: lower-alpha; }
-</style>
 
 [logo]: ../images/logo.svg
 [project-url]: https://github.com/nixe64/The-Next-Generation/

@@ -13,10 +13,15 @@
 
 Durch meinen Beitrag zu diesem Projekt bestätige ich Folgendes:
 
-1. Der Beitrag wurde ganz oder teilweise von mir erstellt und ich habe das Recht, ihn unter der Allgemeinen Öffentlichen GNU-Lizenz \(GPL\) einzureichen; oder
-2. Der Beitrag basiert auf früherer Arbeit, die nach meinem besten Wissen unter einer entsprechenden Open-Source-Lizenz steht, und ich habe das Recht, diese Arbeit mit Änderungen, ob ganz oder teilweise von mir erstellt, unter der Allgemeinen Öffentlichen GNU-Lizenz (GPL) einzureichen; oder
-3. Der Beitrag wurde mir direkt von einer anderen Person zur Verfügung gestellt, die (a), (b) oder (c) zertifiziert hat, und ich habe ihn nicht geändert.
-4. Ich verstehe und stimme zu, dass dieses Projekt und der Beitrag öffentlich sind und dass eine Aufzeichnung des Beitrags (einschließlich aller persönlichen Informationen, die ich damit einreiche) auf unbestimmte Zeit aufbewahrt wird und im Einklang mit diesem Projekt oder der/den betroffenen Open-Source-Lizenz(en) weitergegeben werden kann. |
+<ol type="a"><li>
+Der Beitrag wurde ganz oder teilweise von mir erstellt und ich habe das Recht, ihn unter der Allgemeinen Öffentlichen GNU-Lizenz \(GPL\) einzureichen; oder
+</li><li>
+ Der Beitrag basiert auf früherer Arbeit, die nach meinem besten Wissen unter einer entsprechenden Open-Source-Lizenz steht, und ich habe das Recht, diese Arbeit mit Änderungen, ob ganz oder teilweise von mir erstellt, unter der Allgemeinen Öffentlichen GNU-Lizenz (GPL) einzureichen; oder
+</li><li>
+Der Beitrag wurde mir direkt von einer anderen Person zur Verfügung gestellt, die (a), (b) oder (c) zertifiziert hat, und ich habe ihn nicht geändert.
+</li><li>
+Ich verstehe und stimme zu, dass dieses Projekt und der Beitrag öffentlich sind und dass eine Aufzeichnung des Beitrags (einschließlich aller persönlichen Informationen, die ich damit einreiche) auf unbestimmte Zeit aufbewahrt wird und im Einklang mit diesem Projekt oder der/den betroffenen Open-Source-Lizenz(en) weitergegeben werden kann. |
+</li></ol>
 
 ### Urheberrechte / Namensnennungen
 
@@ -28,10 +33,6 @@ Diese Lizenzvereinbarung kann nicht explizit unterzeichnet werden, da ich kein E
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-
-<style type="text/css">
-    ol { list-style-type: lower-alpha; }
-</style>
 
 [logo]: ../images/logo.svg
 [project-url]: https://github.com/nixe64/The-Next-Generation/
