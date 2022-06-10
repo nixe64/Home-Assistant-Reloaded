@@ -3,7 +3,9 @@
 [![Version][version-badge]][version-url]
 [![License][license-badge]][gpl]
 
-### The Next Generation (of Home Assistant)
+[![Logo][logo]][project-url]
+
+### Smart Home - The Next Generation
 
 Copyright © 2022, Andreas Nixdorf.
 
@@ -141,6 +143,12 @@ Copyright ©  2022, Andreas Nixdorf, GPLv3<br/>
 <https://code.visualstudio.com/brand>.<br/>
  Public Domain.
 
+[![tng][tng]][tng-url]<br/>
+Star Trek - The Next Generation - Logo<br/>
+Copyright ©  2022, Andreas Nixdorf, GPLv3<br/>
+[Original][tng-orig]: Copyright ©  Paramount Domestic Television<br/>
+Public Domain.
+
 <!-------------------------------------------------------------------------------------------------------------------------------------->
 
 [canada]: docs/images/canada.svg
@@ -149,8 +157,8 @@ Copyright ©  2022, Andreas Nixdorf, GPLv3<br/>
 [uk]: docs/images/uk.svg
 [usa]: docs/images/usa.svg
 
-[logo]: images/hassio-icon.png
-[project-url]: https://www.home-assistant.io/docs/automation/using_blueprints/
+[logo]: docs/images/logo.svg
+[project-url]: https://github.com/nixe64/The-Next-Generation/
 
 [license-badge]: docs/images/license.de.svg
 [gpl]: LICENSE.md
@@ -190,3 +198,6 @@ Copyright ©  2022, Andreas Nixdorf, GPLv3<br/>
 [code]: docs/images/vscode.svg
 [code-url]: https://commons.wikimedia.org/w/index.php?curid=79495290
 [code-orig]: https://upload.wikimedia.org/wikipedia/commons/9/9a/Visual_Studio_Code_1.35_icon.svg
+[tng]: docs/images/star-trek-logo.svg
+[tng-url]: https://commons.wikimedia.org/wiki/File:Star_Trek_The_Next_Generation_Logo.svg
+[tng-orig]: https://upload.wikimedia.org/wikipedia/commons/1/15/Star_Trek_The_Next_Generation_Logo.svg

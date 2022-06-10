@@ -3,7 +3,9 @@
 [![Version][version-badge]][version-url]
 [![License][license-badge]][gpl]
 
-### Die Nächste Generation (von Home Assistant)
+[![Logo][logo]][project-url]
+
+### Smart Home - Die Nächste Generation
 
 Copyright © 2022, Andreas Nixdorf.
 
@@ -152,8 +154,8 @@ Recht zur freien Nutzung (Public Domain)
 [uk]: docs/images/uk.svg
 [usa]: docs/images/usa.svg
 
-[logo]: images/hassio-icon.png
-[project-url]: https://www.home-assistant.io/docs/automation/using_blueprints/
+[logo]: docs/images/logo.svg
+[project-url]: https://github.com/nixe64/The-Next-Generation/
 
 [license-badge]: docs/images/license.de.svg
 [gpl]: LICENSE.md

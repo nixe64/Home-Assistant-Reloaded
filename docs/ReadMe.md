@@ -8,7 +8,7 @@
 
 [![Logo][logo]][project-url]
 
-### Live Long And Prosper
+### Lebe lang und in Frieden
 
 Hier kommst sie - die nächste Entwicklungstufe der 
 Hausautomation. Sie basiert auf Home Assistent, dem zurecht beliebten zentralen
@@ -115,8 +115,9 @@ Verwendbarkeit für einen bestimmten Zweck.**
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+
 [logo]: images/logo.svg
-[project-url]: https://homeassistant.io
+[project-url]: https://github.com/nixe64/The-Next-Generation/
 
 [license-badge]: images/license.de.svg
 [license-url]: ../COPYRIGHT.de.md
