@@ -1,16 +1,13 @@
 <a href="Support.en.md"><img src="images/en.svg" valign="top" align="right"/></a>
 <a href="Support.de.md"><img src="images/de.svg" valign="top" align="right"/></a>
-[![Version][version-badge]][version-url]
+<!--[![Version][version-badge]][version-url]-->
 [![License][license-badge]][license-url]
-
-### Home Assistant Blueprint - Support and Servicing
-<br/>
 
 [![Logo][logo]][project-url]
 
-<br/>
+### Support and Servicing
 
-### How to get Help
+#### How to get Help
 
 This project uses GitHub Issues to track bug reports and feature requests. Please **search existing Issues first**,
 before making a new request.
@@ -19,7 +16,7 @@ If you have any problems or suggestions for improvement that have not yet been d
 
 For help and questions about using my projects, please use the [Stack Overflow Questions][soq-url] first.
 
-### Technical Support
+#### Technical Support
 
 This is free software and for that reason the [license agreement][license-url] already states:
 

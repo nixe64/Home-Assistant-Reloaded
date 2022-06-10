@@ -1,12 +1,14 @@
 <a href="Development.en.md"><img src="images/en.svg" valign="top" align="right"/></a>
 <a href="Development.de.md"><img src="images/de.svg" valign="top" align="right"/></a>
-[![Version][version-badge]][version-url]
+<!--[![Version][version-badge]][version-url]-->
 [![License][license-badge]][license-url]
 <!--
 [![Bugs][bugs-badge]][bugs-url]
 -->
 
-### Home Assistant Blueprint - Einrichtung der Entwicklungsumgebung
+[![Logo][logo]][project-url]
+
+### Einrichtung der Entwicklungsumgebung
 
 ##
 
@@ -248,6 +250,8 @@ Spaß und Erfolg bei der Programmierung deiner Integration zu wünschen.
 
 [license-badge]: images/license.de.svg
 [license-url]: ../COPYRIGHT.de.md
+[logo]: images/logo.svg
+[project-url]: https://github.com/nixe64/The-Next-Generation
 
 [version-badge]: images/version.svg
 [version-url]: https://github.com/nixe64/Home-Assistant-Blueprint/releases

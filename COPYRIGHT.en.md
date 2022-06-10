@@ -1,6 +1,6 @@
 <a href="COPYRIGHT.en.md"><img src="docs/images/en.svg" valign="top" align="right"/></a>
 <a href="COPYRIGHT.de.md"><img src="docs/images/de.svg" valign="top" align="right"/></a>
-[![Version][version-badge]][version-url]
+<!--[![Version][version-badge]][version-url]-->
 [![License][license-badge]][gpl]
 
 [![Logo][logo]][project-url]

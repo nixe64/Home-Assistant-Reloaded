@@ -1,17 +1,18 @@
 <a href="Development.en.md"><img src="images/en.svg" valign="top" align="right"/></a>
 <a href="Development.de.md"><img src="images/de.svg" valign="top" align="right"/></a>
-[![Version][version-badge]][version-url]
+<!--[![Version][version-badge]][version-url]-->
 [![License][license-badge]][license-url]
 <!--
 [![Bugs][bugs-badge]][bugs-url]
 -->
 
-### Home Assistant Blueprint - Setting up the development environment
+[![Logo][logo]][project-url]
 
-##
+### Setting up the development environment
+
 
 [![ggshield]][ggshield-url]
-### Set up GitGuardian Shield (if desired).
+#### Set up GitGuardian Shield (if desired).
 
 To use the checks of [GitGuardian][ggshield-url], you first need a free 
 account.  you first need a free account. The link in the previous sentence will
@@ -34,7 +35,7 @@ you have created the two tokens, they "only" have to be deposited in the
 correct places to finally activate GitGuardian as GitHub App. 
 
 
-#### Integration of GitGuardian in the pre-commit checks
+##### Integration of GitGuardian in the pre-commit checks
 
 The actual integration of GitGuardian into the pre-commit checks this 
 Blueprint has already done for you. However, you still need to store your 
@@ -59,7 +60,7 @@ api-key: <your just created personal access token>
 # other personal settings
 ```
 
-#### Integration of GitGuardian into GitHub workflows
+##### Integration of GitGuardian into GitHub workflows
 
 First of all, you should prepare your repositories already. For this you have 
 to go to the ``Settings`` for each repository. There you will find under 
@@ -77,7 +78,7 @@ settings. With this you have done it.
 ##
 
 [![python][python]][python-url]
-### Preparation of the Python virtual environment
+#### Preparation of the Python virtual environment
 
 So that in Visual Studio Code (my favorite IDE) the switch between different 
 virtual python environments works, all VENVs must be located under a "central" 
@@ -115,7 +116,7 @@ After the virtual environment(s) exist, you may need to modify the
 ```.python-version``` file. There you enter the name of the virtual environment 
 you want to use for the development of your integration.
 
-#### Installing the required components for pre-commit checks
+##### Installing the required components for pre-commit checks
 
 Since Python is not compiled, syntactical errors are not detected until the 
 code is executed. In order to be already informed about actual or at least 
@@ -170,7 +171,7 @@ Installation ```pip install -U codespell```.
 Home Assistant, strongly recommended by me.<br/>
 Installation: ```pip install -Uwiekest```.
 
-#### Installing Typos
+##### Installing Typos
 
 Typos can be found in the GitHub repositories of *crate-ci*. The effort to 
 install Typos is a bit higher than CodeSpell, which is favored by Home 
@@ -187,7 +188,7 @@ named ```typos```.  You have to copy it into a directory that is in the **$PATH*
 ##
 
 [![vscode][vscode]][vscode]
-### Configuring Visual Studio Code
+#### Configuring Visual Studio Code
 
 First, you need a few extensions to get the full support of the IDE for Python 
 development. These are:
@@ -231,8 +232,12 @@ you finally did it.
 I hope that I have not forgotten anything important and wish you a lot of fun 
 and success in programming your Integration.
 
+<!----------------------------------------------------------------------------->
+
 [license-badge]: images/license.de.svg
 [license-url]: ../COPYRIGHT.de.md
+[logo]: images/logo.svg
+[project-url]: https://github.com/nixe64/The-Next-Generation
 
 [version-badge]: images/version.svg
 [version-url]: https://github.com/nixe64/Home-Assistant-Blueprint/releases

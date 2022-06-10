@@ -1,6 +1,6 @@
 <a href="ReadMe.en.md"><img src="images/en.svg" valign="top" align="right"/></a>
 <a href="ReadMe.md"><img src="images/de.svg" valign="top" align="right"/></a>
-[![Version][version-badge]][version-url]
+<!--[![Version][version-badge]][version-url]-->
 [![License][license-badge]][license-url]
 <!--
 [![Bugs][bugs-badge]][bugs-url]
