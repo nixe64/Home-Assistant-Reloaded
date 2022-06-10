@@ -53,18 +53,21 @@ Sollten der o.a. Gewährleistungsausschluß und die o.a. Haftungsbegrenzung aufg
 
 Dieser Smart-Home Controller ist eine Weiterentwicklung von Home Assistant.
 
+<p ><a href="https://www.home-assistant.io/"><img src="docs/images/icon.png" align="left"/></a></p>
+
 [Home Assistant][hass]<br/>
 Copyright © home-assistant.io<br/>
 Veröffentlicht mit Urheberrecht gemäß der [Apache Lizenz Version 2.0][apache].
 <br/><br/>
 
 <p ><a href="https://opensource.org/"><img src="docs/images/osi-logo.svg" align="left"/></a></p>
-<p><br/>
+
+&nbsp;<br/>
 Open Source Initiative - Logo<br/>
 Copyright © 2022, Andreas Nixdorf, GPLv3<br/>
-<a href="https://opensource.org/files/OSIApproved_1.png">Original</a>: Copyright © Open Source Initiative<br/>
+[Original](https://opensource.org/files/OSIApproved_1.png): Copyright © Open Source Initiative<br/>
 Lizenz unbekannt.
-</p><br/>
+<br/><br/>
 
 [![shields-logo][shields]][shields-url]<br/>
 Alle verwnendeten Shields und Badges<br/>
