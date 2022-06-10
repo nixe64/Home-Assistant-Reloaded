@@ -185,7 +185,7 @@ Von jedem, der aufgefordert wird, ein nicht toleriertes Verhalten einzustellen, 
 
 Zusätzlich werden alle Teilnehmer, die falsche Meldungen abgeben, so behandelt, als hätten sie die Richtlinien gebrochen und werden denselben Konsequenzen unterworfen. Falsche Meldungen, besonders aus Rache, oder um andere auszuschließen, werden nicht akzeptiert oder toleriert.
 
-##### Meldung von inakzeptablem Verhalten
+#### Meldung von inakzeptablem Verhalten
 
 Wenn Du der Meinung bist, dass inakzeptables Verhalten auftritt, das, wie oben beschrieben, nicht toleriert wird, melde dies bitte unter <coc-report@nixe-home.de>. Die Meldungen werden vom Leiter des Teams für Reaktionen auf Verstösse gegen unsere Richtlinien geprüft.
 
@@ -198,17 +198,17 @@ Berichte uns bitte auch, wenn Du eine möglicherweise gefährliche Situation, je
 
 Wenn Du Dich unfair angeklagt fühlst, diese Richtlinien gebrochen zu haben, folge bitte derselben Vorgehensweise und berichte darüber.
 
-##### Räume der Community
+#### Räume der Community
 
 Jeder physische oder virtuelle Raum der Community hat eine dafür ernannte Kontaktperson.
 
-##### Veranstaltungen der Community
+#### Veranstaltungen der Community
 
 Alle Veranstaltungen der Community haben eine bestimmte Sicherheitsrichtlinie mit Notfallnummern und Kontaktpersonen für Missbrauchsfälle. Diese Kontaktdaten werden am ganzen Veranstaltungsort gut sichtbar „angeschlagen“ sein, ausgedruckt und auch online. Eventmanager werden aufgefordert, auf jeder Veranstaltung über die Richtlinien zu sprechen und alle Teilnehmer aufzufordern, sie durchzulesen und zuzustimmen, wenn sie sich für die Veranstaltung anmelden.
 
 Wenn eine Meldung über nicht toleriertes Verhalten abgegeben wird, erhälst Du eine E-Mail als Empfangsbestätigung. Wenn ein Vorfall überprüft, eine Entscheidung getroffen und allen Beteiligten mitgeteilt wurde, haben alle die Gelegenheit, diese Entscheidung anzufechten, indem sie eine E-Mail an <coc-questions@nixe-home.de> schicken.
 
-##### Fragen stellen
+#### Fragen stellen
 
 Wir möchten alle ermutigen, Fragen zu den Richtlinien zu stellen. Wenn Du eine Veranstaltung oder Aktivität organisierst, dann frag nach Tipps, um die Veranstaltung, Aktivität oder den Raum integrativ zu gestalten. Auch Deine Meinungen sind herzlich willkommen und Du wirst immer innerhalb von 24 Stunden eine Antwort erhalten (oder am nächsten Werktag, wenn Wochenende ist), wenn Du eine E-Mail an <coc-questions@nixe-home.de> schreibst. 
 

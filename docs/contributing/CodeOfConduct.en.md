@@ -185,7 +185,7 @@ Anyone being asked to stop unacceptable behavior is expected to comply immediate
 
 In addition, any participants who abuse the reporting process will be considered to be in violation of these guidelines and subject to the same consequences. False reporting, especially to retaliate or exclude, will not be accepted or tolerated. 
 
-##### Reporting of Unacceptable Behaviour
+#### Reporting of Unacceptable Behaviour
 
 If you believe you’re experiencing unacceptable behavior that will not be tolerated as outlined above, please use <coc-report@nixe-home.de> to report. Reports are triaged by the Community Participation Guidelines Response Lead.
 
@@ -198,17 +198,17 @@ Please also report to us if you observe a potentially dangerous situation, someo
 
 If you feel you have been unfairly accused of violating these guidelines, please follow the same reporting process. 
 
-##### Community Spaces
+#### Community Spaces
 
 Each physical or virtual community space shall have a designated contact. 
 
-##### Community Events
+#### Community Events
 
  All community events will have designated a specific safety guideline with emergency and anti-abuse contacts at the event as well as online. These contacts will be posted prominently throughout the event, and in print and online materials. Event leaders are requested to speak at the event about the guidelines and to ask participants to review and agree to them when they sign up for the event.
 
 Reports will receive an email notice of receipt. Once an incident has been investigated and a decision has been communicated to the relevant parties, all have the opportunity to appeal this decision by sending an email to <coc-questions@nixe-home.de>. 
 
-##### Ask Questions
+#### Ask Questions
 
 Everyone is encouraged to ask questions about these guidelines. If you are organizing an event or activity, reach out for tips for building inclusion for your event, activity or space. Your input is welcome and you will always get a response within 24 hours (or on the next weekday, if it is the weekend) if you reach out to <coc-questions@nixe-home.de>.
 
