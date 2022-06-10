@@ -1,17 +1,14 @@
 <a href="Contributions.en.md"><img src="../images/en.svg" valign="top" align="right"/></a>
 <a href="Contributions.de.md"><img src="../images/de.svg" valign="top" align="right"/></a>
-[![Version][version-badge]][version-url]
+<!--[![Version][version-badge]][version-url]-->
 [![License][license-badge]][license-url]
 <!--
 [![Bugs][bugs-badge]][bugs-url]
 -->
 
-### Home Assistant Blueprint - Verbesserungsvorschläge, Fehlerberichte und Übersetzungen
-<br/>
-
 [![Logo][logo]][project-url]
 
-<br/>
+### Verbesserungsvorschläge, Fehlerberichte und Übersetzungen
 
 Wenn du einen Verbesserungsvorschlag hast oder einen Fehler melden möchtest, eröffne einfach ein neues [Issue][issues-url] auf GitHub.
 
@@ -40,12 +37,13 @@ Noch interessiert? **Super, herzlich willkommen im Team!**
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[logo]: ../images/hassio-icon.png
-[project-url]: https://homeassistant.io
+
+[logo]: ../images/logo.svg
+[project-url]: https://github.com/nixe64/The-Next-Generation
 
 [license-badge]: ../images/license.de.svg
 [license-url]: ../../COPYRIGHT.de.md
-[
+
 [version-badge]: ../images/version.svg
 [version-url]: https://github.com/nixe64/Home-Assistant-Blueprint/releases
 
@@ -57,4 +55,4 @@ Noch interessiert? **Super, herzlich willkommen im Team!**
 [pr-reviews]: https://github.com/kubernetes/community/blob/master/contributors/guide/pull-requests.md#best-practices-for-faster-reviews
 [cla-url]: CLA.de.md
 [flow-url]: https://githubflow.github.io/
-[pr-url]: https://github.com/nixe64/Home-Assistant-Blueprint/pulls
+[pr-url]: https://github.com/nixe64/The-Next-Generation/pulls

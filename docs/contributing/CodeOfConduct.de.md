@@ -1,6 +1,6 @@
 <a href="CodeOfConduct.en.md"><img src="../images/en.svg" valign="top" align="right"/></a>
 <a href="CodeOfConduct.de.md"><img src="../images/de.svg" valign="top" align="right"/></a>
-[![Version][version-badge]][version-url]
+<!--[![Version][version-badge]][version-url]-->
 [![License][license-badge]][license-url]
 <!--
 [![Bugs][bugs-badge]][bugs-url]
@@ -192,7 +192,7 @@ Wenn Du der Meinung bist, dass inakzeptables Verhalten auftritt, das, wie oben b
 Nach Erhalt einer kurzen Beschreibung deiner Situation überprüfen sie den Vorgang und leiten die nächsten Schritte ein. Neben der Durchführung einer Untersuchung können sie eine Reihe von Ressourcen bereitstellen, um dir dabei zu helfen, dass das nicht tolerierte Verhalten eingestellt wird - von der Beratung unter vier Augen bis hin zu Community-Ressourcen. Sie werden, in Absprache mit dir, die für die jeweilige Situation angemessenen und erforderlichen Mitglieder der Community oder externe Experten (wie z. B. einen Rechtsbeistand) heranziehen.
 
 Weitere Ressourcen: Wie Vorfälle gemeldet werden<br/>
-Fragen: <cod-questions@nixe-home.de>
+Fragen: <coc-questions@nixe-home.de>
 
 Berichte uns bitte auch, wenn Du eine möglicherweise gefährliche Situation, jemanden in Not oder jemanden, der diese Richtlinien bricht, beobachtet hast, auch wenn die Situation nicht direkt Dir widerfahren ist.
 
@@ -212,7 +212,7 @@ Wenn eine Meldung über nicht toleriertes Verhalten abgegeben wird, erhälst Du 
 
 Wir möchten alle ermutigen, Fragen zu den Richtlinien zu stellen. Wenn Du eine Veranstaltung oder Aktivität organisierst, dann frag nach Tipps, um die Veranstaltung, Aktivität oder den Raum integrativ zu gestalten. Auch Deine Meinungen sind herzlich willkommen und Du wirst immer innerhalb von 24 Stunden eine Antwort erhalten (oder am nächsten Werktag, wenn Wochenende ist), wenn Du eine E-Mail an <coc-questions@nixe-home.de> schreibst. 
 
-### Urheberrechte und Namensnennungen
+### Urheberrecht und Namensnennungen
 
 Diese Richtlinien werden unter der Creative Commons Attribution-ShareAlike Lizenz veröffentlicht.
 
