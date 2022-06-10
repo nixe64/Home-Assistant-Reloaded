@@ -51,7 +51,7 @@ Sollten der o.a. Gewährleistungsausschluß und die o.a. Haftungsbegrenzung aufg
 
 ##
 
-### Urheberrechtslizenzen / Namensnennungen
+### Urheberrechte und Namensnennungen
 
 Dieser Smart-Home Controller ist eine Weiterentwicklung von Home Assistant.
 

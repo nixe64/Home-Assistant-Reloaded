@@ -54,7 +54,7 @@ liability accompanies a copy of the Program in return for a fee.
 
 ##
 
-### Copyrights / Attribution
+### Copyrights and Attribution
 
 This Smart Home Controller is a derivative of Home Assistant.
 
