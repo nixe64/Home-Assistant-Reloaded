@@ -64,12 +64,11 @@ Veröffentlicht mit Urheberrecht gemäß der [Apache Lizenz Version 2.0][apache]
 
 <p ><a href="https://opensource.org/"><img src="docs/images/osi-logo.svg" align="left"/></a></p>
 
-&nbsp;<br/>
 Open Source Initiative - Logo<br/>
 Copyright © 2022, Andreas Nixdorf, GPLv3<br/>
 [Original](https://opensource.org/files/OSIApproved_1.png): Copyright © Open Source Initiative<br/>
 Lizenz unbekannt.
-<br/><br/><br/>
+<br/><br/><br/><br/>
 
 [![shields-logo][shields]][shields-url]<br/>
 Alle verwnendeten Shields und Badges<br/>
