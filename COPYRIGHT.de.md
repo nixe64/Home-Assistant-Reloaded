@@ -27,7 +27,7 @@ mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.org/licen
 ##
 <br>
 
-Dies gilt für alle Dokumente und/oder Quellcode-Dateien, die keinen anders lauteten Copyright-Vermerk beinhalten. Zur Zeit wird nur der **Verhaltenscodex für Mitwirkende** abweichend von den Richtlinien der GPLv3 veröffentlicht. Wie *Mozilla's Richtlinien für das Mitwirken in der Community*, die als Basis und Inspiration dienten, wird er gemäß den Richtlinien der Creative Commons Namensnennung - Share Alike 4.0 Internationalen Offentlchen Lizenz veröffentlicht.
+Dies gilt für alle Dokumente und/oder Quellcode-Dateien, die keinen anders lauteten Copyright-Vermerk beinhalten. Zur Zeit werden nur der **Verhaltenscodex für Mitwirkende** und die **"Lizenzvereinbarung für Mitwirkende"** abweichend von den Richtlinien der GPLv3 veröffentlicht. Wie *Mozilla's Richtlinien für das Mitwirken in der Community*, die als Basis und Inspiration für den Verhaltenskodex dienten, werden sie gemäß den Richtlinien der Creative Commons Namensnennung - Share Alike 4.0 Internationalen Offentlchen Lizenz veröffentlicht.
 
 Sie sollten ein Exemplar der [Creative Commons Namensnennung - Share Alike Lizenz][cc-by-sa] zusammen
 mit diesem Program erhalten haben. Falls nicht, 

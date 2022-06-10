@@ -37,7 +37,7 @@ This license agreement cannot be signed explicitly as I do not have an Enterpris
 [project-url]: https://github.com/nixe64/The-Next-Generation/
 [pr-url]: https://github.com/nixe64/The-Next-Generation/pulls
 
-[license-badge]: ../images/license.en.svg
+[license-badge]: ../images/license.cc-by-sa.en.svg
 [license-url]: ../../COPYRIGHT.en.md
 
 [version-badge]: ../images/version.svg

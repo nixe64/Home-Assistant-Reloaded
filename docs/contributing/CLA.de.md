@@ -38,7 +38,7 @@ Diese Lizenzvereinbarung kann nicht explizit unterzeichnet werden, da ich kein E
 [project-url]: https://github.com/nixe64/The-Next-Generation/
 [pr-url]: https://github.com/nixe64/The-Next-Generation/pulls
 
-[license-badge]: ../images/license.de.svg
+[license-badge]: ../images/license.cc-by-sa.de.svg
 [license-url]: ../../COPYRIGHT.de.md
 
 [version-badge]: ../images/version.svg
