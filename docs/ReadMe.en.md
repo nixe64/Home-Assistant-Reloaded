@@ -10,9 +10,9 @@
 
 ### Live Long And Prosper
 
-Here it comes - the next stage in the development of 
-home automation. It is based on Home Assistant, the  
-popular central control system in a smart home or smart house. 
+Here it comes - the next stage in the development of home automation. It is 
+based on Home Assistant, the popular central control system in a smart home
+or smart house. 
 
 Like Home Assistant it is also designed as a free and open-source 
 software, which is developed in Python, with a focus on local control 
@@ -58,8 +58,8 @@ and “Jarvis” could be tested with pytest.
 
 Trying to share my gained insights with the Home Assistant Community
 and make the project (even if only a little) better was just as welcome 
-as a fly fly on the breakfast jam (probably Nabu Casa earns already so good 
-with the **”Home Assistant Cloud”** that the Open-Source thought 
+as a fly fly on the breakfast jam (probably Nabu Casa earns already too much 
+money by hosting the **”Home Assistant Cloud”** that the Open-Source thought 
 is only propagated for advertising purposes). 
 I don’t want to be the fifth wheel at the car, so all I have left is to 
 realize my vision of a reliable centralized control system myself and 
