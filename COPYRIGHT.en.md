@@ -61,7 +61,7 @@ This Smart Home Controller is a derivative of Home Assistant.
 [Home Assistant][hass]<br/>
 Copyright © home-assistant.io<br/>
 Distributed with copyright under the [Apache License Version 2.0][apache].
-<br/><br/>
+<br/><br/><br/>
 
 <p ><a href="https://opensource.org/"><img src="docs/images/osi-logo.svg" align="left"/></a></p>
 
@@ -70,7 +70,7 @@ Open Source Initiative - Logo<br/>
 Copyright © 2022, Andreas Nixdorf, GPLv3<br/>
 [Original](https://opensource.org/files/OSIApproved_1.png): Copyright © Open Source Initiative<br/>
 License unknown.
-<br/><br/>
+<br/><br/><br/>
 
 [![shields-logo][shields]][shields-url]<br/>
 All used Shields and Badges<br/>
