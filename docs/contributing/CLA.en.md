@@ -22,7 +22,7 @@ The contribution was provided directly to me by some other person who certified 
 I understand and agree that this project and the contribution are public and that a record of the contribution (including all personal information I submit with it) is maintained indefinitely and may be redistributed consistent with this project or the open source license(s) involved.
 </li></ol>
 
-### Copyrights / Attribution
+### Copyright and Attribution
 
 The text of this license is available under the [Creative Commons][cc-url] Attribution-ShareAlike 3.0 Unported License.  It is based on the Linux [Developer Certificate Of Origin][dco-url].
 

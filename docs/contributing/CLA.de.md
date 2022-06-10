@@ -23,7 +23,7 @@ Der Beitrag wurde mir direkt von einer anderen Person zur Verfügung gestellt, d
 Ich verstehe und stimme zu, dass dieses Projekt und der Beitrag öffentlich sind und dass eine Aufzeichnung des Beitrags (einschließlich aller persönlichen Informationen, die ich damit einreiche) auf unbestimmte Zeit aufbewahrt wird und im Einklang mit diesem Projekt oder der/den betroffenen Open-Source-Lizenz(en) weitergegeben werden kann. |
 </li></ol>
 
-### Urheberrechte / Namensnennungen
+### Urheberrecht und Namensnennungen
 
 Der Text dieser Lizenz ist unter der [Creative Commons][cc-url] Attribution-ShareAlike 3.0 Unported License verfügbar. Es basiert auf dem [Entwickler-Ursprungszertifikat][dco-url] von Linux.
 
