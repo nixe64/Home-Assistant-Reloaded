@@ -19,8 +19,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 General Public License for more details.
 
-You should have received a copy of the GNU General Public
-License along with this program.  If not, see
+You should have received a copy of the [GNU General Public
+License][gpl] along with this program.  If not, see
 http://www.gnu.org/licenses/.
 
 ##
@@ -28,7 +28,7 @@ http://www.gnu.org/licenses/.
 
 This applies to all documents and/or source code files that do not contain a copyright notice to the contrary. At this time, only the **Code of Conduct for Contributors** is published in derogation of the GPLv3 guidelines. Like *Mozilla's Guidelines for Contributing to the Community*, which served as a basis and inspiration, it is published according to the guidelines of the Creative Commons Attribution-ShareAlike 4.0 International Public License.
 
-You should have received a copy of the Creative Commons Attribution - ShareAlike license
+You should have received a copy of the [Creative Commons Attribution - ShareAlike license][cc-by-sa]
 along with this program. If not, see <https://creativecommons.org/licenses/by-sa/4.0/legalcode.en>.
 
 ##
@@ -51,6 +51,9 @@ reviewing courts shall apply local law that most closely
 approximates an absolute waiver of all civil liability in
 connection with the Program, unless a warranty or assumption of
 liability accompanies a copy of the Program in return for a fee.
+
+##
+<br/>
 
 ### Copyrights / Attribution
 
@@ -165,10 +168,10 @@ Public Domain.
 [hass]: https://www.home-assistant.io
 
 [license-badge]: docs/images/license.de.svg
-[gpl]: LICENSE.md
-[apache]: docs/License.apache.de.md
-[mit]: docs/License.mit.de.md
-[cc-by-sa]: docs/License.cc-by-sa.de.md
+[gpl]: LICENSE.en.md
+[apache]: docs/License.apache.en.md
+[mit]: docs/License.mit.en.md
+[cc-by-sa]: docs/License.cc-by-sa.en.md
 
 [version-badge]: docs/images/version.svg
 [version-url]: https://github.com/nixe64/Home-Assistant-Blueprint/releases

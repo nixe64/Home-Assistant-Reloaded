@@ -21,7 +21,7 @@ sogar ohne die implizite Garantie der **Marktreife** oder der
 **Verwendbarkeit für einen bestimmen Zweck**. Details finden Sie in
 der GPL.
 
-Sie sollten ein Exemplar der Allgemeinen Öffentlichen GNU-Lizenz zusammen
+Sie sollten ein Exemplar der [Allgemeinen Öffentlichen GNU-Lizenz][gpl] zusammen
 mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.org/licenses/>.
 
 ##
@@ -48,6 +48,9 @@ In keinem Fall, außer wenn durch geltendes Recht gefordert oder schriftlich zug
 #### Auslegung
 
 Sollten der o.a. Gewährleistungsausschluß und die o.a. Haftungsbegrenzung aufgrund ihrer Bedingungen gemäß lokalem Recht unwirksam sein, sollen Bewertungsgerichte dasjenige lokale Recht anwenden, das einer absoluten Aufhebung jeglicher zivilen Haftung in Zusammenhang mit der Vorlage am nächsten kommt, es sei denn, der Vorlage lag eine entgeltliche Garantieerklärung oder Haftungsübernahme bei. 
+
+##
+<br/>
 
 ### Urheberrechtslizenzen / Namensnennungen
 
