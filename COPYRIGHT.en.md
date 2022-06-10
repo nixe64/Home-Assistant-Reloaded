@@ -56,7 +56,7 @@ liability accompanies a copy of the Program in return for a fee.
 
 This Smart Home Controller is a derivative of Home Assistant.
 
-[Home Assistant Blueprints][project-url]<br/>
+[Home Assistant][hass]<br/>
 Copyright © home-assistant.io<br/>
 Distributed with copyright under the [Apache License Version 2.0][apache].
 <br/><br/>
@@ -159,6 +159,7 @@ Public Domain.
 
 [logo]: docs/images/logo.svg
 [project-url]: https://github.com/nixe64/The-Next-Generation/
+[hass]: https://www.home-assistant.io
 
 [license-badge]: docs/images/license.de.svg
 [gpl]: LICENSE.md

@@ -53,7 +53,7 @@ Sollten der o.a. Gewährleistungsausschluß und die o.a. Haftungsbegrenzung aufg
 
 Dieser Smart-Home Controller ist eine Weiterentwicklung von Home Assistant.
 
-[Home Assistant][project-url]<br/>
+[Home Assistant][hass]<br/>
 Copyright © home-assistant.io<br/>
 Veröffentlicht mit Urheberrecht gemäß der [Apache Lizenz Version 2.0][apache].
 <br/><br/>
@@ -156,6 +156,7 @@ Recht zur freien Nutzung (Public Domain)
 
 [logo]: docs/images/logo.svg
 [project-url]: https://github.com/nixe64/The-Next-Generation/
+[hass]: https://www.home-assistant.io
 
 [license-badge]: docs/images/license.de.svg
 [gpl]: LICENSE.md
