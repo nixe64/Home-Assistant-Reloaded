@@ -1,8 +1,9 @@
 """
-Core components of Home Assistant.
+Core components of Smart Home - The Next Generation.
 
-Home Assistant is a Home Automation framework for observing the state
-of entities and react to changes.
+Smart Home - TNG is a Home Automation framework for observing the state
+of entities and react to changes. It is based on Home Assistant from
+home-assistant.io and the Home Assistant Community.
 
 Copyright (c) 2022, Andreas Nixdorf
 
@@ -22,28 +23,32 @@ http://www.gnu.org/licenses/.
 """
 
 from __future__ import annotations
+import aiohttp.hdrs
 import asyncio
 import attr
-import collections
+import collections.abc
 import datetime
 import enum
 import functools
 import logging
+import numbers
 import os
 import pathlib
 import re
 import strenum
 import typing
-import urllib
+import urllib3.util.url as url
 import voluptuous as vol
 import yarl
 #from .helpers.storage import Store
 
 from . import core, util, exceptions
+from .util import io, dt, location
 
 _R_co = typing.TypeVar("_R_co", covariant=True)
 _CallableT = typing.TypeVar("_CallableT", bound=typing.Callable[..., typing.Any])
 _CALLBACK_TYPE = typing.Callable[[], None] 
+_StateT = typing.TypeVar("_StateT", bound="State")
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,6 +62,305 @@ def is_callback(func: typing.Callable[..., typing.Any]) -> bool:
     """Check if function is safe to be called in the event loop."""
     return getattr(func, "_hass_callback", False) is True
 
+class ApiConfig:
+    """Configuration settings for API server."""
+
+    def __init__(
+        self,
+        local_ip: str,
+        host: str,
+        port: int,
+        use_ssl: bool,
+    ) -> None:
+        """Initialize a new API config object."""
+        self.local_ip = local_ip
+        self.host = host
+        self.port = port
+        self.use_ssl = use_ssl
+
+
+class Config:
+    """Configuration settings for Home Assistant."""
+
+    def __init__(self, hass: core.HomeAssistant) -> None:
+        """Initialize a new config object."""
+        self.hass = hass
+
+        self.latitude: float = 0
+        self.longitude: float = 0
+        self.elevation: int = 0
+        self.location_name: str = "Home"
+        self.time_zone: str = "UTC"
+        self.units: UnitSystem = UnitSystem.METRIC
+        self.internal_url: str | None = None
+        self.external_url: str | None = None
+        self.currency: str = "EUR"
+
+        self.config_source: ConfigSource = ConfigSource.DEFAULT
+
+        # If True, pip install is skipped for requirements on startup
+        self.skip_pip: bool = False
+
+        # List of loaded components
+        self.components: set[str] = set()
+
+        # API (HTTP) server configuration
+        self.api: ApiConfig | None = None
+
+        # Directory that holds the configuration
+        self.config_dir: str | None = None
+
+        # List of allowed external dirs to access
+        self.allowlist_external_dirs: set[str] = set()
+
+        # List of allowed external URLs that integrations may use
+        self.allowlist_external_urls: set[str] = set()
+
+        # Dictionary of Media folders that integrations may use
+        self.media_dirs: dict[str, str] = {}
+
+        # If Home Assistant is running in safe mode
+        self.safe_mode: bool = False
+
+        # Use legacy template behavior
+        self.legacy_templates: bool = False
+
+    def distance(self, lat: float, lon: float) -> float | None:
+        """Calculate distance from Home Assistant.
+
+        Async friendly.
+        """
+        return self.units.length(
+            location.distance(self.latitude, self.longitude, lat, lon), Const.LENGTH_METERS
+        )
+
+    def path(self, *path: str) -> str:
+        """Generate path to the file within the configuration directory.
+
+        Async friendly.
+        """
+        if self.config_dir is None:
+            raise exceptions.HomeAssistantError("config_dir is not set")
+        return os.path.join(self.config_dir, *path)
+
+    def is_allowed_external_url(self, url: str) -> bool:
+        """Check if an external URL is allowed."""
+        parsed_url = f"{str(yarl.URL(url))}/"
+
+        return any(
+            allowed
+            for allowed in self.allowlist_external_urls
+            if parsed_url.startswith(allowed)
+        )
+
+    def is_allowed_path(self, path: str) -> bool:
+        """Check if the path is valid for access from outside."""
+        assert path is not None
+
+        thepath = pathlib.Path(path)
+        try:
+            # The file path does not have to exist (it's parent should)
+            if thepath.exists():
+                thepath = thepath.resolve()
+            else:
+                thepath = thepath.parent.resolve()
+        except (FileNotFoundError, RuntimeError, PermissionError):
+            return False
+
+        for allowed_path in self.allowlist_external_dirs:
+            try:
+                thepath.relative_to(allowed_path)
+                return True
+            except ValueError:
+                pass
+
+        return False
+
+    def as_dict(self) -> dict[str, typing.Any]:
+        """Create a dictionary representation of the configuration.
+
+        Async friendly.
+        """
+        return {
+            Const.CONF_LATITUDE: self.latitude,
+            Const.CONF_LONGITUDE: self.longitude,
+            Const.CONF_ELEVATION: self.elevation,
+            Const.CONF_UNIT_SYSTEM: self.units.as_dict(),
+            Const.CONF_LOCATION_NAME: self.location_name,
+            Const.CONF_TIME_ZONE: self.time_zone,
+            Const.CONF_COMPONENTS: self.components,
+            Const.CONF_CONFIG_DIR: self.config_dir,
+            # legacy, backwards compat
+            Const.LEGACY_CONF_WHITELIST_EXTERNAL_DIRS: self.allowlist_external_dirs,
+            Const.CONF_ALLOWLIST_EXTERNAL_DIRS: self.allowlist_external_dirs,
+            Const.CONF_ALLOWLIST_EXTERNAL_URLS: self.allowlist_external_urls,
+            Const.CONF_VERSION: Const.__version__,
+            Const.CONF_CONFIG_SOURCE: self.config_source,
+            Const.CONF_SAFE_MODE: self.safe_mode,
+            Const.CONF_STATE: self.hass.state.value,
+            Const.CONF_EXTERNAL_URL: self.external_url,
+            Const.CONF_INTERNAL_URL: self.internal_url,
+            Const.CONF_CURRENCY: self.currency,
+        }
+
+    def set_time_zone(self, time_zone_str: str) -> None:
+        """Help to set the time zone."""
+        if time_zone := dt.get_time_zone(time_zone_str):
+            self.time_zone = time_zone_str
+            dt.set_default_time_zone(time_zone)
+        else:
+            raise ValueError(f"Received invalid time zone {time_zone_str}")
+
+    @callback
+    def _update(
+        self,
+        *,
+        source: ConfigSource,
+        latitude: float | None = None,
+        longitude: float | None = None,
+        elevation: int | None = None,
+        unit_system: str | None = None,
+        location_name: str | None = None,
+        time_zone: str | None = None,
+        external_url: str | dict[typing.Any, typing.Any] | None = None,
+        internal_url: str | dict[typing.Any, typing.Any] | None = None,
+        currency: str | None = None,
+    ) -> None:
+        """Update the configuration from a dictionary."""
+        self.config_source = source
+        if latitude is not None:
+            self.latitude = latitude
+        if longitude is not None:
+            self.longitude = longitude
+        if elevation is not None:
+            self.elevation = elevation
+        if unit_system is not None:
+            if unit_system == Const.CONF_UNIT_SYSTEM_IMPERIAL:
+                self.units = UnitSystem.IMPERIAL
+            else:
+                self.units = UnitSystem.METRIC
+        if location_name is not None:
+            self.location_name = location_name
+        if time_zone is not None:
+            self.set_time_zone(time_zone)
+        if external_url is not None:
+            self.external_url = typing.cast(typing.Optional[str], external_url)
+        if internal_url is not None:
+            self.internal_url = typing.cast(typing.Optional[str], internal_url)
+        if currency is not None:
+            self.currency = currency
+
+    async def async_update(self, **kwargs: typing.Any) -> None:
+        """Update the configuration from a dictionary."""
+        self._update(source=ConfigSource.STORAGE, **kwargs)
+        await self.async_store()
+        self.hass.bus.async_fire(Const.EVENT_CORE_CONFIG_UPDATE, kwargs)
+
+    async def async_load(self) -> None:
+        """Load [homeassistant] core config."""
+        # Circular dep
+        # pylint: disable=import-outside-toplevel
+        from .helpers.storage import Store
+
+        store = Store(
+            self.hass,
+            Const.CORE_STORAGE_VERSION,
+            Const.CORE_STORAGE_KEY,
+            private=True,
+            atomic_writes=True,
+        )
+
+        if not (data := await store.async_load()) or not isinstance(data, dict):
+            return
+
+        # In 2021.9 we fixed validation to disallow a path (because that's never correct)
+        # but this data still lives in storage, so we print a warning.
+        if data.get("external_url") and url.parse_url(data["external_url"]).path not in (
+            "",
+            "/",
+        ):
+            _LOGGER.warning("Invalid external_url set. It's not allowed to have a path")
+
+        if data.get("internal_url") and url.parse_url(data["internal_url"]).path not in (
+            "",
+            "/",
+        ):
+            _LOGGER.warning("Invalid internal_url set. It's not allowed to have a path")
+
+        self._update(
+            source=ConfigSource.STORAGE,
+            latitude=data.get("latitude"),
+            longitude=data.get("longitude"),
+            elevation=data.get("elevation"),
+            unit_system=data.get("unit_system"),
+            location_name=data.get("location_name"),
+            time_zone=data.get("time_zone"),
+            external_url=data.get("external_url", None),
+            internal_url=data.get("internal_url", None),
+            currency=data.get("currency"),
+        )
+
+    async def async_store(self) -> None:
+        """Store [homeassistant] core config."""
+        data = {
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "elevation": self.elevation,
+            "unit_system": self.units.name,
+            "location_name": self.location_name,
+            "time_zone": self.time_zone,
+            "external_url": self.external_url,
+            "internal_url": self.internal_url,
+            "currency": self.currency,
+        }
+
+        store = Store(
+            self.hass,
+            Const.CORE_STORAGE_VERSION,
+            Const.CORE_STORAGE_KEY,
+            private=True,
+            atomic_writes=True,
+        )
+        await store.async_save(data)
+
+    def config_per_platform(self, domain: str) -> collections.abc.Iterable[tuple[str | None, ConfigType]]:
+        """Break a component config into different platforms.
+
+        For example, will find 'switch', 'switch 2', 'switch 3', .. etc
+        Async friendly.
+        """
+        for config_key in self.extract_domain_configs(domain):
+            if not (platform_config := self[config_key]):
+                continue
+
+            if not isinstance(platform_config, list):
+                platform_config = [platform_config]
+
+            item: ConfigType
+            platform: str | None
+            for item in platform_config:
+                try:
+                    platform = item.get(Const.CONF_PLATFORM)
+                except AttributeError:
+                    platform = None
+
+                yield platform, item
+
+
+    def extract_domain_configs(config: ConfigType, domain: str) -> collections.abc.Sequence[str]:
+        """Extract keys from config for given domain name.
+
+        Async friendly.
+        """
+        pattern = re.compile(rf"^{domain}(| .+)$")
+        return [key for key in config.keys() if pattern.match(key)]
+
+class ConfigSource(strenum.StrEnum):
+    """Source of core configuration."""
+    DEFAULT = "default"
+    DISCOVERED = "discovered"
+    STORAGE = "storage"
+    YAML = "yaml"
 
 class Const:
     MAJOR_VERSION: typing.Final = 2022
@@ -96,6 +400,28 @@ class Const:
     SUN_EVENT_SUNSET: typing.Final = "sunset"
     SUN_EVENT_SUNRISE: typing.Final = "sunrise"
 
+    # Cache Headers
+    CACHE_TIME: typing.Final = 31 * 86400  # = 1 month
+    CACHE_HEADERS: typing.Final[collections.abc.Mapping[str, str]] = {
+        aiohttp.hdrs.CACHE_CONTROL: f"public, max-age={CACHE_TIME}"
+    }
+
+    CONF_SERVER_HOST: typing.Final = "server_host"
+    CONF_SERVER_PORT: typing.Final = "server_port"
+    CONF_BASE_URL: typing.Final = "base_url"
+    CONF_SSL_CERTIFICATE: typing.Final = "ssl_certificate"
+    CONF_SSL_PEER_CERTIFICATE: typing.Final = "ssl_peer_certificate"
+    CONF_SSL_KEY: typing.Final = "ssl_key"
+    CONF_CORS_ORIGINS: typing.Final = "cors_allowed_origins"
+    CONF_USE_X_FORWARDED_FOR: typing.Final = "use_x_forwarded_for"
+    CONF_TRUSTED_PROXIES: typing.Final = "trusted_proxies"
+    CONF_LOGIN_ATTEMPTS_THRESHOLD: typing.Final = "login_attempts_threshold"
+    CONF_IP_BAN_ENABLED: typing.Final = "ip_ban_enabled"
+    CONF_SSL_PROFILE: typing.Final = "ssl_profile"
+
+    SSL_MODERN: typing.Final = "modern"
+    SSL_INTERMEDIATE: typing.Final = "intermediate"
+
     # #### CONFIG ####
     CONF_ABOVE: typing.Final = "above"
     CONF_ACCESS_TOKEN: typing.Final = "access_token"
@@ -131,8 +457,11 @@ class Const:
     CONF_COMMAND_OPEN: typing.Final = "command_open"
     CONF_COMMAND_STATE: typing.Final = "command_state"
     CONF_COMMAND_STOP: typing.Final = "command_stop"
+    CONF_COMPONENTS: typing.Final = "components"
     CONF_CONDITION: typing.Final = "condition"
     CONF_CONDITIONS: typing.Final = "conditions"
+    CONF_CONFIG_DIR: typing.Final = "config_dir"
+    CONF_CONFIG_SOURCE: typing.Final = "config_source"
     CONF_CONTINUE_ON_ERROR: typing.Final = "continue_on_error"
     CONF_CONTINUE_ON_TIMEOUT: typing.Final = "continue_on_timeout"
     CONF_COUNT: typing.Final = "count"
@@ -194,6 +523,7 @@ class Const:
     CONF_LEGACY_TEMPLATES: typing.Final = "legacy_templates"
     CONF_LIGHTS: typing.Final = "lights"
     CONF_LOCATION: typing.Final = "location"
+    CONF_LOCATION_NAME: typing.Final = "location_name"
     CONF_LONGITUDE: typing.Final = "longitude"
     CONF_MAC: typing.Final = "mac"
     CONF_MATCH: typing.Final = "match"
@@ -234,6 +564,7 @@ class Const:
     CONF_RESOURCE_TEMPLATE: typing.Final = "resource_template"
     CONF_RGB: typing.Final = "rgb"
     CONF_ROOM: typing.Final = "room"
+    CONF_SAFE_MODE: typing.Final = "safe_mode"
     CONF_SCAN_INTERVAL: typing.Final = "scan_interval"
     CONF_SCENE: typing.Final = "scene"
     CONF_SELECTOR: typing.Final = "selector"
@@ -259,6 +590,7 @@ class Const:
     CONF_TIMEOUT: typing.Final = "timeout"
     CONF_TIME_ZONE: typing.Final = "time_zone"
     CONF_TOKEN: typing.Final = "token"
+    CONF_TOTP: typing.Final = "totp"
     CONF_TRIGGER_TIME: typing.Final = "trigger_time"
     CONF_TTL: typing.Final = "ttl"
     CONF_TYPE: typing.Final = "type"
@@ -271,6 +603,7 @@ class Const:
     CONF_VALUE_TEMPLATE: typing.Final = "value_template"
     CONF_VARIABLES: typing.Final = "variables"
     CONF_VERIFY_SSL: typing.Final = "verify_ssl"
+    CONF_VERSION: typing.Final = "version"
     CONF_WAIT_FOR_TRIGGER: typing.Final = "wait_for_trigger"
     CONF_WAIT_TEMPLATE: typing.Final = "wait_template"
     CONF_WEBHOOK_ID: typing.Final = "webhook_id"
@@ -329,6 +662,21 @@ class Const:
     DEVICE_CLASS_TIMESTAMP: typing.Final = "timestamp"
     DEVICE_CLASS_VOLATILE_ORGANIC_COMPOUNDS = "volatile_organic_compounds"
     DEVICE_CLASS_VOLTAGE: typing.Final = "voltage"
+
+    # #### HomeAssistantHttp Keys ####
+    KEY_AUTHENTICATED: typing.Final = "ha_authenticated"
+    KEY_HASS: typing.Final = "hass"
+    KEY_HASS_USER: typing.Final = "hass_user"
+    KEY_HASS_REFRESH_TOKEN_ID: typing.Final = "hass_refresh_token_id"
+    KEY_BANNED_IPS: typing.Final = "ha_banned_ips"
+    KEY_FAILED_LOGIN_ATTEMPTS: typing.Final = "ha_failed_login_attempts"
+    KEY_LOGIN_THRESHOLD: typing.Final = "ha_login_threshold"
+
+    NOTIFICATION_ID_BAN: typing.Final = "ip-ban"
+    NOTIFICATION_ID_LOGIN: typing.Final = "http-login"
+
+    IP_BANS_FILE: typing.Final = "ip_bans.yaml"
+    ATTR_BANNED_AT: typing.Final = "banned_at"
 
     # #### STATES ####
     STATE_ON: typing.Final = "on"
@@ -795,92 +1143,17 @@ class Const:
     HASSIO_USER_NAME = "Supervisor"
     SIGNAL_BOOTSTRAP_INTEGRATONS = "bootstrap_integrations"
 
-class Platform(strenum.StrEnum):
-    """Available entity platforms."""
-    AIR_QUALITY = "air_quality"
-    ALARM_CONTROL_PANEL = "alarm_control_panel"
-    BINARY_SENSOR = "binary_sensor"
-    BUTTON = "button"
-    CALENDAR = "calendar"
-    CAMERA = "camera"
-    CLIMATE = "climate"
-    COVER = "cover"
-    DEVICE_TRACKER = "device_tracker"
-    FAN = "fan"
-    GEO_LOCATION = "geo_location"
-    HUMIDIFIER = "humidifier"
-    IMAGE_PROCESSING = "image_processing"
-    LIGHT = "light"
-    LOCK = "lock"
-    MAILBOX = "mailbox"
-    MEDIA_PLAYER = "media_player"
-    NOTIFY = "notify"
-    NUMBER = "number"
-    REMOTE = "remote"
-    SCENE = "scene"
-    SELECT = "select"
-    SENSOR = "sensor"
-    SIREN = "siren"
-    STT = "stt"
-    SWITCH = "switch"
-    TTS = "tts"
-    VACUUM = "vacuum"
-    UPDATE = "update"
-    WATER_HEATER = "water_heater"
-    WEATHER = "weather"
+@typing.attr.s(slots=True, frozen=True)
+class Context:
+    """The context that triggered something."""
 
-class ConfigSource(strenum.StrEnum):
-    """Source of core configuration."""
-    DEFAULT = "default"
-    DISCOVERED = "discovered"
-    STORAGE = "storage"
-    YAML = "yaml"
+    user_id: str | None = attr.ib(default=None)
+    parent_id: str | None = attr.ib(default=None)
+    id: str = attr.ib(factory=ulid_util.ulid)
 
-@enum.unique
-class HassJobType(enum.Enum):
-    """Represent a job type."""
-    Coroutinefunction = 1
-    Callback = 2
-    Executor = 3
-
-class HassJob(typing.Generic[_R_co]):
-    """Represent a job to be run later.
-
-    We check the callable type in advance
-    so we can avoid checking it every time
-    we run the job.
-    """
-
-    def _get_callable_job_type(target: typing.Callable[..., typing.Any]) -> HassJobType:
-        """Determine the job type from the callable."""
-        # Check for partials to properly determine if coroutine function
-        check_target = target
-        while isinstance(check_target, functools.partial):
-            check_target = check_target.func
-
-        if asyncio.iscoroutinefunction(check_target):
-            return HassJobType.Coroutinefunction
-        if is_callback(check_target):
-            return HassJobType.Callback
-        if asyncio.iscoroutine(check_target):
-            raise ValueError("Coroutine not allowed to be passed to HassJob")
-        return HassJobType.Executor
-
-    __slots__ = ("job_type", "target")
-
-    def __init__(self, target: typing.Callable[..., _R_co]) -> None:
-        """Create a job object."""
-        self.target = target
-        self.job_type = HassJob._get_callable_job_type(target)
-
-    def __repr__(self) -> str:
-        """Return the job."""
-        return f"<Job {self.job_type} {self.target}>"
-
-class UndefinedType(enum.Enum):
-    """Singleton type for use with not set sentinel values."""
-    singleton = 0
-
+    def as_dict(self) -> dict[str, str | None]:
+        """Return a dictionary representation of the context."""
+        return {"id": self.id, "parent_id": self.parent_id, "user_id": self.user_id}
 
 class CoreState(enum.Enum):
     """Represent the current state of Home Assistant."""
@@ -895,19 +1168,6 @@ class CoreState(enum.Enum):
         """Return the event."""
         return self.value
 
-@typing.attr.s(slots=True, frozen=True)
-class Context:
-    """The context that triggered something."""
-
-    user_id: str | None = attr.ib(default=None)
-    parent_id: str | None = attr.ib(default=None)
-    id: str = attr.ib(factory=ulid_util.ulid)
-
-    def as_dict(self) -> dict[str, str | None]:
-        """Return a dictionary representation of the context."""
-        return {"id": self.id, "parent_id": self.parent_id, "user_id": self.user_id}
-
-
 class EventOrigin(enum.Enum):
     """Represent the origin of an event."""
     local = "LOCAL"
@@ -915,7 +1175,6 @@ class EventOrigin(enum.Enum):
     def __str__(self) -> str:
         """Return the event."""
         return self.value
-
 
 class Event:
     """Representation of an event within the bus."""
@@ -933,9 +1192,9 @@ class Event:
         self.event_type = event_type
         self.data = data or {}
         self.origin = origin
-        self.time_fired = time_fired or dt_util.utcnow()
+        self.time_fired = time_fired or dt.utcnow()
         self.context: Context = context or Context(
-            id=ulid_util.ulid(dt_util.utc_to_timestamp(self.time_fired))
+            id=ulid_util.ulid(dt.utc_to_timestamp(self.time_fired))
         )
 
     def __hash__(self) -> int:
@@ -974,15 +1233,6 @@ class Event:
             and self.context == other.context
         )
 
-
-class _FilterableJob(typing.NamedTuple):
-    """Event listener job to be executed with optional filter."""
-
-    job: HassJob[None | collections.abc.Awaitable[None]]
-    event_filter: typing.Callable[[Event], bool] | None
-    run_immediately: bool
-
-
 class EventBus:
     """Allow the firing of and listening for events."""
 
@@ -1002,7 +1252,7 @@ class EventBus:
     @property
     def listeners(self) -> dict[str, int]:
         """Return dictionary with events and the number of listeners."""
-        return run_callback_threadsafe(self._hass.loop, self.async_listeners).result()
+        return io.run_callback_threadsafe(self._hass.loop, self.async_listeners).result()
 
     def fire(
         self,
@@ -1074,13 +1324,13 @@ class EventBus:
         To listen to all events specify the constant ``MATCH_ALL``
         as event_type.
         """
-        async_remove_listener = run_callback_threadsafe(
+        async_remove_listener = io.run_callback_threadsafe(
             self._hass.loop, self.async_listen, event_type, listener
         ).result()
 
         def remove_listener() -> None:
             """Remove the listener."""
-            run_callback_threadsafe(self._hass.loop, async_remove_listener).result()
+            io.run_callback_threadsafe(self._hass.loop, async_remove_listener).result()
 
         return remove_listener
 
@@ -1129,7 +1379,7 @@ class EventBus:
 
     def listen_once(
         self, event_type: str, listener: typing.Callable[[Event], None | collections.abc.Awaitable[None]]
-    ) -> CALLBACK_TYPE:
+    ) -> _CALLBACK_TYPE:
         """Listen once for event of a specific type.
 
         To listen to all events specify the constant ``MATCH_ALL``
@@ -1137,13 +1387,13 @@ class EventBus:
 
         Returns function to unsubscribe the listener.
         """
-        async_remove_listener = run_callback_threadsafe(
+        async_remove_listener = io.run_callback_threadsafe(
             self._hass.loop, self.async_listen_once, event_type, listener
         ).result()
 
         def remove_listener() -> None:
             """Remove the listener."""
-            run_callback_threadsafe(self._hass.loop, async_remove_listener).result()
+            io.run_callback_threadsafe(self._hass.loop, async_remove_listener).result()
 
         return remove_listener
 
@@ -1207,9 +1457,87 @@ class EventBus:
                 "Unable to remove unknown job listener %s", filterable_job
             )
 
+class _FilterableJob(typing.NamedTuple):
+    """Event listener job to be executed with optional filter."""
 
-_StateT = typing.TypeVar("_StateT", bound="State")
+    job: HassJob[None | collections.abc.Awaitable[None]]
+    event_filter: typing.Callable[[Event], bool] | None
+    run_immediately: bool
 
+class HassJob(typing.Generic[_R_co]):
+    """Represent a job to be run later.
+
+    We check the callable type in advance
+    so we can avoid checking it every time
+    we run the job.
+    """
+
+    def _get_callable_job_type(target: typing.Callable[..., typing.Any]) -> HassJobType:
+        """Determine the job type from the callable."""
+        # Check for partials to properly determine if coroutine function
+        check_target = target
+        while isinstance(check_target, functools.partial):
+            check_target = check_target.func
+
+        if asyncio.iscoroutinefunction(check_target):
+            return HassJobType.Coroutinefunction
+        if is_callback(check_target):
+            return HassJobType.Callback
+        if asyncio.iscoroutine(check_target):
+            raise ValueError("Coroutine not allowed to be passed to HassJob")
+        return HassJobType.Executor
+
+    __slots__ = ("job_type", "target")
+
+    def __init__(self, target: typing.Callable[..., _R_co]) -> None:
+        """Create a job object."""
+        self.target = target
+        self.job_type = HassJob._get_callable_job_type(target)
+
+    def __repr__(self) -> str:
+        """Return the job."""
+        return f"<Job {self.job_type} {self.target}>"
+
+@enum.unique
+class HassJobType(enum.Enum):
+    """Represent a job type."""
+    Coroutinefunction = 1
+    Callback = 2
+    Executor = 3
+
+class Platform(strenum.StrEnum):
+    """Available entity platforms."""
+    AIR_QUALITY = "air_quality"
+    ALARM_CONTROL_PANEL = "alarm_control_panel"
+    BINARY_SENSOR = "binary_sensor"
+    BUTTON = "button"
+    CALENDAR = "calendar"
+    CAMERA = "camera"
+    CLIMATE = "climate"
+    COVER = "cover"
+    DEVICE_TRACKER = "device_tracker"
+    FAN = "fan"
+    GEO_LOCATION = "geo_location"
+    HUMIDIFIER = "humidifier"
+    IMAGE_PROCESSING = "image_processing"
+    LIGHT = "light"
+    LOCK = "lock"
+    MAILBOX = "mailbox"
+    MEDIA_PLAYER = "media_player"
+    NOTIFY = "notify"
+    NUMBER = "number"
+    REMOTE = "remote"
+    SCENE = "scene"
+    SELECT = "select"
+    SENSOR = "sensor"
+    SIREN = "siren"
+    STT = "stt"
+    SWITCH = "switch"
+    TTS = "tts"
+    VACUUM = "vacuum"
+    UPDATE = "update"
+    WATER_HEATER = "water_heater"
+    WEATHER = "weather"
 
 class State:
     """Object to represent a state within the state machine.
@@ -1266,12 +1594,12 @@ class State:
 
         self.entity_id = entity_id.lower()
         self.state = state
-        self.attributes = ReadOnlyDict(attributes or {})
-        self.last_updated = last_updated or dt_util.utcnow()
+        self.attributes = util.ReadOnlyDict(attributes or {})
+        self.last_updated = last_updated or dt.utcnow()
         self.last_changed = last_changed or self.last_updated
         self.context = context or Context()
         self.domain, self.object_id = State._split_entity_id(self.entity_id)
-        self._as_dict: ReadOnlyDict[str, collections.abc.Collection[typing.Any]] | None = None
+        self._as_dict: util.ReadOnlyDict[str, collections.abc.Collection[typing.Any]] | None = None
 
     def _valid_entity_id(entity_id: str) -> bool:
         """Test if an entity ID is a valid format.
@@ -1299,7 +1627,7 @@ class State:
             "_", " "
         )
 
-    def as_dict(self) -> ReadOnlyDict[str, collections.abc.Collection[typing.Any]]:
+    def as_dict(self) -> util.ReadOnlyDict[str, collections.abc.Collection[typing.Any]]:
         """Return a dict representation of the State.
 
         Async friendly.
@@ -1313,14 +1641,14 @@ class State:
                 last_updated_isoformat = last_changed_isoformat
             else:
                 last_updated_isoformat = self.last_updated.isoformat()
-            self._as_dict = ReadOnlyDict(
+            self._as_dict = util.ReadOnlyDict(
                 {
                     "entity_id": self.entity_id,
                     "state": self.state,
                     "attributes": self.attributes,
                     "last_changed": last_changed_isoformat,
                     "last_updated": last_updated_isoformat,
-                    "context": ReadOnlyDict(self.context.as_dict()),
+                    "context": util.ReadOnlyDict(self.context.as_dict()),
                 }
             )
         return self._as_dict
@@ -1339,12 +1667,12 @@ class State:
         last_changed = json_dict.get("last_changed")
 
         if isinstance(last_changed, str):
-            last_changed = dt_util.parse_datetime(last_changed)
+            last_changed = dt.parse_datetime(last_changed)
 
         last_updated = json_dict.get("last_updated")
 
         if isinstance(last_updated, str):
-            last_updated = dt_util.parse_datetime(last_updated)
+            last_updated = dt.parse_datetime(last_updated)
 
         if context := json_dict.get("context"):
             context = Context(id=context.get("id"), user_id=context.get("user_id"))
@@ -1374,9 +1702,8 @@ class State:
 
         return (
             f"<state {self.entity_id}={self.state}{attrs}"
-            f" @ {dt_util.as_local(self.last_changed).isoformat()}>"
+            f" @ {dt.as_local(self.last_changed).isoformat()}>"
         )
-
 
 class StateMachine:
     """Helper class that tracks the state of different entities."""
@@ -1390,7 +1717,7 @@ class StateMachine:
 
     def entity_ids(self, domain_filter: str | None = None) -> list[str]:
         """List of entity ids that are being tracked."""
-        future = run_callback_threadsafe(
+        future = io.run_callback_threadsafe(
             self._loop, self.async_entity_ids, domain_filter
         )
         return future.result()
@@ -1435,7 +1762,7 @@ class StateMachine:
 
     def all(self, domain_filter: str | collections.abc.Iterable[str] | None = None) -> list[State]:
         """Create a list of all states."""
-        return run_callback_threadsafe(
+        return io.run_callback_threadsafe(
             self._loop, self.async_all, domain_filter
         ).result()
 
@@ -1477,7 +1804,7 @@ class StateMachine:
 
         Returns boolean to indicate if an entity was removed.
         """
-        return run_callback_threadsafe(
+        return io.run_callback_threadsafe(
             self._loop, self.async_remove, entity_id
         ).result()
 
@@ -1521,7 +1848,7 @@ class StateMachine:
         If you just update the attributes and not the state, last changed will
         not be affected.
         """
-        run_callback_threadsafe(
+        io.run_callback_threadsafe(
             self._loop,
             self.async_set,
             entity_id,
@@ -1587,10 +1914,10 @@ class StateMachine:
         if same_state and same_attr:
             return
 
-        now = dt_util.utcnow()
+        now = dt.utcnow()
 
         if context is None:
-            context = Context(id=ulid_util.ulid(dt_util.utc_to_timestamp(now)))
+            context = Context(id=ulid_util.ulid(dt.utc_to_timestamp(now)))
 
         state = State(
             entity_id,
@@ -1610,7 +1937,6 @@ class StateMachine:
             time_fired=now,
         )
 
-
 class Service:
     """Representation of a callable service."""
 
@@ -1625,7 +1951,6 @@ class Service:
         """Initialize a service."""
         self.job = HassJob(func)
         self.schema = schema
-
 
 class ServiceCall:
     """Representation of a call to a service."""
@@ -1642,7 +1967,7 @@ class ServiceCall:
         """Initialize a service call."""
         self.domain = domain.lower()
         self.service = service.lower()
-        self.data = ReadOnlyDict(data or {})
+        self.data = util.ReadOnlyDict(data or {})
         self.context = context or Context()
 
     def __repr__(self) -> str:
@@ -1655,7 +1980,6 @@ class ServiceCall:
 
         return f"<ServiceCall {self.domain}.{self.service} (c:{self.context.id})>"
 
-
 class ServiceRegistry:
     """Offer the services over the eventbus."""
 
@@ -1667,7 +1991,7 @@ class ServiceRegistry:
     @property
     def services(self) -> dict[str, dict[str, Service]]:
         """Return dictionary with per domain a list of available services."""
-        return run_callback_threadsafe(self._hass.loop, self.async_services).result()
+        return io.run_callback_threadsafe(self._hass.loop, self.async_services).result()
 
     @callback
     def async_services(self) -> dict[str, dict[str, Service]]:
@@ -1696,7 +2020,7 @@ class ServiceRegistry:
 
         Schema is called to coerce and validate the service data.
         """
-        run_callback_threadsafe(
+        io.run_callback_threadsafe(
             self._hass.loop, self.async_register, domain, service, service_func, schema
         ).result()
 
@@ -1730,7 +2054,7 @@ class ServiceRegistry:
 
     def remove(self, domain: str, service: str) -> None:
         """Remove a registered service from service handler."""
-        run_callback_threadsafe(
+        io.run_callback_threadsafe(
             self._hass.loop, self.async_remove, domain, service
         ).result()
 
@@ -1912,247 +2236,432 @@ class ServiceRegistry:
                 typing.cast(typing.Callable[[ServiceCall], None], handler.job.target), service_call
             )
 
+class UnitSystem:
+    """A container for units of measure."""
+    _LENGTH_UNITS: typing.Final = (
+        Const.LENGTH_KILOMETERS,
+        Const.LENGTH_MILES,
+        Const.LENGTH_FEET,
+        Const.LENGTH_METERS,
+        Const.LENGTH_CENTIMETERS,
+        Const.LENGTH_MILLIMETERS,
+        Const.LENGTH_INCHES,
+        Const.LENGTH_YARD,
+    )
 
-class Config:
-    """Configuration settings for Home Assistant."""
+    _TO_METERS: typing.Final = {
+        Const.LENGTH_METERS: lambda meters: meters,
+        Const.LENGTH_MILES: lambda miles: miles * 1609.344,
+        Const.LENGTH_YARD: lambda yards: yards * 0.9144,
+        Const.LENGTH_FEET: lambda feet: feet * 0.3048,
+        Const.LENGTH_INCHES: lambda inches: inches * 0.0254,
+        Const.LENGTH_KILOMETERS: lambda kilometers: kilometers * 1000,
+        Const.LENGTH_CENTIMETERS: lambda centimeters: centimeters * 0.01,
+        Const.LENGTH_MILLIMETERS: lambda millimeters: millimeters * 0.001,
+    }
 
-    def __init__(self, hass: core.HomeAssistant) -> None:
-        """Initialize a new config object."""
-        self.hass = hass
+    _METERS_TO: typing.Final = {
+        Const.LENGTH_METERS: lambda meters: meters,
+        Const.LENGTH_MILES: lambda meters: meters * 0.000621371,
+        Const.LENGTH_YARD: lambda meters: meters * 1.09361,
+        Const.LENGTH_FEET: lambda meters: meters * 3.28084,
+        Const.LENGTH_INCHES: lambda meters: meters * 39.3701,
+        Const.LENGTH_KILOMETERS: lambda meters: meters * 0.001,
+        Const.LENGTH_CENTIMETERS: lambda meters: meters * 100,
+        Const.LENGTH_MILLIMETERS: lambda meters: meters * 1000,
+    }
 
-        self.latitude: float = 0
-        self.longitude: float = 0
-        self.elevation: int = 0
-        self.location_name: str = "Home"
-        self.time_zone: str = "UTC"
-        self.units: UnitSystem = METRIC_SYSTEM
-        self.internal_url: str | None = None
-        self.external_url: str | None = None
-        self.currency: str = "EUR"
+    _SPEED_UNITS: typing.Final = (
+        Const.SPEED_METERS_PER_SECOND,
+        Const.SPEED_KILOMETERS_PER_HOUR,
+        Const.SPEED_MILES_PER_HOUR,
+        Const.SPEED_MILLIMETERS_PER_DAY,
+        Const.SPEED_INCHES_PER_DAY,
+        Const.SPEED_INCHES_PER_HOUR,
+    )
 
-        self.config_source: ConfigSource = ConfigSource.DEFAULT
+    _HRS_TO_SECS: typing.Final = 60 * 60  # 1 hr = 3600 seconds
+    _KM_TO_M: typing.Final = 1000  # 1 km = 1000 m
+    _KM_TO_MILE: typing.Final = 0.62137119  # 1 km = 0.62137119 mi
+    _M_TO_IN: typing.Final = 39.3700787  # 1 m = 39.3700787 in
 
-        # If True, pip install is skipped for requirements on startup
-        self.skip_pip: bool = False
+    # Units in terms of m/s
+    _SPEED_CONVERSION: typing.Final = {
+        Const.SPEED_METERS_PER_SECOND: 1,
+        Const.SPEED_KILOMETERS_PER_HOUR: _HRS_TO_SECS / _KM_TO_M,
+        Const.SPEED_MILES_PER_HOUR: _HRS_TO_SECS * _KM_TO_MILE / _KM_TO_M,
+        Const.SPEED_MILLIMETERS_PER_DAY: (24 * _HRS_TO_SECS) * 1000,
+        Const.SPEED_INCHES_PER_DAY: (24 * _HRS_TO_SECS) * _M_TO_IN,
+        Const.SPEED_INCHES_PER_HOUR: _HRS_TO_SECS * _M_TO_IN,
+    }
 
-        # List of loaded components
-        self.components: set[str] = set()
+    _TEMPERATURE_UNITS: typing.Final = (
+        Const.TEMP_CELSIUS,
+        Const.TEMP_FAHRENHEIT,
+        Const.TEMP_KELVIN,
+    )
 
-        # API (HTTP) server configuration
-        self.api: ApiConfig | None = None
+    _MASS_UNITS: typing.Final = (
+        Const.MASS_POUNDS, 
+        Const.MASS_OUNCES, 
+        Const.MASS_KILOGRAMS, 
+        Const.MASS_GRAMS
+    )
 
-        # Directory that holds the configuration
-        self.config_dir: str | None = None
+    _VOLUME_UNITS: typing.Final = (
+        Const.VOLUME_LITERS,
+        Const.VOLUME_MILLILITERS,
+        Const.VOLUME_GALLONS,
+        Const.VOLUME_FLUID_OUNCE,
+        Const.VOLUME_CUBIC_METERS,
+        Const.VOLUME_CUBIC_FEET,
+    )
 
-        # List of allowed external dirs to access
-        self.allowlist_external_dirs: set[str] = set()
+    _PRESSURE_UNITS: typing.Final = (
+        Const.PRESSURE_PA,
+        Const.PRESSURE_HPA,
+        Const.PRESSURE_KPA,
+        Const.PRESSURE_BAR,
+        Const.PRESSURE_CBAR,
+        Const.PRESSURE_MBAR,
+        Const.PRESSURE_INHG,
+        Const.PRESSURE_PSI,
+        Const.PRESSURE_MMHG,
+    )
 
-        # List of allowed external URLs that integrations may use
-        self.allowlist_external_urls: set[str] = set()
+    _PRESSURE_CONVERSION: typing.Final = {
+        Const.PRESSURE_PA: 1,
+        Const.PRESSURE_HPA: 1 / 100,
+        Const.PRESSURE_KPA: 1 / 1000,
+        Const.PRESSURE_BAR: 1 / 100000,
+        Const.PRESSURE_CBAR: 1 / 1000,
+        Const.PRESSURE_MBAR: 1 / 100,
+        Const.PRESSURE_INHG: 1 / 3386.389,
+        Const.PRESSURE_PSI: 1 / 6894.757,
+        Const.PRESSURE_MMHG: 1 / 133.322,
+    }
 
-        # Dictionary of Media folders that integrations may use
-        self.media_dirs: dict[str, str] = {}
-
-        # If Home Assistant is running in safe mode
-        self.safe_mode: bool = False
-
-        # Use legacy template behavior
-        self.legacy_templates: bool = False
-
-    def distance(self, lat: float, lon: float) -> float | None:
-        """Calculate distance from Home Assistant.
-
-        Async friendly.
-        """
-        return self.units.length(
-            location.distance(self.latitude, self.longitude, lat, lon), LENGTH_METERS
-        )
-
-    def path(self, *path: str) -> str:
-        """Generate path to the file within the configuration directory.
-
-        Async friendly.
-        """
-        if self.config_dir is None:
-            raise exceptions.HomeAssistantError("config_dir is not set")
-        return os.path.join(self.config_dir, *path)
-
-    def is_allowed_external_url(self, url: str) -> bool:
-        """Check if an external URL is allowed."""
-        parsed_url = f"{str(yarl.URL(url))}/"
-
-        return any(
-            allowed
-            for allowed in self.allowlist_external_urls
-            if parsed_url.startswith(allowed)
-        )
-
-    def is_allowed_path(self, path: str) -> bool:
-        """Check if the path is valid for access from outside."""
-        assert path is not None
-
-        thepath = pathlib.Path(path)
-        try:
-            # The file path does not have to exist (it's parent should)
-            if thepath.exists():
-                thepath = thepath.resolve()
-            else:
-                thepath = thepath.parent.resolve()
-        except (FileNotFoundError, RuntimeError, PermissionError):
-            return False
-
-        for allowed_path in self.allowlist_external_dirs:
-            try:
-                thepath.relative_to(allowed_path)
-                return True
-            except ValueError:
-                pass
-
-        return False
-
-    def as_dict(self) -> dict[str, typing.Any]:
-        """Create a dictionary representation of the configuration.
-
-        Async friendly.
-        """
-        return {
-            "latitude": self.latitude,
-            "longitude": self.longitude,
-            "elevation": self.elevation,
-            "unit_system": self.units.as_dict(),
-            "location_name": self.location_name,
-            "time_zone": self.time_zone,
-            "components": self.components,
-            "config_dir": self.config_dir,
-            # legacy, backwards compat
-            "whitelist_external_dirs": self.allowlist_external_dirs,
-            "allowlist_external_dirs": self.allowlist_external_dirs,
-            "allowlist_external_urls": self.allowlist_external_urls,
-            "version": Const.__version__,
-            "config_source": self.config_source,
-            "safe_mode": self.safe_mode,
-            "state": self.hass.state.value,
-            "external_url": self.external_url,
-            "internal_url": self.internal_url,
-            "currency": self.currency,
-        }
-
-    def set_time_zone(self, time_zone_str: str) -> None:
-        """Help to set the time zone."""
-        if time_zone := dt_util.get_time_zone(time_zone_str):
-            self.time_zone = time_zone_str
-            dt_util.set_default_time_zone(time_zone)
-        else:
-            raise ValueError(f"Received invalid time zone {time_zone_str}")
-
-    @callback
-    def _update(
+    def __init__(
         self,
-        *,
-        source: ConfigSource,
-        latitude: float | None = None,
-        longitude: float | None = None,
-        elevation: int | None = None,
-        unit_system: str | None = None,
-        location_name: str | None = None,
-        time_zone: str | None = None,
-        external_url: str | dict[typing.Any, typing.Any] | None = None,
-        internal_url: str | dict[typing.Any, typing.Any] | None = None,
-        currency: str | None = None,
+        name: str,
+        temperature: str,
+        length: str,
+        wind_speed: str,
+        volume: str,
+        mass: str,
+        pressure: str,
+        accumulated_precipitation: str,
     ) -> None:
-        """Update the configuration from a dictionary."""
-        self.config_source = source
-        if latitude is not None:
-            self.latitude = latitude
-        if longitude is not None:
-            self.longitude = longitude
-        if elevation is not None:
-            self.elevation = elevation
-        if unit_system is not None:
-            if unit_system == Const.CONF_UNIT_SYSTEM_IMPERIAL:
-                self.units = IMPERIAL_SYSTEM
-            else:
-                self.units = METRIC_SYSTEM
-        if location_name is not None:
-            self.location_name = location_name
-        if time_zone is not None:
-            self.set_time_zone(time_zone)
-        if external_url is not None:
-            self.external_url = typing.cast(typing.Optional[str], external_url)
-        if internal_url is not None:
-            self.internal_url = typing.cast(typing.Optional[str], internal_url)
-        if currency is not None:
-            self.currency = currency
-
-    async def async_update(self, **kwargs: typing.Any) -> None:
-        """Update the configuration from a dictionary."""
-        self._update(source=ConfigSource.STORAGE, **kwargs)
-        await self.async_store()
-        self.hass.bus.async_fire(Const.EVENT_CORE_CONFIG_UPDATE, kwargs)
-
-    async def async_load(self) -> None:
-        """Load [homeassistant] core config."""
-        # Circular dep
-        # pylint: disable=import-outside-toplevel
-        from .helpers.storage import Store
-
-        store = Store(
-            self.hass,
-            Const.CORE_STORAGE_VERSION,
-            Const.CORE_STORAGE_KEY,
-            private=True,
-            atomic_writes=True,
+        """Initialize the unit system object."""
+        errors: str = ", ".join(
+            Const.UNIT_NOT_RECOGNIZED_TEMPLATE.format(unit, unit_type)
+            for unit, unit_type in (
+                (accumulated_precipitation, Const.ACCUMULATED_PRECIPITATION),
+                (temperature, Const.TEMPERATURE),
+                (length, Const.LENGTH),
+                (wind_speed, Const.WIND_SPEED),
+                (volume, Const.VOLUME),
+                (mass, Const.MASS),
+                (pressure, Const.PRESSURE),
+            )
+            if not UnitSystem._is_valid_unit(unit, unit_type)
         )
 
-        if not (data := await store.async_load()) or not isinstance(data, dict):
-            return
+        if errors:
+            raise ValueError(errors)
 
-        # In 2021.9 we fixed validation to disallow a path (because that's never correct)
-        # but this data still lives in storage, so we print a warning.
-        if data.get("external_url") and urlparse(data["external_url"]).path not in (
-            "",
-            "/",
-        ):
-            _LOGGER.warning("Invalid external_url set. It's not allowed to have a path")
+        self.name = name
+        self.accumulated_precipitation_unit = accumulated_precipitation
+        self.temperature_unit = temperature
+        self.length_unit = length
+        self.mass_unit = mass
+        self.pressure_unit = pressure
+        self.volume_unit = volume
+        self.wind_speed_unit = wind_speed
 
-        if data.get("internal_url") and urlparse(data["internal_url"]).path not in (
-            "",
-            "/",
-        ):
-            _LOGGER.warning("Invalid internal_url set. It's not allowed to have a path")
+    def _is_valid_unit(unit: str, unit_type: str) -> bool:
+        """Check if the unit is valid for it's type."""
+        if unit_type == Const.LENGTH:
+            units = UnitSystem._LENGTH_UNITS
+        elif unit_type == Const.ACCUMULATED_PRECIPITATION:
+            units = UnitSystem._LENGTH_UNITS
+        elif unit_type == Const.WIND_SPEED:
+            units = UnitSystem._SPEED_UNITS
+        elif unit_type == Const.TEMPERATURE:
+            units = UnitSystem._TEMPERATURE_UNITS
+        elif unit_type == Const.MASS:
+            units = UnitSystem._MASS_UNITS
+        elif unit_type == Const.VOLUME:
+            units = UnitSystem._VOLUME_UNITS
+        elif unit_type == Const.PRESSURE:
+            units = UnitSystem._PRESSURE_UNITS
+        else:
+            return False
+        return unit in units
 
-        self._update(
-            source=ConfigSource.STORAGE,
-            latitude=data.get("latitude"),
-            longitude=data.get("longitude"),
-            elevation=data.get("elevation"),
-            unit_system=data.get("unit_system"),
-            location_name=data.get("location_name"),
-            time_zone=data.get("time_zone"),
-            external_url=data.get("external_url", None),
-            internal_url=data.get("internal_url", None),
-            currency=data.get("currency"),
+    def _convert_length(value: float, unit_1: str, unit_2: str) -> float:
+        """Convert one unit of measurement to another."""
+        if unit_1 not in UnitSystem._LENGTH_UNITS:
+            raise ValueError(Const.UNIT_NOT_RECOGNIZED_TEMPLATE.format(unit_1, Const.LENGTH))
+        if unit_2 not in UnitSystem._LENGTH_UNITS:
+            raise ValueError(Const.UNIT_NOT_RECOGNIZED_TEMPLATE.format(unit_2, Const.LENGTH))
+
+        if not isinstance(value, numbers.Number):
+            raise TypeError(f"{value} is not of numeric type")
+
+        if unit_1 == unit_2 or unit_1 not in UnitSystem._LENGTH_UNITS:
+            return value
+
+        meters: float = UnitSystem._TO_METERS[unit_1](value)
+        return UnitSystem._METERS_TO[unit_2](meters)
+
+
+    def _convert_speed(value: float, unit_1: str, unit_2: str) -> float:
+        """Convert one unit of measurement to another."""
+        if unit_1 not in UnitSystem._SPEED_UNITS:
+            raise ValueError(Const.UNIT_NOT_RECOGNIZED_TEMPLATE.format(unit_1, Const.SPEED))
+        if unit_2 not in UnitSystem._SPEED_UNITS:
+            raise ValueError(Const.UNIT_NOT_RECOGNIZED_TEMPLATE.format(unit_2, Const.SPEED))
+
+        if not isinstance(value, numbers.Number):
+            raise TypeError(f"{value} is not of numeric type")
+
+        if unit_1 == unit_2:
+            return value
+
+        meters_per_second = value / UnitSystem._SPEED_CONVERSION[unit_1]
+        return meters_per_second * UnitSystem._SPEED_CONVERSION[unit_2]
+
+    def _fahrenheit_to_celsius(fahrenheit: float, interval: bool = False) -> float:
+        """Convert a temperature in Fahrenheit to Celsius."""
+        if interval:
+            return fahrenheit / 1.8
+        return (fahrenheit - 32.0) / 1.8
+
+
+    def _kelvin_to_celsius(kelvin: float, interval: bool = False) -> float:
+        """Convert a temperature in Kelvin to Celsius."""
+        if interval:
+            return kelvin
+        return kelvin - 273.15
+
+
+    def _celsius_to_fahrenheit(celsius: float, interval: bool = False) -> float:
+        """Convert a temperature in Celsius to Fahrenheit."""
+        if interval:
+            return celsius * 1.8
+        return celsius * 1.8 + 32.0
+
+
+    def _celsius_to_kelvin(celsius: float, interval: bool = False) -> float:
+        """Convert a temperature in Celsius to Fahrenheit."""
+        if interval:
+            return celsius
+        return celsius + 273.15
+
+
+    def _convert_temperature(
+        temperature: float, from_unit: str, to_unit: str, interval: bool = False
+    ) -> float:
+        """Convert a temperature from one unit to another."""
+        if from_unit not in UnitSystem._TEMPERATURE_UNITS:
+            raise ValueError(Const.UNIT_NOT_RECOGNIZED_TEMPLATE.format(from_unit, Const.TEMPERATURE))
+        if to_unit not in UnitSystem._TEMPERATURE_UNITS:
+            raise ValueError(Const.UNIT_NOT_RECOGNIZED_TEMPLATE.format(to_unit, Const.TEMPERATURE))
+
+        if from_unit == to_unit:
+            return temperature
+
+        if from_unit == Const.TEMP_CELSIUS:
+            if to_unit == Const.TEMP_FAHRENHEIT:
+                return UnitSystem._celsius_to_fahrenheit(temperature, interval)
+            # kelvin
+            return UnitSystem._celsius_to_kelvin(temperature, interval)
+
+        if from_unit == Const.TEMP_FAHRENHEIT:
+            if to_unit == Const.TEMP_CELSIUS:
+                return UnitSystem._fahrenheit_to_celsius(temperature, interval)
+            # kelvin
+            return UnitSystem._celsius_to_kelvin(UnitSystem._fahrenheit_to_celsius(temperature, interval), interval)
+
+        # from_unit == kelvin
+        if to_unit == Const.TEMP_CELSIUS:
+            return UnitSystem._kelvin_to_celsius(temperature, interval)
+        # fahrenheit
+        return UnitSystem._celsius_to_fahrenheit(UnitSystem._kelvin_to_celsius(temperature, interval), interval)
+
+    def _liter_to_gallon(liter: float) -> float:
+        """Convert a volume measurement in Liter to Gallon."""
+        return liter * 0.2642
+
+
+    def _gallon_to_liter(gallon: float) -> float:
+        """Convert a volume measurement in Gallon to Liter."""
+        return gallon * 3.785
+
+
+    def _cubic_meter_to_cubic_feet(cubic_meter: float) -> float:
+        """Convert a volume measurement in cubic meter to cubic feet."""
+        return cubic_meter * 35.3146667
+
+
+    def _cubic_feet_to_cubic_meter(cubic_feet: float) -> float:
+        """Convert a volume measurement in cubic feet to cubic meter."""
+        return cubic_feet * 0.0283168466
+
+    def _convert_volume(volume: float, from_unit: str, to_unit: str) -> float:
+        """Convert a temperature from one unit to another."""
+        if from_unit not in UnitSystem._VOLUME_UNITS:
+            raise ValueError(Const.UNIT_NOT_RECOGNIZED_TEMPLATE.format(from_unit, Const.VOLUME))
+        if to_unit not in UnitSystem._VOLUME_UNITS:
+            raise ValueError(Const.UNIT_NOT_RECOGNIZED_TEMPLATE.format(to_unit, Const.VOLUME))
+
+        if not isinstance(volume, numbers.Number):
+            raise TypeError(f"{volume} is not of numeric type")
+
+        if from_unit == to_unit:
+            return volume
+
+        result: float = volume
+        if from_unit == Const.VOLUME_LITERS and to_unit == Const.VOLUME_GALLONS:
+            result = UnitSystem._liter_to_gallon(volume)
+        elif from_unit == Const.VOLUME_GALLONS and to_unit == Const.VOLUME_LITERS:
+            result = UnitSystem._gallon_to_liter(volume)
+        elif from_unit == Const.VOLUME_CUBIC_METERS and to_unit == Const.VOLUME_CUBIC_FEET:
+            result = UnitSystem._cubic_meter_to_cubic_feet(volume)
+        elif from_unit == Const.VOLUME_CUBIC_FEET and to_unit == Const.VOLUME_CUBIC_METERS:
+            result = UnitSystem._cubic_feet_to_cubic_meter(volume)
+        return result
+
+    def _convert_pressure(value: float, unit_1: str, unit_2: str) -> float:
+        """Convert one unit of measurement to another."""
+        if unit_1 not in UnitSystem._PRESSURE_UNITS:
+            raise ValueError(Const.UNIT_NOT_RECOGNIZED_TEMPLATE.format(unit_1, Const.PRESSURE))
+        if unit_2 not in UnitSystem._PRESSURE_UNITS:
+            raise ValueError(Const.UNIT_NOT_RECOGNIZED_TEMPLATE.format(unit_2, Const.PRESSURE))
+
+        if not isinstance(value, numbers.Number):
+            raise TypeError(f"{value} is not of numeric type")
+
+        if unit_1 == unit_2:
+            return value
+
+        pascals = value / UnitSystem._PRESSURE_CONVERSION[unit_1]
+        return pascals * UnitSystem._PRESSURE_CONVERSION[unit_2]
+
+    @property
+    def is_metric(self) -> bool:
+        """Determine if this is the metric unit system."""
+        return self.name == Const.CONF_UNIT_SYSTEM_METRIC
+
+    def temperature(self, temperature: float, from_unit: str) -> float:
+        """Convert the given temperature to this unit system."""
+        if not isinstance(temperature, numbers.Number):
+            raise TypeError(f"{temperature!s} is not a numeric value.")
+        return UnitSystem._convert_temperature(temperature, from_unit, self.temperature_unit)
+
+    def mass(self, mass: float | None, from_unit: str) -> float:
+        """Convert the given mass to this unit system."""
+        if not isinstance(mass, numbers.Number):
+            raise TypeError(f"{mass!s} is not a numeric value.")
+        return UnitSystem._convert_mass(
+            mass, from_unit, self.mass_unit
         )
 
-    async def async_store(self) -> None:
-        """Store [homeassistant] core config."""
-        data = {
-            "latitude": self.latitude,
-            "longitude": self.longitude,
-            "elevation": self.elevation,
-            "unit_system": self.units.name,
-            "location_name": self.location_name,
-            "time_zone": self.time_zone,
-            "external_url": self.external_url,
-            "internal_url": self.internal_url,
-            "currency": self.currency,
+    def length(self, length: float | None, from_unit: str) -> float:
+        """Convert the given length to this unit system."""
+        if not isinstance(length, numbers.Number):
+            raise TypeError(f"{length!s} is not a numeric value.")
+
+        # type ignore: https://github.com/python/mypy/issues/7207
+        return UnitSystem._convert_length(  # type: ignore[unreachable]
+            length, from_unit, self.length_unit
+        )
+
+    def accumulated_precipitation(self, precip: float | None, from_unit: str) -> float:
+        """Convert the given length to this unit system."""
+        if not isinstance(precip, numbers.Number):
+            raise TypeError(f"{precip!s} is not a numeric value.")
+
+        # type ignore: https://github.com/python/mypy/issues/7207
+        return UnitSystem._convert_length(  # type: ignore[unreachable]
+            precip, from_unit, self.accumulated_precipitation_unit
+        )
+
+    def pressure(self, pressure: float | None, from_unit: str) -> float:
+        """Convert the given pressure to this unit system."""
+        if not isinstance(pressure, numbers.Number):
+            raise TypeError(f"{pressure!s} is not a numeric value.")
+
+        # type ignore: https://github.com/python/mypy/issues/7207
+        return pressure_util.convert(  # type: ignore[unreachable]
+            pressure, from_unit, self.pressure_unit
+        )
+
+    def wind_speed(self, wind_speed: float | None, from_unit: str) -> float:
+        """Convert the given wind_speed to this unit system."""
+        if not isinstance(wind_speed, numbers.Number):
+            raise TypeError(f"{wind_speed!s} is not a numeric value.")
+
+        # type ignore: https://github.com/python/mypy/issues/7207
+        return speed_util.convert(wind_speed, from_unit, self.wind_speed_unit)  # type: ignore[unreachable]
+
+    def volume(self, volume: float | None, from_unit: str) -> float:
+        """Convert the given volume to this unit system."""
+        if not isinstance(volume, numbers.Number):
+            raise TypeError(f"{volume!s} is not a numeric value.")
+
+        # type ignore: https://github.com/python/mypy/issues/7207
+        return volume_util.convert(volume, from_unit, self.volume_unit)  # type: ignore[unreachable]
+
+    def as_dict(self) -> dict[str, str]:
+        """Convert the unit system to a dictionary."""
+        return {
+            Const.LENGTH: self.length_unit,
+            Const.ACCUMULATED_PRECIPITATION: self.accumulated_precipitation_unit,
+            Const.MASS: self.mass_unit,
+            Const.PRESSURE: self.pressure_unit,
+            Const.TEMPERATURE: self.temperature_unit,
+            Const.VOLUME: self.volume_unit,
+            Const.WIND_SPEED: self.wind_speed_unit,
         }
 
-        store = Store(
-            self.hass,
-            Const.CORE_STORAGE_VERSION,
-            Const.CORE_STORAGE_KEY,
-            private=True,
-            atomic_writes=True,
+    METRIC: UnitSystem | None = None
+    IMPERIAL: UnitSystem | None = None
+
+    def __static_init__():
+        UnitSystem.METRIC = UnitSystem(
+            Const.CONF_UNIT_SYSTEM_METRIC,
+            Const.TEMP_CELSIUS,
+            Const.LENGTH_KILOMETERS,
+            Const.SPEED_METERS_PER_SECOND,
+            Const.VOLUME_LITERS,
+            Const.MASS_GRAMS,
+            Const.PRESSURE_PA,
+            Const.LENGTH_MILLIMETERS,
         )
-        await store.async_save(data)
+        UnitSystem.IMPERIAL = UnitSystem(
+            Const.CONF_UNIT_SYSTEM_IMPERIAL,
+            Const.TEMP_FAHRENHEIT,
+            Const.LENGTH_MILES,
+            Const.SPEED_MILES_PER_HOUR,
+            Const.VOLUME_GALLONS,
+            Const.MASS_POUNDS,
+            Const.PRESSURE_PSI,
+            Const.LENGTH_INCHES,
+        )
+
+    __static_init__()
+
+
+GPSType = tuple[float, float]
+ConfigType = dict[str, typing.Any]
+ContextType = Context
+DiscoveryInfoType = dict[str, typing.Any]
+EventType = Event
+ServiceDataType = dict[str, typing.Any]
+StateType = typing.Union[None, str, int, float]
+TemplateVarsType = typing.Optional[collections.abc.Mapping[str, typing.Any]]
+JsonType = typing.Union[list, dict, str] 
+# Custom type for recorder Queries
+QueryType = typing.Any
