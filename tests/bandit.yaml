@@ -2,6 +2,8 @@
 exclude:
   - tests/
 
+skips: ['B101']
+
 any_other_function_with_shell_equals_true:
   no_shell:
     [

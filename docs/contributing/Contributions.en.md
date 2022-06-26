@@ -39,7 +39,7 @@ Still interested? **Great, welcome to the team!**
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 
 [logo]: ../images/logo.svg
-[project-url]: https://homeassistant.io
+[project-url]: https://github.com/nixe64/The-Next-Generation
 
 [license-badge]: ../images/license.cc-by-sa.en.svg
 [license-url]: ../../COPYRIGHT.en.md

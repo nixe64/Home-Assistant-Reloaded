@@ -27,7 +27,7 @@ repos:
           - --py39-plus
           - --force
           - --keep-updates
-        files: ^(custom_components|tests)/.+\.py$
+        files: ^(smart_home_tng|tests)/.+\.py$
   - repo: local
     hooks:
       - id: pytest-check
@@ -39,17 +39,17 @@ repos:
 
       - id: black
         name: black
-        entry: script/run-in-env.sh black --safe --quiet custom_components/ tests/
+        entry: script/run-in-env.sh black --safe --quiet smart_home_tng/ tests/
         language: script
         pass_filenames: false
         stages: [commit, push, manual]
 
       - id: pylint
         name: pylint
-        entry: script/run-in-env.sh pylint --rcfile=.pylint custom_components/ tests/
+        entry: script/run-in-env.sh pylint --rcfile=.pylint 
         language: script
         types: [python]
-        pass_filenames: false
+        pass_filenames: true
         stages: [commit, push, manual]
 
       - id: prettier
@@ -61,7 +61,7 @@ repos:
 
       - id: flake8
         name: flake8
-        entry: script/run-in-env.sh flake8 custom_components/ tests/
+        entry: script/run-in-env.sh flake8 smart_home_tng/
         language: script
         pass_filenames: false
         stages: [commit, manual]
@@ -75,12 +75,12 @@ repos:
 
       - id: mypy
         name: mypy
-        entry: script/run-in-env.sh mypy custom_components/ tests/
+        entry: script/run-in-env.sh mypy
         language: script
         types: [python]
         require_serial: true
-        pass_filenames: false
-        stages: [commit, push, manual]
+        pass_filenames: true
+        stages: [manual]
 
       - id: isort
         name: isort
@@ -91,14 +91,14 @@ repos:
 
       - id: bandit
         name: bandit
-        entry: script/run-in-env.sh bandit -qr --format=custom -c=tests/bandit.yaml custom_components/
+        entry: script/run-in-env.sh bandit -qr --format=custom -c=tests/bandit.yaml smart_home_tng/
         language: script
         pass_filenames: false
         stages: [commit, manual]
 
       - id: yamllint
         name: yamllint
-        entry: script/run-in-env.sh yamllint tests/ custom_components/
+        entry: script/run-in-env.sh yamllint tests/ smart_home_tng/
         language: script
         pass_filenames: false
         stages: [commit, manual]

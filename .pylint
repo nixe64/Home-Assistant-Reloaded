@@ -3,7 +3,7 @@
 # A comma-separated list of package or module names from where C extensions may
 # be loaded. Extensions are loading into the active Python interpreter and may
 # run arbitrary code.
-extension-pkg-allow-list=
+extension-pkg-allow-list=ciso8601
 
 # A comma-separated list of package or module names from where C extensions may
 # be loaded. Extensions are loading into the active Python interpreter and may
@@ -89,6 +89,8 @@ disable=
       no-self-argument, # wird ständig falsch erkannt, um beim Einfügen
                         # mit der Warnung zu kommen, es könnte entfernt werden.
       no-method-argument,
+      logging-not-lazy,
+      relative-beyond-top-level # wird ständig falsch erkannt
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
@@ -149,7 +151,7 @@ ignore-imports=no
 ignore-signatures=no
 
 # Minimum lines number of a similarity.
-min-similarity-lines=4
+min-similarity-lines=25
 
 
 [VARIABLES]
@@ -365,6 +367,8 @@ function-naming-style=snake_case
 
 # Good variable names which should always be accepted, separated by a comma.
 good-names=i,
+           id,
+           ip,
            j,
            k,
            ex,
@@ -445,7 +449,7 @@ indent-string='    '
 max-line-length=100
 
 # Maximum number of lines in a module.
-max-module-lines=1000
+max-module-lines=7500
 
 # Allow the body of a class to be on the same line as the declaration if body
 # contains single statement.
@@ -504,31 +508,31 @@ exclude-too-few-public-methods=
 ignored-parents=
 
 # Maximum number of arguments for function / method.
-max-args=5
+max-args=20
 
 # Maximum number of attributes for a class (see R0902).
-max-attributes=7
+max-attributes=25
 
 # Maximum number of boolean expressions in an if statement (see R0916).
 max-bool-expr=5
 
 # Maximum number of branch for function / method body.
-max-branches=20
+max-branches=30
 
 # Maximum number of locals for function / method body.
-max-locals=15
+max-locals=40
 
 # Maximum number of parents for a class (see R0901).
-max-parents=7
+max-parents=10
 
 # Maximum number of public methods for a class (see R0904).
-max-public-methods=20
+max-public-methods=100
 
 # Maximum number of return / yield for function / method body.
-max-returns=6
+max-returns=15
 
 # Maximum number of statements in function / method body.
-max-statements=50
+max-statements=150
 
 # Minimum number of public methods for a class (see R0903).
 min-public-methods=0

@@ -146,7 +146,7 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "script/run-in-env.sh pylint --rcfile=.pylint custom_components/ tests/",
+            "command": "script/run-in-env.sh pylint --rcfile=.pylint smart_home_tng/ tests/",
             "group": {
                 "kind": "test",
                 "isDefault": true
