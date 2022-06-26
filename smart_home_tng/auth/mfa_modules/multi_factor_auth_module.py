@@ -53,6 +53,10 @@ class MultiFactorAuthModule:
         self._config = config
 
     @property
+    def controller(self) -> core.SmartHomeController:
+        return self._shc
+
+    @property
     def default_title(self) -> str:
         return _DEFAULT_TITLE
 
