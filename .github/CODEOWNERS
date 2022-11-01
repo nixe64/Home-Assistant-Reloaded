@@ -76,6 +76,7 @@ setup.cfg @nixe64
 /smart_home_tng/components/scene/ @nixe64
 /smart_home_tng/components/script/ @home-assistant/core
 /smart_home_tng/components/search/ @nixe64
+/smart_home_tng/components/select/ @nixe64
 /smart_home_tng/components/sensor/ @nixe64
 /smart_home_tng/components/siren/ @home-assistant/core @raman325
 /smart_home_tng/components/ssdp/ @nixe64
