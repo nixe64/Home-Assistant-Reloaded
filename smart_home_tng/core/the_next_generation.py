@@ -57,6 +57,7 @@ from .entity_registry import EntityRegistry
 from .event_bus import EventBus
 from .event_tracker import EventTracker
 from .flow_dispatcher import FlowDispatcher
+from .intent_manager import IntentManager
 from .no_url_available_error import NoURLAvailableError
 from .runtime_config import RuntimeConfig
 from .service_registry import ServiceRegistry
@@ -139,6 +140,7 @@ class TheNextGeneration(SmartHomeController):
             SmartHomeControllerView | type[SmartHomeControllerView]
         ]()
         self._loop.set_debug(False)
+        self._intent_manager: IntentManager = None
 
     async def async_get_instance_id(self) -> str:
         if self._instance_id is None:
@@ -238,6 +240,12 @@ class TheNextGeneration(SmartHomeController):
     @property
     def http(self) -> SmartHomeControllerHTTP:
         return self._http
+
+    @property
+    def intents(self) -> IntentManager:
+        if self._intent_manager is None:
+            self._intent_manager = IntentManager(self)
+        return self._intent_manager
 
     @property
     def services(self) -> ServiceRegistry:

@@ -23,15 +23,9 @@ http://www.gnu.org/licenses/.
 """
 
 import collections
-import typing
 
 from .check_config_error import CheckConfigError
-from .config_type import CONFIG_TYPE
-
-
-@typing.overload
-class SmartHomeControllerConfig:
-    ...
+from .config_type import ConfigType
 
 
 # pylint: disable=unused-variable
@@ -41,19 +35,19 @@ class SmartHomeControllerConfig(collections.OrderedDict):
     def __init__(self) -> None:
         """Initialize HA config."""
         super().__init__()
-        self.errors: list[CheckConfigError] = []
+        self._errors: list[CheckConfigError] = []
 
     def add_error(
         self,
         message: str,
-        domain: str | None = None,
-        config: CONFIG_TYPE | None = None,
-    ) -> SmartHomeControllerConfig:
+        domain: str = None,
+        config: ConfigType = None,
+    ):
         """Add a single error."""
-        self.errors.append(CheckConfigError(str(message), domain, config))
+        self._errors.append(CheckConfigError(str(message), domain, config))
         return self
 
     @property
     def error_str(self) -> str:
         """Return errors as a string."""
-        return "\n".join([err.message for err in self.errors])
+        return "\n".join([err.message for err in self._errors])

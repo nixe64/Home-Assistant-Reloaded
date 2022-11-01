@@ -52,6 +52,7 @@ from .event import Event
 from .event_bus import EventBus
 from .event_tracker import EventTracker
 from .flow_dispatcher import FlowDispatcher
+from .intent_manager import IntentManager
 from .service_registry import ServiceRegistry
 from .setup_manager import SetupManager
 from .smart_home_controller_error import SmartHomeControllerError
@@ -215,6 +216,11 @@ class SmartHomeController(abc.ABC):
     @abc.abstractmethod
     def tracker(self) -> EventTracker:
         """Get the Event Tracker Helpers of the Smart Home Controller."""
+
+    @property
+    @abc.abstractmethod
+    def intents(self) -> IntentManager:
+        """Get the Intent Manager of the Smart Home Controller."""
 
     @property
     @abc.abstractmethod

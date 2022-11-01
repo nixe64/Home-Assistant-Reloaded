@@ -177,6 +177,8 @@ from .integration import Integration
 from .integration_error import IntegrationError
 from .integration_not_found import IntegrationNotFound
 from .integration_platform import IntegrationPlatform
+from .intent import Intent
+from .intent_manager import IntentManager
 from .interruptible_thread_pool_executor import InterruptibleThreadPoolExecutor
 from .invalid_device_automation_config import InvalidDeviceAutomationConfig
 from .invalid_entity_format_error import InvalidEntityFormatError
