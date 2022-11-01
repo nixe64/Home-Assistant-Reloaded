@@ -25,4 +25,4 @@ http://www.gnu.org/licenses/.
 import typing
 
 # pylint: disable=unused-variable
-JSON_TYPE: typing.Final = typing.Union[list, dict, str]
+JsonType: typing.TypeAlias = typing.Union[list, dict, str]

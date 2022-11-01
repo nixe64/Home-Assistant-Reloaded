@@ -32,11 +32,7 @@ import voluptuous as vol
 
 from ... import core
 from ..user import User
-from .multi_factor_auth_module import (
-    MULTI_FACTOR_AUTH_MODULE_SCHEMA,
-    MULTI_FACTOR_AUTH_MODULES,
-    MultiFactorAuthModule,
-)
+from .multi_factor_auth_module import MultiFactorAuthModule, _MULTI_FACTOR_AUTH_MODULES
 from .setup_flow import SetupFlow
 
 # pylint: disable=unused-variable
@@ -83,7 +79,7 @@ _DEFAULT_TITLE: typing.Final = "Time-based One Time Password"
 _MAX_RETRY_TIME: typing.Final = 5
 
 
-@MULTI_FACTOR_AUTH_MODULES.register("totp")
+@_MULTI_FACTOR_AUTH_MODULES.register("totp")
 class TotpAuthModule(MultiFactorAuthModule):
     """Auth module validate time-based one time password."""
 
@@ -92,8 +88,8 @@ class TotpAuthModule(MultiFactorAuthModule):
     ) -> None:
         """Initialize the user data store."""
         super().__init__(shc, config)
-        self._users: dict[str, str] | None = None
-        self._user_store = core.Store(
+        self._users: dict[str, str] = None
+        self._user_store = core.Store[dict[str, dict[str, str]]](
             shc, _STORAGE_VERSION, _STORAGE_KEY, private=True, atomic_writes=True
         )
         self._init_lock = asyncio.Lock()
@@ -128,7 +124,7 @@ class TotpAuthModule(MultiFactorAuthModule):
         """Save data."""
         await self._user_store.async_save({_STORAGE_USERS: self._users})
 
-    def _add_ota_secret(self, user_id: str, secret: str | None = None) -> str:
+    def _add_ota_secret(self, user_id: str, secret: str = None) -> str:
         """Create a ota_secret for user."""
         ota_secret: str = secret or pyotp.random_base32()
 
@@ -207,11 +203,11 @@ class TotpSetupFlow(SetupFlow):
         self._auth_module: TotpAuthModule = auth_module
         self._user = user
         self._ota_secret: str = ""
-        self._url: str | None = None
-        self._image: str | None = None
+        self._url: str = None
+        self._image: str = None
 
     async def async_step_init(
-        self, user_input: dict[str, str] | None = None
+        self, user_input: dict[str, str] = None
     ) -> core.FlowResult:
         """Handle the first step of setup flow.
 
@@ -256,4 +252,4 @@ class TotpSetupFlow(SetupFlow):
 
 
 # pylint: disable=unused-variable
-CONFIG_SCHEMA = MULTI_FACTOR_AUTH_MODULE_SCHEMA.extend({}, extra=vol.PREVENT_EXTRA)
+CONFIG_SCHEMA = MultiFactorAuthModule.MODULE_SCHEMA.extend({}, extra=vol.PREVENT_EXTRA)

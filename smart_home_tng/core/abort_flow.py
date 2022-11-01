@@ -29,9 +29,7 @@ from .flow_error import FlowError
 class AbortFlow(FlowError):
     """Exception to indicate a flow needs to be aborted."""
 
-    def __init__(
-        self, reason: str, description_placeholders: dict | None = None
-    ) -> None:
+    def __init__(self, reason: str, description_placeholders: dict = None) -> None:
         """Initialize an abort flow exception."""
         super().__init__(f"Flow aborted: {reason}")
         self._reason = reason
@@ -42,5 +40,5 @@ class AbortFlow(FlowError):
         return self._reason
 
     @property
-    def description_placeholders(self) -> dict | None:
+    def description_placeholders(self) -> dict:
         return self._description_placeholders

@@ -29,15 +29,15 @@ import collections.abc
 class AbstractPermissions:
     """Default permissions class."""
 
-    _cached_entity_func: collections.abc.Callable[[str, str], bool] | None = None
+    _cached_entity_func: collections.abc.Callable[[str, str], bool] = None
 
     def _entity_func(self) -> collections.abc.Callable[[str, str], bool]:
         """Return a function that can test entity access."""
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def access_all_entities(self, key: str) -> bool:
         """Check if we have a certain access to all entities."""
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def check_entity(self, entity_id: str, key: str) -> bool:
         """Check if we can access entity."""

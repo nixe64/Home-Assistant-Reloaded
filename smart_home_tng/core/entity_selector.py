@@ -28,12 +28,11 @@ import voluptuous as vol
 
 from .config_validation import ConfigValidation as cv
 from .entity_selector_config import EntitySelectorConfig
-from .selector import SELECTORS, Selector
+from .selector import Selector
 from .single_entity_selector_config import SINGLE_ENTITY_SELECTOR_CONFIG_SCHEMA
 
 
 # pylint: disable=unused-variable
-@SELECTORS.register("entity")
 class EntitySelector(Selector):
     """Selector of a single or list of entities."""
 
@@ -48,7 +47,7 @@ class EntitySelector(Selector):
     def config_schema(self, config: typing.Any) -> typing.Callable:
         return EntitySelector._CONFIG_SCHEMA(config)
 
-    def __init__(self, config: EntitySelectorConfig | None = None) -> None:
+    def __init__(self, config: EntitySelectorConfig = None) -> None:
         """Instantiate a selector."""
         super().__init__("entity", config)
 

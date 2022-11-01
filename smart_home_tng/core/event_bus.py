@@ -32,23 +32,34 @@ import typing
 
 from . import helpers
 from .callback import callback, is_callback
-from .callback_type import CALLBACK_TYPE
+from .callback_type import CallbackType
 from .const import Const
 from .context import Context
 from .event import Event
 from .event_origin import EventOrigin
 from .max_length_exceeded import MaxLengthExceeded
-from .smart_home_controller import SmartHomeController
 from .smart_home_controller_error import SmartHomeControllerError
 from .smart_home_controller_job import SmartHomeControllerJob
 
 
-@typing.overload
-class _FilterableJob:
-    ...
+if not typing.TYPE_CHECKING:
 
+    class SmartHomeController:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from .smart_home_controller import SmartHomeController
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
+
+
+class _FilterableJob(typing.NamedTuple):
+    """Event listener job to be executed with optional filter."""
+
+    job: SmartHomeControllerJob[collections.abc.Awaitable[None]]
+    event_filter: typing.Callable[[Event], bool] = None
+    run_immediately: bool = False
 
 
 # pylint: disable=unused-variable
@@ -74,14 +85,16 @@ class EventBus:
     @property
     def listeners(self) -> dict[str, int]:
         """Return dictionary with events and the number of listeners."""
-        return self._loop.run_callback_threadsafe(self.async_listeners).result()
+        return helpers.run_callback_threadsafe(
+            self._loop, self.async_listeners
+        ).result()
 
     def fire(
         self,
         event_type: str,
-        event_data: dict[str, typing.Any] | None = None,
+        event_data: dict[str, typing.Any] = None,
         origin: EventOrigin = EventOrigin.LOCAL,
-        context: Context | None = None,
+        context: Context = None,
     ) -> None:
         """Fire an event."""
         helpers.run_callback_threadsafe(
@@ -92,10 +105,10 @@ class EventBus:
     def async_fire(
         self,
         event_type: str,
-        event_data: dict[str, typing.Any] | None = None,
+        event_data: dict[str, typing.Any] = None,
         origin: EventOrigin = EventOrigin.LOCAL,
-        context: Context | None = None,
-        time_fired: datetime.datetime | None = None,
+        context: Context = None,
+        time_fired: datetime.datetime = None,
     ) -> None:
         """Fire an event.
 
@@ -110,10 +123,7 @@ class EventBus:
 
         # EVENT_ASSISTANT_CLOSE should go only to this listeners
         match_all_listeners = self._listeners.get(Const.MATCH_ALL)
-        if (
-            match_all_listeners is not None
-            and event_type != Const.EVENT_ASSISTANT_CLOSE
-        ):
+        if match_all_listeners is not None and event_type != Const.EVENT_SHC_CLOSE:
             listeners = match_all_listeners + listeners
 
         event = Event(event_type, event_data, origin, time_fired, context)
@@ -143,7 +153,7 @@ class EventBus:
         self,
         event_type: str,
         listener: typing.Callable[[Event], None | collections.abc.Awaitable[None]],
-    ) -> CALLBACK_TYPE:
+    ) -> CallbackType:
         """Listen for all events or events of a specific type.
 
         To listen to all events specify the constant ``MATCH_ALL``
@@ -164,9 +174,9 @@ class EventBus:
         self,
         event_type: str,
         listener: typing.Callable[[Event], None | collections.abc.Awaitable[None]],
-        event_filter: typing.Callable[[Event], bool] | None = None,
+        event_filter: typing.Callable[[Event], bool] = None,
         run_immediately: bool = False,
-    ) -> CALLBACK_TYPE:
+    ) -> CallbackType:
         """Listen for all events or events of a specific type.
 
         To listen to all events specify the constant ``MATCH_ALL``
@@ -200,7 +210,7 @@ class EventBus:
     @callback
     def _async_listen_filterable_job(
         self, event_type: str, filterable_job: _FilterableJob
-    ) -> CALLBACK_TYPE:
+    ) -> CallbackType:
         self._listeners.setdefault(event_type, []).append(filterable_job)
 
         def remove_listener() -> None:
@@ -213,7 +223,7 @@ class EventBus:
         self,
         event_type: str,
         listener: typing.Callable[[Event], None | collections.abc.Awaitable[None]],
-    ) -> CALLBACK_TYPE:
+    ) -> CallbackType:
         """Listen once for event of a specific type.
 
         To listen to all events specify the constant ``MATCH_ALL``
@@ -236,7 +246,7 @@ class EventBus:
         self,
         event_type: str,
         listener: typing.Callable[[Event], None | collections.abc.Awaitable[None]],
-    ) -> CALLBACK_TYPE:
+    ) -> CallbackType:
         """Listen once for event of a specific type.
 
         To listen to all events specify the constant ``MATCH_ALL``
@@ -246,7 +256,7 @@ class EventBus:
 
         This method must be run in the event loop.
         """
-        filterable_job: _FilterableJob | None = None
+        filterable_job: _FilterableJob = None
 
         @callback
         def _onetime_listener(event: Event) -> None:
@@ -292,29 +302,3 @@ class EventBus:
             # KeyError is key event_type listener did not exist
             # ValueError if listener did not exist within event_type
             _LOGGER.exception(f"Unable to remove unknown job listener {filterable_job}")
-
-
-class _FilterableJob(typing.NamedTuple):
-    """Event listener job to be executed with optional filter."""
-
-    def __init__(
-        self,
-        job: SmartHomeControllerJob[None | collections.abc.Awaitable[None]],
-        event_filter: typing.Callable[[Event], bool] | None = None,
-        run_immediately: bool = False,
-    ):
-        self._job = job
-        self._event_filter = event_filter
-        self._run_immediately = run_immediately
-
-    @property
-    def job(self) -> SmartHomeControllerJob:
-        return self._job
-
-    @property
-    def event_filter(self) -> typing.Callable[[Event], bool] | None:
-        return self._event_filter
-
-    @property
-    def run_immediately(self) -> bool:
-        return self._run_immediately

@@ -31,9 +31,46 @@ from ..backports import strenum
 class Platform(strenum.LowercaseStrEnum):
     """Available entity platforms."""
 
+    APPLICATION_CREDENTIALS = enum.auto()
+    """Get ApplicationCredentials instance."""
+    CONFIG_FLOW = enum.auto()
+    """Get ConfigFlow instance."""
+    TRIGGER = enum.auto()
+    """Get TriggerProtocol instance"""
+    ACTION = enum.auto()
+    """Get ActionProtocol instance."""
+    CONDITION = enum.auto()
+    """Get ActionConditionProtocol instance."""
+
+    AUTOMATION = enum.auto()
+    BACKUP = enum.auto()
+    COUNTER = enum.auto()
+    DIAGNOSTICS = enum.auto()
+    DISCOVERY = enum.auto()
+    ENERGY = enum.auto()
+    GROUP = enum.auto()
+    INPUT_BOOLEAN = enum.auto()
+    INPUT_BUTTON = enum.auto()
+    INPUT_DATETIME = enum.auto()
+    INPUT_SELECT = enum.auto()
+    INPUT_TEXT = enum.auto()
+    INPUT_NUMBER = enum.auto()
+    LOGBOOK = enum.auto()
+    MEDIA_SOURCE = enum.auto()
+    PERSON = enum.auto()
+    RECORDER = enum.auto()
+    REPRODUCE_STATE = enum.auto()
+    SCRIPT = enum.auto()
+    SIGNIFICANT_CHANGE = enum.auto()
+    SYSTEM_HEALTH = enum.auto()
+    TIMER = enum.auto()
+    WEBHOOK = enum.auto()
+    ZONE = enum.auto()
+
     AIR_QUALITY = enum.auto()
     ALARM_CONTROL_PANEL = enum.auto()
     BINARY_SENSOR = enum.auto()
+    BLUEPRINT = enum.auto()
     BUTTON = enum.auto()
     CALENDAR = enum.auto()
     CAMERA = enum.auto()

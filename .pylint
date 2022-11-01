@@ -3,7 +3,7 @@
 # A comma-separated list of package or module names from where C extensions may
 # be loaded. Extensions are loading into the active Python interpreter and may
 # run arbitrary code.
-extension-pkg-allow-list=ciso8601
+extension-pkg-allow-list=ciso8601,lru,av
 
 # A comma-separated list of package or module names from where C extensions may
 # be loaded. Extensions are loading into the active Python interpreter and may
@@ -180,7 +180,7 @@ dummy-variables-rgx=_+$|(_[a-zA-Z0-9_]*[a-zA-Z0-9]+?$)|dummy|^ignored_|^unused_
 ignored-argument-names=_.*|^ignored_|^unused_
 
 # Tells whether we should check for unused import in __init__ files.
-init-import=yes
+init-import=no
 
 # List of qualified module names which can have objects that can redefine
 # builtins.
@@ -508,25 +508,25 @@ exclude-too-few-public-methods=
 ignored-parents=
 
 # Maximum number of arguments for function / method.
-max-args=20
+max-args=100
 
 # Maximum number of attributes for a class (see R0902).
-max-attributes=25
+max-attributes=50
 
 # Maximum number of boolean expressions in an if statement (see R0916).
-max-bool-expr=5
+max-bool-expr=10
 
 # Maximum number of branch for function / method body.
-max-branches=30
+max-branches=75
 
 # Maximum number of locals for function / method body.
-max-locals=40
+max-locals=100
 
 # Maximum number of parents for a class (see R0901).
 max-parents=10
 
 # Maximum number of public methods for a class (see R0904).
-max-public-methods=100
+max-public-methods=150
 
 # Maximum number of return / yield for function / method body.
 max-returns=15

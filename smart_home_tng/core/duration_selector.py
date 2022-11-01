@@ -28,11 +28,10 @@ import voluptuous as vol
 
 from .config_validation import ConfigValidation as cv
 from .duration_selector_config import DurationSelectorConfig
-from .selector import SELECTORS, Selector
+from .selector import Selector
 
 
 # pylint: disable=unused-variable
-@SELECTORS.register("duration")
 class DurationSelector(Selector):
     """Selector for a duration."""
 
@@ -47,7 +46,7 @@ class DurationSelector(Selector):
     def config_schema(self, config: typing.Any) -> typing.Callable:
         return DurationSelector._CONFIG_SCHEMA(config)
 
-    def __init__(self, config: DurationSelectorConfig | None = None) -> None:
+    def __init__(self, config: DurationSelectorConfig = None) -> None:
         """Instantiate a selector."""
         super().__init__("duration", config)
 

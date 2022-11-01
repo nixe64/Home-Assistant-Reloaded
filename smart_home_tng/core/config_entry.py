@@ -34,25 +34,38 @@ import weakref
 
 from . import helpers
 from .callback import callback
-from .callback_type import CALLBACK_TYPE
+from .callback_type import CallbackType
 from .config_entry_auth_failed import ConfigEntryAuthFailed
 from .config_entry_disabler import ConfigEntryDisabler
 from .config_entry_not_ready import ConfigEntryNotReady
 from .config_entry_source import ConfigEntrySource
 from .config_entry_state import ConfigEntryState
+from .config_flow import _CONFIG_HANDLERS
+from .config_flow_platform import ConfigFlowPlatform
 from .const import Const
 from .core_state import CoreState
 from .entity_registry_entry_disabler import EntityRegistryEntryDisabler
 from .event import Event
 from .integration import Integration
 from .integration_not_found import IntegrationNotFound
-from .smart_home_controller import SmartHomeController
+from .platform import Platform
+from .smart_home_controller_component import SmartHomeControllerComponent
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
 
-_SOURCE_IGNORE: typing.Final = ConfigEntrySource.IGNORE
+_SOURCE_IGNORE: typing.Final = ConfigEntrySource.IGNORE.value
 
-UPDATE_LISTENER_TYPE: typing.Final = typing.Callable[
+if not typing.TYPE_CHECKING:
+
+    class SmartHomeController:
+        pass
+
+
+if typing.TYPE_CHECKING:
+    from .smart_home_controller import SmartHomeController
+
+
+UpdateListenerType: typing.TypeAlias = typing.Callable[
     [SmartHomeController, "ConfigEntry"],
     typing.Coroutine[typing.Any, typing.Any, None],
 ]
@@ -62,9 +75,8 @@ UPDATE_LISTENER_TYPE: typing.Final = typing.Callable[
 class ConfigEntry:
     """Hold a configuration entry."""
 
-    EVENT_FLOW_DISCOVERED: typing.Final = "config_entry_discovered"
-    DISCOVERY_NOTIFICATION_ID: typing.Final = "config_entry_discovery"
-    RECONFIGURE_NOTIFICATION_ID: typing.Final = "config_entry_reconfigure"
+    EVENT_FLOW_DISCOVERED: typing.Final = "config_entry.discovered"
+    DISCOVERY_NOTIFICATION_ID: typing.Final = "config_entry.discovery"
 
     __slots__ = (
         "_entry_id",
@@ -96,13 +108,13 @@ class ConfigEntry:
         title: str,
         data: collections.abc.Mapping[str, typing.Any],
         source: str,
-        pref_disable_new_entities: bool | None = None,
-        pref_disable_polling: bool | None = None,
-        options: collections.abc.Mapping[str, typing.Any] | None = None,
-        unique_id: str | None = None,
-        entry_id: str | None = None,
+        pref_disable_new_entities: bool = None,
+        pref_disable_polling: bool = None,
+        options: collections.abc.Mapping[str, typing.Any] = None,
+        unique_id: str = None,
+        entry_id: str = None,
         state: ConfigEntryState = ConfigEntryState.NOT_LOADED,
-        disabled_by: ConfigEntryDisabler | None = None,
+        disabled_by: ConfigEntryDisabler = None,
     ) -> None:
         """Initialize a config entry."""
         # Unique id of the config entry
@@ -147,7 +159,7 @@ class ConfigEntry:
         if isinstance(disabled_by, str) and not isinstance(
             disabled_by, ConfigEntryDisabler
         ):
-            SmartHomeController.report_(
+            helpers.report(
                 "uses str for config entry disabled_by. This is deprecated and will "
                 + "stop working in Home Assistant 2022.3, it should be updated to use "
                 + "ConfigEntryDisabler instead",
@@ -164,20 +176,40 @@ class ConfigEntry:
 
         # Listeners to call on update
         self._update_listeners: list[
-            weakref.ReferenceType[UPDATE_LISTENER_TYPE] | weakref.WeakMethod
+            weakref.ReferenceType[UpdateListenerType] | weakref.WeakMethod
         ] = []
 
         # Reason why config entry is in a failed state
-        self._reason: str | None = None
+        self._reason: str = None
 
         # Function to cancel a scheduled retry
-        self._async_cancel_retry_setup: typing.Callable[[], typing.Any] | None = None
+        self._async_cancel_retry_setup: typing.Callable[[], typing.Any] = None
 
         # Hold list for functions to call on unload.
-        self._on_unload: list[CALLBACK_TYPE] | None = None
+        self._on_unload: list[CallbackType] = None
 
         # Reload lock to prevent conflicting reloads
         self._reload_lock = asyncio.Lock()
+
+    @property
+    def supports_unload(self) -> bool:
+        return self._supports_unload
+
+    @property
+    def supports_remove_device(self) -> bool:
+        return self._supports_remove_device
+
+    @property
+    def disabled_by(self) -> ConfigEntryDisabler:
+        return self._disabled_by
+
+    @property
+    def reason(self) -> str:
+        return self._reason
+
+    @property
+    def reload_lock(self) -> asyncio.Lock:
+        return self._reload_lock
 
     @property
     def entry_id(self) -> str:
@@ -192,15 +224,15 @@ class ConfigEntry:
         return self._domain
 
     @property
-    def unique_id(self) -> str | None:
+    def unique_id(self) -> str:
         return self._unique_id
 
     @property
-    def pref_disable_new_entities(self) -> bool | None:
+    def pref_disable_new_entities(self) -> bool:
         return self._pref_disable_new_entities
 
     @property
-    def pref_disable_polling(self) -> bool | None:
+    def pref_disable_polling(self) -> bool:
         return self._pref_disable_polling
 
     @property
@@ -220,20 +252,20 @@ class ConfigEntry:
         return self._title
 
     @property
-    def disabled_by(self) -> ConfigEntryDisabler | None:
-        return self._disabled_by
-
-    @property
     def update_listeners(
         self,
-    ) -> list[weakref.ReferenceType[UPDATE_LISTENER_TYPE] | weakref.WeakMethod]:
+    ) -> list[weakref.ReferenceType[UpdateListenerType] | weakref.WeakMethod]:
         return self._update_listeners
+
+    @property
+    def state(self) -> ConfigEntryState:
+        return self._state
 
     async def async_setup(
         self,
         shc: SmartHomeController,
         *,
-        integration: Integration | None = None,
+        integration: Integration = None,
         tries: int = 0,
     ) -> None:
         """Set up an entry."""
@@ -242,12 +274,7 @@ class ConfigEntry:
             return
 
         if integration is None:
-            integration = await shc.async_get_integration(self._domain)
-
-        self._supports_unload = await self.support_entry_unload(shc, self._domain)
-        self._supports_remove_device = await self.support_remove_from_device(
-            shc, self._domain
-        )
+            integration = await shc.setup.async_get_integration(self._domain)
 
         try:
             component = integration.get_component()
@@ -261,18 +288,34 @@ class ConfigEntry:
                 self._reason = "Import error"
             return
 
+        shc_component = SmartHomeControllerComponent.get_component(integration.domain)
+        if shc_component is not None:
+            self._supports_remove_device = shc_component.supports_remove_from_device
+            self._supports_unload = shc_component.supports_entry_unload
+        else:
+            self._supports_unload = await self.support_entry_unload(shc, self._domain)
+            self._supports_remove_device = await self.support_remove_from_device(
+                shc, self._domain
+            )
+
         if self._domain == integration.domain:
-            try:
-                integration.get_platform("config_flow")
-            except ImportError as err:
-                _LOGGER.error(
-                    "Error importing platform config_flow from integration "
-                    + f"{integration.domain} to set up {self._domain} "
-                    + f"configuration entry: {err}"
-                )
-                self._state = ConfigEntryState.SETUP_ERROR
-                self._reason = "Import error"
-                return
+            platform = None
+            if shc_component is not None:
+                platform = shc_component.get_platform(Platform.CONFIG_FLOW)
+                if not isinstance(platform, ConfigFlowPlatform):
+                    platform = None
+            if platform is None:
+                try:
+                    integration.get_platform("config_flow")
+                except ImportError as err:
+                    _LOGGER.error(
+                        "Error importing platform config_flow from integration "
+                        + f"{integration.domain} to set up {self._domain} "
+                        + f"configuration entry: {err}"
+                    )
+                    self._state = ConfigEntryState.SETUP_ERROR
+                    self._reason = "Import error"
+                    return
 
             # Perform migration
             if not await self.async_migrate(shc):
@@ -283,8 +326,10 @@ class ConfigEntry:
         error_reason = None
 
         try:
-            # TODO: Realize without module-functions
-            result = await component.async_setup_entry(shc, self)
+            if shc_component is not None:
+                result = await shc_component.async_setup_entry(self)
+            else:
+                result = await component.async_setup_entry(shc, self)
 
             if not isinstance(result, bool):
                 _LOGGER.error(
@@ -328,7 +373,7 @@ class ConfigEntry:
                 await self.async_setup(shc, integration=integration, tries=tries)
 
             if shc.state == CoreState.RUNNING:
-                self._async_cancel_retry_setup = shc.async_call_later(
+                self._async_cancel_retry_setup = shc.tracker.async_call_later(
                     wait_time, setup_again
                 )
             else:
@@ -367,7 +412,7 @@ class ConfigEntry:
             self._async_cancel_retry_setup = None
 
     async def async_unload(
-        self, shc: SmartHomeController, *, integration: Integration | None = None
+        self, shc: SmartHomeController, *, integration: Integration = None
     ) -> bool:
         """Unload an entry.
 
@@ -383,7 +428,7 @@ class ConfigEntry:
 
         if integration is None:
             try:
-                integration = await shc.async_get_integration(self._domain)
+                integration = await shc.setup.async_get_integration(self._domain)
             except IntegrationNotFound:
                 # The integration was likely a custom_component
                 # that was uninstalled, or an integration
@@ -406,7 +451,11 @@ class ConfigEntry:
                 self._reason = None
                 return True
 
-        supports_unload = hasattr(component, "async_unload_entry")
+        shc_component = SmartHomeControllerComponent.get_component(integration.domain)
+        if shc_component is not None:
+            supports_unload = shc_component.supports_entry_unload
+        else:
+            supports_unload = hasattr(component, "async_unload_entry")
 
         if not supports_unload:
             if integration.domain == self._domain:
@@ -415,8 +464,10 @@ class ConfigEntry:
             return False
 
         try:
-            # TODO: realize without module-functions
-            result = await component.async_unload_entry(shc, self)
+            if shc_component is not None:
+                result = await shc_component.async_unload_entry(self)
+            else:
+                result = await component.async_unload_entry(shc, self)
 
             assert isinstance(result, bool)
 
@@ -453,35 +504,45 @@ class ConfigEntry:
             return
 
         component = integration.get_component()
-        if not hasattr(component, "async_remove_entry"):
+        shc_component = SmartHomeControllerComponent.get_component(self._domain)
+        if shc_component is not None:
+            supports_remove = shc_component.supports_entry_remove
+        else:
+            supports_remove = hasattr(component, "async_remove_entry")
+        if not supports_remove:
             return
         try:
-            await component.async_remove_entry(shc, self)
+            if shc_component is not None:
+                await shc_component.async_remove_entry(self)
+            else:
+                await component.async_remove_entry(shc, self)
         except Exception:  # pylint: disable=broad-except
             _LOGGER.exception(
                 f"Error calling entry remove callback {self._title} for {integration.domain}"
             )
 
-    async def async_migrate(self, shc: SmartHomeController) -> bool:
+    async def _legacy_migrate(self, shc: SmartHomeController) -> bool:
         """Migrate an entry.
 
         Returns True if config entry is up-to-date or has been migrated.
         """
-        if (handler := shc.config_flow_handlers.get(self._domain)) is None:
+        # legacy module based implementation
+        if (handler := _CONFIG_HANDLERS.get(self._domain)) is None:
             _LOGGER.error(
                 f"Flow handler not found for entry {self._title} for {self._domain}"
             )
             return False
+
         # Handler may be a partial
         # Keep for backwards compatibility
         # https://github.com/home-assistant/core/pull/67087#discussion_r812559950
         while isinstance(handler, functools.partial):
             handler = handler.func
 
-        if self._version == handler.VERSION:
+        if self._version == handler.version:
             return True
 
-        integration = await shc.async_get_integration(self._domain)
+        integration = await shc.setup.async_get_integration(self._domain)
         component = integration.get_component()
         supports_migrate = hasattr(component, "async_migrate_entry")
         if not supports_migrate:
@@ -492,7 +553,6 @@ class ConfigEntry:
             return False
 
         try:
-            # TODO: realize without module-functions
             result = await component.async_migrate_entry(shc, self)
             if not isinstance(result, bool):
                 _LOGGER.error(
@@ -501,13 +561,62 @@ class ConfigEntry:
                 return False
             if result:
                 # pylint: disable=protected-access
-                shc.config_entries.async_schedule_save()
+                shc.config_entries._async_schedule_save()
             return result
         except Exception:  # pylint: disable=broad-except
             _LOGGER.exception(f"Error migrating entry {self._title} for {self._domain}")
             return False
 
-    def add_update_listener(self, listener: UPDATE_LISTENER_TYPE) -> CALLBACK_TYPE:
+    async def async_migrate(self, shc: SmartHomeController) -> bool:
+        """Migrate an entry.
+
+        Returns True if config entry is up-to-date or has been migrated.
+        """
+        handler_version = 0  # ungültiger default
+        handler = _CONFIG_HANDLERS.get(self._domain)
+        if isinstance(handler, ConfigFlowPlatform):
+            handler_version = handler.version
+        else:
+            comp = SmartHomeControllerComponent.get_component(self._domain)
+            if comp is None:
+                return await self._legacy_migrate(shc)
+
+        # new class based implementation
+        if handler is None:
+            platform = comp.get_platform(Platform.CONFIG_FLOW)
+            if not isinstance(platform, ConfigFlowPlatform):
+                return await self._legacy_migrate(shc)
+
+            handler_version = platform.describe_config_flow()
+
+        if self._version == handler_version:
+            return True
+
+        supports_migrate = comp.supports_migrate_entry
+
+        if not supports_migrate:
+            _LOGGER.error(
+                f"Migration handler not found for entry {self._title} for "
+                + f"{self._domain}"
+            )
+            return False
+
+        try:
+            result = await comp.async_migrate_entry(self)
+            if not isinstance(result, bool):
+                _LOGGER.error(
+                    f"{self._domain}.async_migrate_entry did not return boolean"
+                )
+                return False
+            if result:
+                # pylint: disable=protected-access
+                shc.config_entries._async_schedule_save()
+            return result
+        except Exception:  # pylint: disable=broad-except
+            _LOGGER.exception(f"Error migrating entry {self._title} for {self._domain}")
+            return False
+
+    def add_update_listener(self, listener: UpdateListenerType) -> CallbackType:
         """Listen for when entry is updated.
 
         Returns function to unlisten.
@@ -540,7 +649,7 @@ class ConfigEntry:
         }
 
     @callback
-    def async_on_unload(self, func: CALLBACK_TYPE) -> None:
+    def async_on_unload(self, func: CallbackType) -> None:
         """Add a function to call when config entry is unloaded."""
         if self._on_unload is None:
             self._on_unload = []
@@ -594,9 +703,11 @@ class ConfigEntry:
     @staticmethod
     async def support_entry_unload(shc: SmartHomeController, domain: str) -> bool:
         """Test if a domain supports entry unloading."""
-        integration = await shc.async_get_integration(domain)
+        integration = await shc.setup.async_get_integration(domain)
         component = integration.get_component()
-        # TODO: realize without module-functions
+        shc_component = SmartHomeControllerComponent.get_component(domain)
+        if shc_component is not None:
+            return shc_component.supports_entry_unload
         return hasattr(component, "async_unload_entry")
 
     @staticmethod
@@ -604,10 +715,17 @@ class ConfigEntry:
         """Test if a domain supports being removed from a device."""
         integration = await shc.async_get_integration(domain)
         component = integration.get_component()
-        # TODO: realize without module-functions
+        shc_component = SmartHomeControllerComponent.get_component(domain)
+        if shc_component is not None:
+            return shc_component.supports_remove_from_device
+
         return hasattr(component, "async_remove_config_entry_device")
 
+    @staticmethod
+    def current_entry() -> contextvars.ContextVar:
+        return _current_entry
 
-_current_entry: contextvars.ContextVar[ConfigEntry | None] = contextvars.ContextVar(
+
+_current_entry: contextvars.ContextVar[ConfigEntry] = contextvars.ContextVar(
     "current_entry", default=None
 )

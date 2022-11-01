@@ -29,5 +29,5 @@ import typing
 class UserMeta(typing.NamedTuple):
     """User metadata."""
 
-    name: str | None
+    name: str
     is_active: bool

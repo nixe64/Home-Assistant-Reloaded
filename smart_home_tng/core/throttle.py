@@ -1,5 +1,5 @@
 """
-Helper methods for various modules in Smart Home - The Next Generation.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -53,7 +53,7 @@ class Throttle:
     def __init__(
         self,
         min_time: datetime.timedelta,
-        limit_no_throttle: datetime.timedelta | None = None,
+        limit_no_throttle: datetime.timedelta = None,
     ) -> None:
         """Initialize the throttle."""
         self.min_time = min_time

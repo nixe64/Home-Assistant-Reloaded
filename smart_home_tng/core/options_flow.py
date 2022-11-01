@@ -22,6 +22,8 @@ License along with this program.  If not, see
 http://www.gnu.org/licenses/.
 """
 
+import typing
+
 from .flow_handler import FlowHandler
 
 
@@ -29,5 +31,12 @@ from .flow_handler import FlowHandler
 class OptionsFlow(FlowHandler):
     """Base class for config option flows."""
 
-    def __init__(self, handler: str):
-        super().__init__(handler)
+    def __init__(
+        self,
+        handler: str,
+        context: dict[str, typing.Any] = None,
+        data: typing.Any = None,
+        version: int = 1,
+    ):
+        super().__init__(handler, context, data, version)
+        self._init_step = "init"

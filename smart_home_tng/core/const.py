@@ -23,8 +23,13 @@ http://www.gnu.org/licenses/.
 """
 
 import collections.abc
+import functools
+import json
+import re
 import typing
+
 import aiohttp.hdrs
+from .json_encoder import JsonEncoder
 
 
 # pylint: disable=unused-variable
@@ -32,14 +37,14 @@ class Const:
     """global constants for Smart Home - The Next Generation"""
 
     MAJOR_VERSION: typing.Final = 2022
-    MINOR_VERSION: typing.Final = 6
-    PATCH_VERSION: typing.Final = "0.dev0"
+    MINOR_VERSION: typing.Final = 9
+    PATCH_VERSION: typing.Final = "4"
     __short_version__: typing.Final = f"{MAJOR_VERSION}.{MINOR_VERSION}"
     __version__: typing.Final = f"{__short_version__}.{PATCH_VERSION}"
-    REQUIRED_PYTHON_VER: typing.Final[tuple[int, int, int]] = (3, 9, 0)
-    REQUIRED_NEXT_PYTHON_VER: typing.Final[tuple[int, int, int]] = (3, 9, 0)
+    REQUIRED_PYTHON_VER: typing.Final[tuple[int, int, int]] = (3, 10, 0)
+    REQUIRED_NEXT_PYTHON_VER: typing.Final[tuple[int, int, int]] = (3, 10, 0)
     # Truthy date string triggers showing related deprecation warning messages.
-    REQUIRED_NEXT_PYTHON_HA_RELEASE: typing.Final = ""
+    REQUIRED_NEXT_PYTHON_SHC_RELEASE: typing.Final = ""
 
     # Format for platform files
     PLATFORM_FORMAT: typing.Final = "{platform}.{domain}"
@@ -63,6 +68,10 @@ class Const:
     MAX_LENGTH_STATE_DOMAIN: typing.Final = 64
     MAX_LENGTH_STATE_ENTITY_ID: typing.Final = 255
     MAX_LENGTH_STATE_STATE: typing.Final = 255
+
+    MAX_LOAD_CONCURRENTLY: typing.Final = 4
+    MAX_EXPECTED_ENTITY_IDS: typing.Final = 16384
+    SHUTDOWN_RUN_CALLBACK_THREADSAFE: typing.Final = "_shutdown_run_callback_threadsafe"
 
     # Sun events
     SUN_EVENT_SUNSET: typing.Final = "sunset"
@@ -242,6 +251,7 @@ class Const:
     CONF_SEQUENCE: typing.Final = "sequence"
     CONF_SERVICE: typing.Final = "service"
     CONF_SERVICE_DATA: typing.Final = "data"
+    CONF_SERVICE_DATA_TEMPLATE: typing.Final = "data_template"
     CONF_SERVICE_TEMPLATE: typing.Final = "service_template"
     CONF_SHOW_ON_MAP: typing.Final = "show_on_map"
     CONF_SLAVE: typing.Final = "slave"
@@ -249,7 +259,9 @@ class Const:
     CONF_SSL: typing.Final = "ssl"
     CONF_STATE: typing.Final = "state"
     CONF_STATE_TEMPLATE: typing.Final = "state_template"
+    CONF_STATES: typing.Final = "states"
     CONF_STOP: typing.Final = "stop"
+    CONF_STORED_TRACES: typing.Final = "stored_traces"
     CONF_STRUCTURE: typing.Final = "structure"
     CONF_SWITCHES: typing.Final = "switches"
     CONF_TARGET: typing.Final = "target"
@@ -285,26 +297,27 @@ class Const:
     CONF_ZONE: typing.Final = "zone"
 
     # #### EVENTS ####
-    EVENT_CALL_SERVICE: typing.Final = "call_service"
-    EVENT_COMPONENT_LOADED: typing.Final = "component_loaded"
-    EVENT_CORE_CONFIG_UPDATE: typing.Final = "core_config_updated"
-    EVENT_SHC_CLOSE: typing.Final = "smart_home_controller_close"
-    EVENT_SHC_START: typing.Final = "smart_home_controller_start"
-    EVENT_SHC_STARTED: typing.Final = "smart_home_controller_started"
-    EVENT_SHC_STOP: typing.Final = "smart_home_controller_stop"
-    EVENT_SHC_FINAL_WRITE: typing.Final = "smart_home_controller_final_write"
-    EVENT_LOGBOOK_ENTRY: typing.Final = "logbook_entry"
-    EVENT_SERVICE_REGISTERED: typing.Final = "service_registered"
-    EVENT_SERVICE_REMOVED: typing.Final = "service_removed"
-    EVENT_STATE_CHANGED: typing.Final = "state_changed"
-    EVENT_THEMES_UPDATED: typing.Final = "themes_updated"
-    EVENT_DEVICE_REGISTRY_UPDATED: typing.Final = "device_registry_updated"
-    EVENT_PERSISTENT_NOTIFICATION_CREATE: typing.Final = (
-        "create_persistent_notification"
-    )
-    EVENT_PERSISTENT_NOTIFICATION_DISMISS: typing.Final = (
-        "dismiss_persistent_notification"
-    )
+    EVENT_COLLECTION_CHANGE_ADDED: typing.Final = "collection.added"
+    EVENT_COLLECTION_CHANGE_UPDATED: typing.Final = "collection.updated"
+    EVENT_COLLECTION_CHANGE_REMOVED: typing.Final = "collection.removed"
+
+    EVENT_CALL_SERVICE: typing.Final = "service.call"
+    EVENT_COMPONENT_LOADED: typing.Final = "component.loaded"
+    EVENT_CORE_CONFIG_UPDATE: typing.Final = "core_config.updated"
+    EVENT_SHC_CLOSE: typing.Final = "smart_home_tng.close"
+    EVENT_SHC_START: typing.Final = "smart_home_tng.start"
+    EVENT_SHC_STARTED: typing.Final = "smart_home_tng.started"
+    EVENT_SHC_STOP: typing.Final = "smart_home_tng.stop"
+    EVENT_SHC_FINAL_WRITE: typing.Final = "smart_home_tng.final_write"
+    EVENT_LOGBOOK_ENTRY: typing.Final = "logbook.entry"
+    EVENT_SERVICE_REGISTERED: typing.Final = "service.registered"
+    EVENT_SERVICE_REMOVED: typing.Final = "service.removed"
+    EVENT_STATE_CHANGED: typing.Final = "state.changed"
+    EVENT_THEMES_UPDATED: typing.Final = "themes.updated"
+    EVENT_AREA_REGISTRY_UPDATED: typing.Final = "area_registry.updated"
+    EVENT_DEVICE_REGISTRY_UPDATED: typing.Final = "device_registry.updated"
+    EVENT_ENTITY_REGISTRY_UPDATED: typing.Final = "entity_registry.updated"
+    CONFIG_ENTRY_RECONFIGURE_NOTIFICATION_ID: typing.Final = "config_entry.reconfigure"
 
     # #### DEVICE CLASSES ####
     # DEVICE_CLASS_* below are deprecated as of 2021.12
@@ -339,13 +352,13 @@ class Const:
     DEVICE_CLASS_VOLTAGE: typing.Final = "voltage"
 
     # #### NextGenerationHttp Keys ####
-    KEY_AUTHENTICATED: typing.Final = "shc_authenticated"
+    KEY_AUTHENTICATED: typing.Final = "shc.authenticated"
     KEY_SHC: typing.Final = "shc"
-    KEY_TNG_USER: typing.Final = "shc_user"
-    KEY_SHC_REFRESH_TOKEN_ID: typing.Final = "shc_refresh_token_id"
-    KEY_BANNED_IPS: typing.Final = "shc_banned_ips"
-    KEY_FAILED_LOGIN_ATTEMPTS: typing.Final = "shc_failed_login_attempts"
-    KEY_LOGIN_THRESHOLD: typing.Final = "shc_login_threshold"
+    KEY_SHC_USER: typing.Final = "shc.user"
+    KEY_SHC_REFRESH_TOKEN_ID: typing.Final = "shc.refresh_token_id"
+    KEY_BANNED_IPS: typing.Final = "shc.banned_ips"
+    KEY_FAILED_LOGIN_ATTEMPTS: typing.Final = "shc.failed_login_attempts"
+    KEY_LOGIN_THRESHOLD: typing.Final = "shc.login_threshold"
 
     NOTIFICATION_ID_BAN: typing.Final = "ip-ban"
     NOTIFICATION_ID_LOGIN: typing.Final = "http-login"
@@ -353,6 +366,9 @@ class Const:
 
     IP_BANS_FILE: typing.Final = "ip_bans.yaml"
     ATTR_BANNED_AT: typing.Final = "banned_at"
+    ATTR_COMPONENT: typing.Final = "component"
+
+    SECRET_YAML: typing.Final = "secrets.yaml"
 
     # #### STATES ####
     STATE_ON: typing.Final = "on"
@@ -405,6 +421,19 @@ class Const:
     ATTR_DOMAIN: typing.Final = "domain"
     ATTR_SERVICE: typing.Final = "service"
     ATTR_SERVICE_DATA: typing.Final = "service_data"
+    ATTR_SOURCE_TYPE: typing.Final = "source_type"
+
+    # Notfify Component
+    ATTR_DATA: typing.Final = "data"
+
+    # Text to notify user of
+    ATTR_MESSAGE: typing.Final = "message"
+
+    # Target of the notification (user, device, etc)
+    ATTR_TARGET: typing.Final = "target"
+
+    # Title of notification
+    ATTR_TITLE: typing.Final = "title"
 
     # IDs
     ATTR_ID: typing.Final = "id"
@@ -456,6 +485,7 @@ class Const:
     ATTR_HW_VERSION: typing.Final = "hw_version"
     ATTR_VIA_DEVICE: typing.Final = "via_device"
 
+    ATTR_BATTERY: typing.Final = "battery"
     ATTR_BATTERY_CHARGING: typing.Final = "battery_charging"
     ATTR_BATTERY_LEVEL: typing.Final = "battery_level"
     ATTR_WAKEUP: typing.Final = "wake_up_interval"
@@ -489,13 +519,15 @@ class Const:
 
     # Accuracy of location in meters
     ATTR_GPS_ACCURACY: typing.Final = "gps_accuracy"
+    ATTR_GPS: typing.Final = "gps"
+
+    ATTR_LOCATION_NAME: typing.Final = "location_name"
 
     # If state is assumed
     ATTR_ASSUMED_STATE: typing.Final = "assumed_state"
     ATTR_STATE: typing.Final = "state"
 
     ATTR_EDITABLE: typing.Final = "editable"
-    ATTR_OPTION: typing.Final = "option"
 
     # The entity has been restored with restore state
     ATTR_RESTORED: typing.Final = "restored"
@@ -511,6 +543,13 @@ class Const:
 
     # Persons attribute
     ATTR_PERSONS: typing.Final = "persons"
+
+    ATTR_HOST_NAME: typing.Final = "host_name"
+    ATTR_IP: typing.Final = "ip"
+    ATTR_MAC: typing.Final = "mac"
+
+    # Float that represents transition time in seconds to make change.
+    ATTR_TRANSITION: typing.Final = "transition"
 
     # #### UNITS OF MEASUREMENT ####
     # Apparent power units
@@ -696,8 +735,8 @@ class Const:
     DATA_RATE_GIBIBYTES_PER_SECOND: typing.Final = "GiB/s"
 
     # #### SERVICES ####
-    SERVICE_ASSISTANT_STOP: typing.Final = "stop"
-    SERVICE_ASSISTANT_RESTART: typing.Final = "restart"
+    SERVICE_SHC_STOP: typing.Final = "stop"
+    SERVICE_SHC_RESTART: typing.Final = "restart"
 
     SERVICE_TURN_ON: typing.Final = "turn_on"
     SERVICE_TURN_OFF: typing.Final = "turn_off"
@@ -744,6 +783,12 @@ class Const:
     SERVICE_TOGGLE_COVER_TILT: typing.Final = "toggle_cover_tilt"
 
     SERVICE_SELECT_OPTION: typing.Final = "select_option"
+    SERVICE_PRESS: typing.Final = "press"
+    SERVICE_NOTIFY: typing.Final = "notify"
+    # NOTIFY Component
+    CONF_FIELDS: typing.Final = "fields"
+    # Platform specific data
+    ATTR_TITLE_DEFAULT: typing.Final = "Smart Home - The Next Generation"
 
     # #### API / REMOTE ####
     SERVER_PORT: typing.Final = 8123
@@ -822,5 +867,112 @@ class Const:
     CAST_APP_ID_HOMEASSISTANT_LOVELACE: typing.Final = "A078F6B0"
 
     # User used by Supervisor
-    HASSIO_USER_NAME: typing.Final = "Supervisor"
     SIGNAL_BOOTSTRAP_INTEGRATONS: typing.Final = "bootstrap_integrations"
+    LOGSEVERITY: typing.Final = {
+        "CRITICAL": 50,
+        "FATAL": 50,
+        "ERROR": 40,
+        "WARNING": 30,
+        "WARN": 30,
+        "INFO": 20,
+        "DEBUG": 10,
+        "NOTSET": 0,
+    }
+
+    MEDIA_SOURCE_URI_SCHEME: typing.Final = "media-source://"
+    MEDIA_SOURCE_URI_SCHEME_REGEX: typing.Final = re.compile(
+        r"^media-source:\/\/(?:(?P<domain>(?!_)[\da-z_]+(?<!_))(?:\/(?P<identifier>(?!\/).+))?)?$"
+    )
+
+    LOGBOOK_ENTRY_ICON: typing.Final = "icon"
+    LOGBOOK_ENTRY_MESSAGE: typing.Final = "message"
+    LOGBOOK_ENTRY_NAME: typing.Final = "name"
+    LOGBOOK_ENTRY_ENTITY_ID: typing.Final = "entity_id"
+    LOGBOOK_ENTRY_SOURCE: typing.Final = "source"
+    LOGBOOK_ENTRY_CONTEXT_ID: typing.Final = "context_id"
+
+    DEFAULT_STORED_TRACES: typing.Final = 5  # Stored traces per script or automation
+
+    EVENT_AUTOMATION_RELOADED: typing.Final = "automation.reloaded"
+    EVENT_AUTOMATION_TRIGGERED: typing.Final = "automation.triggered"
+    EVENT_SCRIPT_STARTED: typing.Final = "script.started"
+
+    # -------- Weather Platform Constants --------
+    ATTR_CONDITION_CLASS: typing.Final = "condition_class"
+    ATTR_CONDITION_CLEAR_NIGHT: typing.Final = "clear-night"
+    ATTR_CONDITION_CLOUDY: typing.Final = "cloudy"
+    ATTR_CONDITION_EXCEPTIONAL: typing.Final = "exceptional"
+    ATTR_CONDITION_FOG: typing.Final = "fog"
+    ATTR_CONDITION_HAIL: typing.Final = "hail"
+    ATTR_CONDITION_LIGHTNING: typing.Final = "lightning"
+    ATTR_CONDITION_LIGHTNING_RAINY: typing.Final = "lightning-rainy"
+    ATTR_CONDITION_PARTLYCLOUDY: typing.Final = "partlycloudy"
+    ATTR_CONDITION_POURING: typing.Final = "pouring"
+    ATTR_CONDITION_RAINY: typing.Final = "rainy"
+    ATTR_CONDITION_SNOWY: typing.Final = "snowy"
+    ATTR_CONDITION_SNOWY_RAINY: typing.Final = "snowy-rainy"
+    ATTR_CONDITION_SUNNY: typing.Final = "sunny"
+    ATTR_CONDITION_WINDY: typing.Final = "windy"
+    ATTR_CONDITION_WINDY_VARIANT: typing.Final = "windy-variant"
+    ATTR_FORECAST: typing.Final = "forecast"
+    ATTR_FORECAST_CONDITION: typing.Final = "condition"
+    ATTR_FORECAST_NATIVE_PRECIPITATION: typing.Final = "native_precipitation"
+    ATTR_FORECAST_PRECIPITATION: typing.Final = "precipitation"
+    ATTR_FORECAST_PRECIPITATION_PROBABILITY: typing.Final = "precipitation_probability"
+    ATTR_FORECAST_NATIVE_PRESSURE: typing.Final = "native_pressure"
+    ATTR_FORECAST_PRESSURE: typing.Final = "pressure"
+    ATTR_FORECAST_NATIVE_TEMP: typing.Final = "native_temperature"
+    ATTR_FORECAST_TEMP: typing.Final = "temperature"
+    ATTR_FORECAST_NATIVE_TEMP_LOW: typing.Final = "native_templow"
+    ATTR_FORECAST_TEMP_LOW: typing.Final = "templow"
+    ATTR_FORECAST_TIME: typing.Final = "datetime"
+    ATTR_FORECAST_WIND_BEARING: typing.Final = "wind_bearing"
+    ATTR_FORECAST_NATIVE_WIND_SPEED: typing.Final = "native_wind_speed"
+    ATTR_FORECAST_WIND_SPEED: typing.Final = "wind_speed"
+    ATTR_WEATHER_HUMIDITY: typing.Final = "humidity"
+    ATTR_WEATHER_OZONE: typing.Final = "ozone"
+    ATTR_WEATHER_PRESSURE: typing.Final = "pressure"
+    ATTR_WEATHER_PRESSURE_UNIT: typing.Final = "pressure_unit"
+    ATTR_WEATHER_TEMPERATURE: typing.Final = "temperature"
+    ATTR_WEATHER_TEMPERATURE_UNIT: typing.Final = "temperature_unit"
+    ATTR_WEATHER_VISIBILITY: typing.Final = "visibility"
+    ATTR_WEATHER_VISIBILITY_UNIT: typing.Final = "visibility_unit"
+    ATTR_WEATHER_WIND_BEARING: typing.Final = "wind_bearing"
+    ATTR_WEATHER_WIND_SPEED: typing.Final = "wind_speed"
+    ATTR_WEATHER_WIND_SPEED_UNIT: typing.Final = "wind_speed_unit"
+    ATTR_WEATHER_PRECIPITATION_UNIT: typing.Final = "precipitation_unit"
+
+    JSON_DUMP: typing.Final = functools.partial(
+        json.dumps, cls=JsonEncoder, allow_nan=False, separators=(",", ":")
+    )
+
+    MDNS_TARGET_IP: typing.Final = "224.0.0.251"
+
+    # Constants for device automations.
+    CONF_CHANGED_STATES: typing.Final = "changed_states"
+
+    # State Trigger
+    CONF_FROM: typing.Final = "from"
+    CONF_TO: typing.Final = "to"
+    CONF_NOT_FROM: typing.Final = "not_from"
+    CONF_NOT_TO: typing.Final = "not_to"
+
+    # ------- Predefined Component Domains -------
+
+    PERSISTENT_NOTIFICATION_COMPONENT_NAME: typing.Final = "persistent_notification"
+    PERSON_COMPONENT_NAME: typing.Final = "person"
+    PROXIMITY_COMPONENT_NAME: typing.Final = "proximity"
+    RECORDER_COMPONENT_NAME: typing.Final = "recorder"
+    SCENE_COMPONENT_NAME: typing.Final = "scene"
+    SCRIPT_COMPONENT_NAME: typing.Final = "script"
+    SENSOR_COMPONENT_NAME: typing.Final = "sensor"
+    SSDP_COMPONENT_NAME: typing.Final = "ssdp"
+    STREAM_COMPONENT_NAME: typing.Final = "stream"
+    SYSTEM_HEALTH_COMPONENT_NAME: typing.Final = "system_health"
+    TRACE_COMPONENT_NAME: typing.Final = "trace"
+    USB_COMPONENT_NAME: typing.Final = "usb"
+    WEATHER_COMPONENT_NAME: typing.Final = "weather"
+    WEBHOOK_COMPONENT_NAME: typing.Final = "webhook"
+    ZEROCONF_COMPONENT_NAME: typing.Final = "zeroconf"
+    ZONE_COMPONENT_NAME: typing.Final = "zone"
+    CORE_COMPONENT_NAME: typing.Final = "homeassistant"

@@ -30,8 +30,19 @@ import attr
 
 from .area import Area
 from .callback import callback
-from .smart_home_controller import SmartHomeController
+from .const import Const
 from .store import Store
+
+
+if not typing.TYPE_CHECKING:
+
+    class SmartHomeController:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from .smart_home_controller import SmartHomeController
+
 
 _STORAGE_KEY: typing.Final = "core.area_registry"
 _STORAGE_VERSION: typing.Final = 1
@@ -43,13 +54,14 @@ _UNDEFINED: typing.Final = object()
 class AreaRegistry:
     """Class to hold a registry of areas."""
 
-    EVENT_REGISTRY_UPDATED: typing.Final = "area_registry_updated"
-
     def __init__(self, shc: SmartHomeController) -> None:
         """Initialize the area registry."""
         self._shc = shc
+        self._loaded = False
         self._areas: collections.abc.MutableMapping[str, Area] = {}
-        self._store = Store(shc, _STORAGE_VERSION, _STORAGE_KEY, atomic_writes=True)
+        self._store = Store[dict[str, list[dict[str, typing.Optional[str]]]]](
+            shc, _STORAGE_VERSION, _STORAGE_KEY, atomic_writes=True
+        )
         self._normalized_name_area_idx: dict[str, str] = {}
 
     @property
@@ -57,12 +69,12 @@ class AreaRegistry:
         return self._areas
 
     @callback
-    def async_get_area(self, area_id: str) -> Area | None:
+    def async_get_area(self, area_id: str) -> Area:
         """Get area by id."""
         return self.areas.get(area_id)
 
     @callback
-    def async_get_area_by_name(self, name: str) -> Area | None:
+    def async_get_area_by_name(self, name: str) -> Area:
         """Get area by name."""
         normalized_name = self.normalize_area_name(name)
         if normalized_name not in self._normalized_name_area_idx:
@@ -82,7 +94,7 @@ class AreaRegistry:
         return self.async_create(name)
 
     @callback
-    def async_create(self, name: str, picture: str | None = None) -> Area:
+    def async_create(self, name: str, picture: str = None) -> Area:
         """Create a new area."""
         normalized_name = self.normalize_area_name(name)
 
@@ -96,7 +108,7 @@ class AreaRegistry:
         self._normalized_name_area_idx[normalized_name] = area.id
         self.async_schedule_save()
         self._shc.bus.async_fire(
-            self.EVENT_REGISTRY_UPDATED, {"action": "create", "area_id": area.id}
+            Const.EVENT_AREA_REGISTRY_UPDATED, {"action": "create", "area_id": area.id}
         )
         return area
 
@@ -113,7 +125,7 @@ class AreaRegistry:
         del self._normalized_name_area_idx[area.normalized_name]
 
         self._shc.bus.async_fire(
-            self.EVENT_REGISTRY_UPDATED, {"action": "remove", "area_id": area_id}
+            Const.EVENT_AREA_REGISTRY_UPDATED, {"action": "remove", "area_id": area_id}
         )
 
         self.async_schedule_save()
@@ -123,12 +135,12 @@ class AreaRegistry:
         self,
         area_id: str,
         name: str | object = _UNDEFINED,
-        picture: str | None | object = _UNDEFINED,
+        picture: str | object = _UNDEFINED,
     ) -> Area:
         """Update name of area."""
         updated = self._async_update(area_id, name=name, picture=picture)
         self._shc.bus.async_fire(
-            self.EVENT_REGISTRY_UPDATED, {"action": "update", "area_id": area_id}
+            Const.EVENT_AREA_REGISTRY_UPDATED, {"action": "update", "area_id": area_id}
         )
         return updated
 
@@ -137,7 +149,7 @@ class AreaRegistry:
         self,
         area_id: str,
         name: str | object = _UNDEFINED,
-        picture: str | None | object = _UNDEFINED,
+        picture: str | object = _UNDEFINED,
     ) -> Area:
         """Update name of area."""
         old = self.areas[area_id]
@@ -176,6 +188,9 @@ class AreaRegistry:
 
     async def async_load(self) -> None:
         """Load the area registry."""
+        if self._loaded:
+            return None
+        self._loaded = True
         data = await self._store.async_load()
 
         areas: collections.abc.MutableMapping[str, Area] = collections.OrderedDict()
@@ -192,7 +207,7 @@ class AreaRegistry:
                 )
                 self._normalized_name_area_idx[normalized_name] = area["id"]
 
-        self.areas = areas
+        self._areas = areas
 
     @callback
     def async_schedule_save(self) -> None:
@@ -200,7 +215,7 @@ class AreaRegistry:
         self._store.async_delay_save(self._data_to_save, _SAVE_DELAY)
 
     @callback
-    def _data_to_save(self) -> dict[str, list[dict[str, str | None]]]:
+    def _data_to_save(self) -> dict[str, list[dict[str, str]]]:
         """Return data of area registry to store in a file."""
         data = {}
 

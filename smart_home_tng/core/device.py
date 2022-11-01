@@ -22,8 +22,6 @@ License along with this program.  If not, see
 http://www.gnu.org/licenses/.
 """
 
-import attr
-
 from . import helpers
 from .device_base import DeviceBase
 from .device_registry_entry_disabler import DeviceRegistryEntryDisabler
@@ -31,25 +29,103 @@ from .device_registry_entry_type import DeviceRegistryEntryType
 
 
 # pylint: disable=unused-variable
-@attr.s(slots=True, frozen=True)
 class Device(DeviceBase):
     """Device Registry Entry."""
 
-    id: str = (attr.ib(factory=helpers.random_uuid_hex),)
-    area_id: str | None = (attr.ib(default=None),)
-    configuration_url: str | None = (attr.ib(default=None),)
-    disabled_by: DeviceRegistryEntryDisabler | None = (attr.ib(default=None),)
-    entry_type: DeviceRegistryEntryType | None = (attr.ib(default=None),)
-    manufacturer: str | None = (attr.ib(default=None),)
-    model: str | None = (attr.ib(default=None),)
-    name_by_user: str | None = (attr.ib(default=None),)
-    name: str | None = (attr.ib(default=None),)
-    suggested_area: str | None = (attr.ib(default=None),)
-    sw_version: str | None = (attr.ib(default=None),)
-    hw_version: str | None = (attr.ib(default=None),)
-    via_device_id: str | None = (attr.ib(default=None),)
-    # This value is not stored, just used to keep track of events to fire.
-    is_new: bool = (attr.ib(default=False),)
+    def __init__(
+        self,
+        device_id: str = None,
+        config_entries: set[str] = None,
+        connections: set[tuple[str, str]] = None,
+        identifiers: set[tuple[str, str]] = None,
+        area_id: str = None,
+        configuration_url: str = None,
+        disabled_by: DeviceRegistryEntryDisabler = None,
+        entry_type: DeviceRegistryEntryType = None,
+        manufacturer: str = None,
+        model: str = None,
+        name_by_user: str = None,
+        name: str = None,
+        suggested_area: str = None,
+        sw_version: str = None,
+        hw_version: str = None,
+        via_device_id: str = None,
+        is_new: bool = False,
+    ) -> None:
+        if device_id is None:
+            device_id = helpers.random_uuid_hex()
+        super().__init__(
+            device_id=device_id,
+            config_entries=config_entries,
+            connections=connections,
+            identitifiers=identifiers,
+        )
+        self._area_id = area_id
+        self._configuration_url = configuration_url
+        self._disabled_by = disabled_by
+        self._entry_type = entry_type
+        self._manufacturer = manufacturer
+        self._model = model
+        self._name_by_user = name_by_user
+        self._name = name
+        self._suggested_area = suggested_area
+        self._sw_version = sw_version
+        self._hw_version = hw_version
+        self._via_device_id = via_device_id
+        # This value is not stored, just used to keep track of events to fire.
+        self._is_new = is_new
+
+    @property
+    def area_id(self) -> str:
+        return self._area_id
+
+    @property
+    def configuration_url(self) -> str:
+        return self._configuration_url
+
+    @property
+    def disabled_by(self) -> DeviceRegistryEntryDisabler:
+        return self._disabled_by
+
+    @property
+    def entry_type(self) -> DeviceRegistryEntryType:
+        return self._entry_type
+
+    @property
+    def manufacturer(self) -> str:
+        return self._manufacturer
+
+    @property
+    def model(self) -> str:
+        return self._model
+
+    @property
+    def name_by_user(self) -> str:
+        return self._name_by_user
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def suggested_area(self) -> str:
+        return self._suggested_area
+
+    @property
+    def hw_version(self) -> str:
+        return self._hw_version
+
+    @property
+    def sw_version(self) -> str:
+        return self._sw_version
+
+    @property
+    def via_device_id(self) -> str:
+        return self._via_device_id
+
+    @property
+    def is_new(self) -> bool:
+        return self._is_new
 
     @property
     def disabled(self) -> bool:

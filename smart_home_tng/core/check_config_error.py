@@ -23,7 +23,7 @@ http://www.gnu.org/licenses/.
 """
 
 import typing
-from .config_type import CONFIG_TYPE
+from .config_type import ConfigType
 
 
 # pylint: disable=unused-variable
@@ -31,5 +31,5 @@ class CheckConfigError(typing.NamedTuple):
     """Configuration check error."""
 
     message: str
-    domain: str | None
-    config: CONFIG_TYPE | None
+    domain: str
+    config: ConfigType

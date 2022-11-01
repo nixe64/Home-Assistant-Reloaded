@@ -27,4 +27,4 @@ import typing
 
 # Custom type for recorder Queries
 # pylint: disable=unused-variable
-QUERY_TYPE: typing.Final = typing.Any
+QueryType: typing.TypeAlias = typing.Any

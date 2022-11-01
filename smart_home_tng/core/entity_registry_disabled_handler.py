@@ -27,10 +27,20 @@ import logging
 import typing
 
 from .callback import callback
-from .entity_registry import EntityRegistry
+from .const import Const
 from .entity_registry_entry_disabler import EntityRegistryEntryDisabler
 from .event import Event
-from .smart_home_controller import SmartHomeController
+
+
+if not typing.TYPE_CHECKING:
+
+    class SmartHomeController:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from .smart_home_controller import SmartHomeController
+
 
 _RELOAD_AFTER_UPDATE_DELAY: typing.Final = 30
 _LOGGER: typing.Final = logging.getLogger(__name__)
@@ -44,17 +54,18 @@ class EntityRegistryDisabledHandler:
         """Initialize the handler."""
         self._shc = shc
         self._changed: set[str] = set()
-        self._remove_call_later: typing.Callable[[], None] | None = None
+        self._remove_call_later: typing.Callable[[], None] = None
 
     @callback
     def async_setup(self) -> None:
         """Set up the disable handler."""
         self._shc.bus.async_listen(
-            EntityRegistry.EVENT_REGISTRY_UPDATED,
+            Const.EVENT_ENTITY_REGISTRY_UPDATED,
             self._handle_entry_updated,
             event_filter=self._handle_entry_updated_filter,
         )
 
+    @callback
     async def _handle_entry_updated(self, event: Event) -> None:
         """Handle entity registry entry update."""
         registry = self._shc.entity_registry
@@ -88,7 +99,7 @@ class EntityRegistryDisabledHandler:
         if self._remove_call_later:
             self._remove_call_later()
 
-        self._remove_call_later = self._shc.async_call_later(
+        self._remove_call_later = self._shc.tracker.async_call_later(
             _RELOAD_AFTER_UPDATE_DELAY, self._handle_reload
         )
 
@@ -107,8 +118,8 @@ class EntityRegistryDisabledHandler:
             *(self._shc.config_entries.async_reload(entry_id) for entry_id in to_reload)
         )
 
-    @callback
     @staticmethod
+    @callback
     def _handle_entry_updated_filter(event: Event) -> bool:
         """Handle entity registry entry update filter.
 

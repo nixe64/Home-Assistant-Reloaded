@@ -27,12 +27,23 @@ import logging
 import typing
 
 from .callback import callback
-from .smart_home_controller import SmartHomeController
 from .smart_home_controller_job import SmartHomeControllerJob
 
 
+if not typing.TYPE_CHECKING:
+
+    class SmartHomeController:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from .smart_home_controller import SmartHomeController
+
+_R_co = typing.TypeVar("_R_co", covariant=True)
+
+
 # pylint: disable=unused-variable
-class Debouncer:
+class Debouncer(typing.Generic[_R_co]):
     """Class to rate limit calls to a specific command."""
 
     def __init__(
@@ -42,7 +53,7 @@ class Debouncer:
         *,
         cooldown: float,
         immediate: bool,
-        function: typing.Callable[..., typing.Awaitable[typing.Any]] | None = None,
+        function: typing.Callable[..., typing.Awaitable[typing.Any]] = None,
     ) -> None:
         """Initialize debounce.
 
@@ -55,15 +66,15 @@ class Debouncer:
         self._function = function
         self._cooldown = cooldown
         self._immediate = immediate
-        self._timer_task: asyncio.TimerHandle | None = None
+        self._timer_task: asyncio.TimerHandle = None
         self._execute_at_end_of_timer: bool = False
         self._execute_lock = asyncio.Lock()
-        self._job: SmartHomeControllerJob | None = (
+        self._job: SmartHomeControllerJob = (
             None if function is None else SmartHomeControllerJob(function)
         )
 
     @property
-    def function(self) -> typing.Callable[..., typing.Awaitable[typing.Any]] | None:
+    def function(self) -> typing.Callable[..., typing.Awaitable[typing.Any]]:
         """Return the function being wrapped by the Debouncer."""
         return self._function
 

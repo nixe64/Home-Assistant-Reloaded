@@ -39,17 +39,17 @@ class FlowResult(typing.TypedDict, total=False):
     title: str
     data: collections.abc.Mapping[str, typing.Any]
     step_id: str
-    data_schema: vol.Schema | None
+    data_schema: vol.Schema
     extra: str
     required: bool
-    errors: dict[str, str] | None
-    description: str | None
-    description_placeholders: dict[str, typing.Any] | None
+    errors: dict[str, str]
+    description: str
+    description_placeholders: dict[str, typing.Any]
     progress_action: str
     url: str
     reason: str
     context: dict[str, typing.Any]
     result: typing.Any
-    last_step: bool | None
+    last_step: bool
     options: collections.abc.Mapping[str, typing.Any]
     menu_options: list[str] | dict[str, str]

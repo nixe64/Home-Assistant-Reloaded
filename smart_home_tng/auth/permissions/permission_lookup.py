@@ -24,7 +24,8 @@ http://www.gnu.org/licenses/.
 
 import attr
 
-from ... import core
+from ...core.device_registry import DeviceRegistry
+from ...core.entity_registry import EntityRegistry
 
 
 # pylint: disable=unused-variable
@@ -32,5 +33,5 @@ from ... import core
 class PermissionLookup:
     """Class to hold data for permission lookups."""
 
-    entity_registry: core.EntityRegistry = attr.ib()
-    device_registry: core.DeviceRegistry = attr.ib()
+    entity_registry: EntityRegistry = attr.ib()
+    device_registry: DeviceRegistry = attr.ib()

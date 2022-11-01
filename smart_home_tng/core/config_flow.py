@@ -29,50 +29,50 @@ import typing
 
 from .abort_flow import AbortFlow
 from .callback import callback
-from .config_entry import ConfigEntry
 from .config_entry_source import ConfigEntrySource
 from .config_entry_state import ConfigEntryState
 from .const import Const
 from .flow_handler import FlowHandler
 from .flow_result import FlowResult
-from .registry import Registry
-from .smart_home_controller import SmartHomeController
-from .unknown_handler import UnknownHandler
+from .persistent_notification_component import PersistentNotificationComponent
+from .ssdp import SSDP
+
+if not typing.TYPE_CHECKING:
+
+    class ConfigEntry:
+        ...
+
+    class ConfigFlowPlatform:
+        ...
+
+    class SmartHomeController:
+        ...
+
+    class DhcpServiceInfo:
+        ...
+
+    class DiscoveryInfoType:
+        ...
+
+    class MqttServiceInfo:
+        ...
+
+    class UsbServiceInfo:
+        ...
+
+    class ZeroconfServiceInfo:
+        ...
 
 
-@typing.overload
-class DhcpServiceInfo:
-    ...
-
-
-@typing.overload
-class DiscoveryInfoType:
-    ...
-
-
-@typing.overload
-class MqttServiceInfo:
-    ...
-
-
-@typing.overload
-class SsdpServiceInfo:
-    ...
-
-
-@typing.overload
-class OptionsFlow:
-    ...
-
-
-@typing.overload
-class UsbServiceInfo:
-    ...
-
-
-@typing.overload
-class ZeroconfServiceInfo:
-    ...
+if typing.TYPE_CHECKING:
+    from .config_entry import ConfigEntry
+    from .config_flow_platform import ConfigFlowPlatform
+    from .dhcp_service_info import DhcpServiceInfo
+    from .discovery_info_type import DiscoveryInfoType
+    from .mqtt_service_info import MqttServiceInfo
+    from .smart_home_controller import SmartHomeController
+    from .usb_service_info import UsbServiceInfo
+    from .zeroconf_service_info import ZeroconfServiceInfo
 
 
 # pylint: disable=unused-variable
@@ -81,45 +81,32 @@ class ConfigFlow(FlowHandler):
 
     DEFAULT_DISCOVERY_UNIQUE_ID: typing.Final = "default_discovery_unique_id"
 
-    def __init_subclass__(
-        cls,
+    def __init__(
+        self,
         shc: SmartHomeController,
-        *,
-        domain: str | None = None,
-        **kwargs: typing.Any,
-    ) -> None:
-        """Initialize a subclass, register if possible."""
-        super().__init_subclass__(**kwargs)
-        if domain is not None:
-            CONFIG_HANDLERS.register(domain)(cls)
-
-    def __init__(self, shc: SmartHomeController):
-        super().__init__("")
+        handler: str,
+        context: dict[str, typing.Any] = None,
+        data: typing.Any = None,
+        version: int = 1,
+    ):
+        super().__init__(handler, context, data, version)
         self._shc = shc
 
     @property
-    def unique_id(self) -> str | None:
+    def controller(self) -> SmartHomeController:
+        return self._shc
+
+    @property
+    def unique_id(self) -> str:
         """Return unique ID if available."""
         if not self._context:
             return None
 
         return typing.cast(typing.Optional[str], self._context.get("unique_id"))
 
-    @staticmethod
-    @callback
-    def async_get_options_flow(_config_entry: ConfigEntry) -> OptionsFlow:
-        """Get the options flow for this handler."""
-        raise UnknownHandler
-
-    @classmethod
-    @callback
-    def async_supports_options_flow(cls, _config_entry: ConfigEntry) -> bool:
-        """Return options flow support for this handler."""
-        return cls.async_get_options_flow is not ConfigFlow.async_get_options_flow
-
     @callback
     def _async_abort_entries_match(
-        self, match_dict: dict[str, typing.Any] | None = None
+        self, match_dict: dict[str, typing.Any] = None
     ) -> None:
         """Abort if current entries match all data."""
         if match_dict is None:
@@ -134,7 +121,7 @@ class ConfigFlow(FlowHandler):
     @callback
     def _abort_if_unique_id_configured(
         self,
-        updates: dict[str, typing.Any] | None = None,
+        updates: dict[str, typing.Any] = None,
         reload_on_update: bool = True,
     ) -> None:
         """Abort if the unique ID is already configured."""
@@ -165,8 +152,8 @@ class ConfigFlow(FlowHandler):
                 raise AbortFlow("already_configured")
 
     async def async_set_unique_id(
-        self, unique_id: str | None = None, *, raise_on_progress: bool = True
-    ) -> ConfigEntry | None:
+        self, unique_id: str = None, *, raise_on_progress: bool = True
+    ) -> ConfigEntry:
         """Set a unique ID for the config flow.
 
         Returns optionally existing config entry with same ID.
@@ -205,9 +192,7 @@ class ConfigFlow(FlowHandler):
         self._context["confirm_only"] = True
 
     @callback
-    def _async_current_entries(
-        self, include_ignore: bool | None = None
-    ) -> list[ConfigEntry]:
+    def _async_current_entries(self, include_ignore: bool = None) -> list[ConfigEntry]:
         """Return current entries.
 
         If the flow is user initiated, filter out ignored entries unless include_ignore is True.
@@ -228,7 +213,7 @@ class ConfigFlow(FlowHandler):
         ]
 
     @callback
-    def _async_current_ids(self, include_ignore: bool = True) -> set[str | None]:
+    def _async_current_ids(self, include_ignore: bool = True) -> set[str]:
         """Return current unique IDs."""
         return {
             entry.unique_id
@@ -261,7 +246,7 @@ class ConfigFlow(FlowHandler):
         return self.async_abort(reason="not_implemented")
 
     async def async_step_user(
-        self, _user_input: dict[str, typing.Any] | None = None
+        self, _user_input: dict[str, typing.Any] = None
     ) -> FlowResult:
         """Handle a flow initiated by the user."""
         return self.async_abort(reason="not_implemented")
@@ -299,7 +284,7 @@ class ConfigFlow(FlowHandler):
 
     @callback
     def async_abort(
-        self, *, reason: str, description_placeholders: dict | None = None
+        self, *, reason: str, description_placeholders: dict = None
     ) -> FlowResult:
         """Abort the config flow."""
         # Remove reauth notification if no reauth flows are in progress
@@ -310,10 +295,9 @@ class ConfigFlow(FlowHandler):
             )
             if ent["flow_id"] != self.flow_id
         ):
-            event_data = {"notification_id": ConfigEntry.RECONFIGURE_NOTIFICATION_ID}
-            self._shc.bus.async_fire(
-                Const.EVENT_PERSISTENT_NOTIFICATION_DISMISS, event_data
-            )
+            comp = self._shc.components.persistent_notification
+            if isinstance(comp, PersistentNotificationComponent):
+                comp.async_dismiss(Const.CONFIG_ENTRY_RECONFIGURE_NOTIFICATION_ID)
 
         return super().async_abort(
             reason=reason, description_placeholders=description_placeholders
@@ -345,7 +329,7 @@ class ConfigFlow(FlowHandler):
         """Handle a flow initialized by MQTT discovery."""
         return await self.async_step_discovery(dataclasses.asdict(discovery_info))
 
-    async def async_step_ssdp(self, discovery_info: SsdpServiceInfo) -> FlowResult:
+    async def async_step_ssdp(self, discovery_info: SSDP.ServiceInfo) -> FlowResult:
         """Handle a flow initialized by SSDP discovery."""
         return await self.async_step_discovery(dataclasses.asdict(discovery_info))
 
@@ -365,9 +349,9 @@ class ConfigFlow(FlowHandler):
         *,
         title: str,
         data: collections.abc.Mapping[str, typing.Any],
-        description: str | None = None,
-        description_placeholders: dict | None = None,
-        options: collections.abc.Mapping[str, typing.Any] | None = None,
+        description: str = None,
+        description_placeholders: dict = None,
+        options: collections.abc.Mapping[str, typing.Any] = None,
     ) -> FlowResult:
         """Finish config flow and create a config entry."""
         result = super().async_create_entry(
@@ -382,4 +366,4 @@ class ConfigFlow(FlowHandler):
         return result
 
 
-CONFIG_HANDLERS: typing.Final[Registry[str, type[ConfigFlow]]] = Registry()
+_CONFIG_HANDLERS: typing.Final = dict[str, ConfigFlowPlatform]()

@@ -1,5 +1,5 @@
 """
-Selectors for Smart Home - The Next Generation.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -31,29 +31,16 @@ import yaml
 from . import helpers
 from .registry import Registry
 
-# from homeassistant.util.yaml.dumper import represent_odict
+
 # pylint: disable=unused-variable
-
-
-@typing.overload
-class Selector:
-    pass
-
-
-SELECTORS: Registry[str, type[Selector]] = Registry()
-
-
 class Selector:
     """Base class for selectors."""
 
-    _config: typing.Any
-    _selector_type: str
-
     @abc.abstractmethod
-    def config_schema(self, config: typing.Any) -> typing.Callable:
+    def config_schema(self, config: typing.Any) -> typing.Any:
         ...
 
-    def __init__(self, selector_type: str | None, config: typing.Any = None) -> None:
+    def __init__(self, selector_type: str, config: typing.Any = None) -> None:
         """Instantiate a selector."""
         # Selectors can be empty
         if config is None:
@@ -67,7 +54,7 @@ class Selector:
         return {"selector": {self._selector_type: self._config}}
 
     @staticmethod
-    def _get_selector_class(config: typing.Any) -> type[Selector]:
+    def _get_selector_class(config: typing.Any):
         """Get selector class type."""
         if not isinstance(config, dict):
             raise vol.Invalid("Expected a dictionary")
@@ -79,13 +66,13 @@ class Selector:
 
         selector_type: str = list(config)[0]
 
-        if (selector_class := SELECTORS.get(selector_type)) is None:
+        if (selector_class := _SELECTORS.get(selector_type)) is None:
             raise vol.Invalid(f"Unknown selector type {selector_type} found")
 
         return selector_class
 
     @staticmethod
-    def selector(config: typing.Any) -> Selector:
+    def selector(config: typing.Any):
         """Instantiate a selector."""
         selector_class = Selector._get_selector_class(config)
         selector_type = list(config)[0]
@@ -98,14 +85,14 @@ class Selector:
         selector_class = Selector._get_selector_class(config)
         selector_type = list(config)[0]
 
+        selector_config = config[selector_type]
         # Selectors can be empty
-        if config[selector_type] is None:
+        if selector_config is None:
             return {selector_type: {}}
 
+        selector = selector_class(selector_config)
         return {
-            selector_type: typing.cast(
-                dict, selector_class.CONFIG_SCHEMA(config[selector_type])
-            )
+            selector_type: typing.cast(dict, selector.config_schema(selector_config))
         }
 
 
@@ -115,3 +102,5 @@ yaml.SafeDumper.add_representer(
         dumper, "tag:yaml.org,2002:map", value.serialize()
     ),
 )
+
+_SELECTORS: Registry[str, type[Selector]] = Registry()

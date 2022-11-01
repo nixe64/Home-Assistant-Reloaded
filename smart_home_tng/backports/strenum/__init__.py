@@ -51,6 +51,7 @@ class StrEnum(str, enum.Enum):
     def __str__(self):
         return str(self.value)
 
+    @staticmethod
     def _generate_next_value_(name, *_):
         return name
 
@@ -72,6 +73,7 @@ class LowercaseStrEnum(StrEnum):
 
     """
 
+    @staticmethod
     def _generate_next_value_(name, *_):
         return name.lower()
 
@@ -92,6 +94,7 @@ class UppercaseStrEnum(StrEnum):
         assert Example.MixedCase == "MIXEDCASE"
     """
 
+    @staticmethod
     def _generate_next_value_(name, *_):
         return name.upper()
 
@@ -112,6 +115,7 @@ class CamelCaseStrEnum(StrEnum):
         assert Example.MixedCase == "mixedCase"
     """
 
+    @staticmethod
     def _generate_next_value_(name, *_):
         return _name_mangler.camel(name)
 
@@ -132,6 +136,7 @@ class PascalCaseStrEnum(StrEnum):
         assert Example.MixedCase == "MixedCase"
     """
 
+    @staticmethod
     def _generate_next_value_(name, *_):
         return _name_mangler.pascal(name)
 
@@ -152,6 +157,7 @@ class KebabCaseStrEnum(StrEnum):
         assert Example.MixedCase == "mixed-case"
     """
 
+    @staticmethod
     def _generate_next_value_(name, *_):
         return _name_mangler.kebab(name)
 
@@ -172,6 +178,7 @@ class SnakeCaseStrEnum(StrEnum):
         assert Example.MixedCase == "mixed_case"
     """
 
+    @staticmethod
     def _generate_next_value_(name, *_):
         return _name_mangler.snake(name)
 
@@ -192,5 +199,6 @@ class MacroCaseStrEnum(StrEnum):
         assert Example.MixedCase == "MIXED_CASE"
     """
 
+    @staticmethod
     def _generate_next_value_(name, *_):
         return _name_mangler.macro(name)

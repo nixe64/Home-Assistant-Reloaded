@@ -6,5 +6,7 @@ rules:
         ignore: |
           .github/workflows/*
     line-length:
-        ignore: |
+        ignore: | 
           .pre-commit-config.yaml
+          notify_leaving_zone.yaml
+          motion_light.yaml

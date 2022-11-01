@@ -34,7 +34,7 @@ from ... import core
 from ..credentials import Credentials
 from ..invalid_auth_error import InvalidAuthError
 from ..user_meta import UserMeta
-from .auth_provider import AUTH_PROVIDER_SCHEMA, AUTH_PROVIDERS, AuthProvider
+from .auth_provider import AuthProvider, _AUTH_PROVIDERS
 from .login_flow import LoginFlow
 
 _CONF_ARGS: typing.Final = "args"
@@ -46,7 +46,7 @@ _DEFAULT_TITLE = "Command Line Authentication"
 
 
 # pylint: disable=unused-variable
-@AUTH_PROVIDERS.register("command_line")
+@_AUTH_PROVIDERS.register("command_line")
 class CommandLineAuthProvider(AuthProvider):
     """Auth provider validating credentials by calling a command."""
 
@@ -66,9 +66,7 @@ class CommandLineAuthProvider(AuthProvider):
     def default_title(self) -> str:
         return _DEFAULT_TITLE
 
-    async def async_login_flow(
-        self, _context: dict[str, typing.Any] | None
-    ) -> LoginFlow:
+    async def async_login_flow(self, _context: dict[str, typing.Any]) -> LoginFlow:
         """Return a flow to login."""
         return CommandLineLoginFlow(self)
 
@@ -139,7 +137,7 @@ class CommandLineLoginFlow(LoginFlow):
     """Handler for the login flow."""
 
     async def async_step_init(
-        self, user_input: dict[str, str] | None = None
+        self, user_input: dict[str, str] = None
     ) -> core.FlowResult:
         """Handle the step of the form."""
         errors = {}
@@ -170,7 +168,7 @@ class CommandLineLoginFlow(LoginFlow):
 
 
 # pylint: disable=unused-variable
-CONFIG_SCHEMA: typing.Final = AUTH_PROVIDER_SCHEMA.extend(
+CONFIG_SCHEMA: typing.Final = AuthProvider.AUTH_PROVIDER_SCHEMA.extend(
     {
         vol.Required(core.Const.CONF_COMMAND): vol.All(
             str, os.path.normpath, msg="must be an absolute path"

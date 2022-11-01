@@ -29,21 +29,43 @@ import typing
 import voluptuous as vol
 import voluptuous.humanize as vh
 
-from ... import core
+from ...core.callback import callback
+from ...core.const import Const
+from ...core.registry import Registry
 from ..auth_store import AuthStore
 from ..credentials import Credentials
 from ..refresh_token import RefreshToken
 from ..user_meta import UserMeta
 
 
-@typing.overload
-class LoginFlow:
-    ...
-
-
 _LOGGER: typing.Final = logging.getLogger(__name__)
 
 _DEFAULT_TITLE: typing.Final = "Unnamed auth provider"
+
+
+if not typing.TYPE_CHECKING:
+
+    class LoginFlow:
+        ...
+
+    class SmartHomeController:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from ...core.smart_home_controller import SmartHomeController
+    from .login_flow import LoginFlow
+
+
+_AUTH_PROVIDER_SCHEMA: typing.Final = vol.Schema(
+    {
+        vol.Required(Const.CONF_TYPE): str,
+        vol.Optional(Const.CONF_NAME): str,
+        # Specify ID if you have two auth providers for same type.
+        vol.Optional(Const.CONF_ID): str,
+    },
+    extra=vol.ALLOW_EXTRA,
+)
 
 
 # pylint: disable=unused-variable
@@ -52,7 +74,7 @@ class AuthProvider:
 
     def __init__(
         self,
-        shc: core.SmartHomeController,
+        shc: SmartHomeController,
         store: AuthStore,
         config: dict[str, typing.Any],
     ) -> None:
@@ -61,31 +83,33 @@ class AuthProvider:
         self._store = store
         self._config = config
 
+    AUTH_PROVIDER_SCHEMA: typing.Final = _AUTH_PROVIDER_SCHEMA
+
     @property
     def default_title(self) -> str:
         return _DEFAULT_TITLE
 
     @property
-    def controller(self) -> core.SmartHomeController:
+    def controller(self) -> SmartHomeController:
         return self._shc
 
     @property
-    def id(self) -> str | None:
+    def id(self) -> str:
         """Return id of the auth provider.
 
         Optional, can be None.
         """
-        return self._config.get(core.Const.CONF_ID)
+        return self._config.get(Const.CONF_ID)
 
     @property
     def type(self) -> str:
         """Return type of the provider."""
-        return self._config[core.Const.CONF_TYPE]
+        return self._config[Const.CONF_TYPE]
 
     @property
     def name(self) -> str:
         """Return the name of the auth provider."""
-        return self._config.get(core.Const.CONF_NAME, self.default_title)
+        return self._config.get(Const.CONF_NAME, self.default_title)
 
     @property
     def support_mfa(self) -> bool:
@@ -105,7 +129,7 @@ class AuthProvider:
             )
         ]
 
-    @core.callback
+    @callback
     def async_create_credentials(self, data: dict[str, str]) -> Credentials:
         """Create credentials."""
         return Credentials(
@@ -114,20 +138,18 @@ class AuthProvider:
 
     # Implement by extending class
 
-    async def async_login_flow(
-        self, _context: dict[str, typing.Any] | None
-    ) -> LoginFlow:
+    async def async_login_flow(self, _context: dict[str, typing.Any]) -> LoginFlow:
         """Return the data flow for logging in with auth provider.
 
         Auth provider should extend LoginFlow and return an instance.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     async def async_get_or_create_credentials(
         self, _flow_result: collections.abc.Mapping[str, str]
     ) -> Credentials:
         """Get credentials based on the flow result."""
-        raise NotImplementedError
+        raise NotImplementedError()
 
     async def async_user_meta_for_credentials(
         self, _credentials: Credentials
@@ -136,14 +158,14 @@ class AuthProvider:
 
         Will be used to populate info when creating a new user.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     async def async_initialize(self) -> None:
         """Initialize the auth provider."""
 
-    @core.callback
+    @callback
     def async_validate_refresh_token(
-        self, _refresh_token: RefreshToken, _remote_ip: str | None = None
+        self, _refresh_token: RefreshToken, _remote_ip: str = None
     ) -> None:
         """Verify a refresh token is still valid.
 
@@ -151,34 +173,24 @@ class AuthProvider:
         Should raise InvalidAuthError on errors.
         """
 
+    @staticmethod
+    async def from_config(
+        shc: SmartHomeController, store: AuthStore, config: dict[str, typing.Any]
+    ):
+        """Initialize an auth provider from a config."""
+        provider_name: str = config[Const.CONF_TYPE]
+        module = await shc.setup.load_auth_provider_module(provider_name)
 
-async def auth_provider_from_config(
-    shc: core.SmartHomeController, store: AuthStore, config: dict[str, typing.Any]
-) -> AuthProvider:
-    """Initialize an auth provider from a config."""
-    provider_name: str = config[core.Const.CONF_TYPE]
-    module = await shc.load_auth_provider_module(provider_name)
+        try:
+            config = module.CONFIG_SCHEMA(config)
+        except vol.Invalid as err:
+            _LOGGER.error(
+                f"Invalid configuration for auth provider {provider_name}: "
+                + f"{vh.humanize_error(config, err)}"
+            )
+            raise
 
-    try:
-        config = module.CONFIG_SCHEMA(config)
-    except vol.Invalid as err:
-        _LOGGER.error(
-            f"Invalid configuration for auth provider {provider_name}: "
-            + f"{vh.humanize_error(config, err)}"
-        )
-        raise
-
-    return AUTH_PROVIDERS[provider_name](shc, store, config)
+        return _AUTH_PROVIDERS[provider_name](shc, store, config)
 
 
-AUTH_PROVIDERS: typing.Final[core.Registry[str, type[AuthProvider]]] = core.Registry()
-
-AUTH_PROVIDER_SCHEMA: typing.Final = vol.Schema(
-    {
-        vol.Required(core.Const.CONF_TYPE): str,
-        vol.Optional(core.Const.CONF_NAME): str,
-        # Specify ID if you have two auth providers for same type.
-        vol.Optional(core.Const.CONF_ID): str,
-    },
-    extra=vol.ALLOW_EXTRA,
-)
+_AUTH_PROVIDERS: typing.Final[Registry[str, type[AuthProvider]]] = Registry()

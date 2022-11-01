@@ -29,7 +29,9 @@ import hmac
 import logging
 import typing
 
-from .. import core
+from ..core import helpers
+from ..core.callback import callback
+from ..core.store import Store
 from . import permissions as perm
 from .const import Const
 from .credentials import Credentials
@@ -47,6 +49,16 @@ _GROUP_NAME_READ_ONLY: typing.Final = "Read Only"
 _LOGGER: typing.Final = logging.getLogger(__name__)
 
 
+if not typing.TYPE_CHECKING:
+
+    class SmartHomeController:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from ..core.smart_home_controller import SmartHomeController
+
+
 # pylint: disable=unused-variable
 class AuthStore:
     """Stores authentication info.
@@ -57,13 +69,13 @@ class AuthStore:
     called that needs it.
     """
 
-    def __init__(self, shc: core.SmartHomeController) -> None:
+    def __init__(self, shc: SmartHomeController) -> None:
         """Initialize the auth store."""
         self._shc = shc
-        self._users: dict[str, User] | None = None
-        self._groups: dict[str, Group] | None = None
-        self._perm_lookup: perm.PermissionLookup | None = None
-        self._store = core.Store(
+        self._users: dict[str, User] = None
+        self._groups: dict[str, Group] = None
+        self._perm_lookup: perm.PermissionLookup = None
+        self._store = Store(
             shc, _STORAGE_VERSION, _STORAGE_KEY, private=True, atomic_writes=True
         )
         self._lock = asyncio.Lock()
@@ -76,7 +88,7 @@ class AuthStore:
 
         return list(self._groups.values())
 
-    async def async_get_group(self, group_id: str) -> Group | None:
+    async def async_get_group(self, group_id: str) -> Group:
         """Retrieve all users."""
         if self._groups is None:
             await self._async_load()
@@ -92,7 +104,7 @@ class AuthStore:
 
         return list(self._users.values())
 
-    async def async_get_user(self, user_id: str) -> User | None:
+    async def async_get_user(self, user_id: str) -> User:
         """Retrieve a user by id."""
         if self._users is None:
             await self._async_load()
@@ -102,13 +114,13 @@ class AuthStore:
 
     async def async_create_user(
         self,
-        name: str | None,
-        is_owner: bool | None = None,
-        is_active: bool | None = None,
-        system_generated: bool | None = None,
-        credentials: Credentials | None = None,
-        group_ids: list[str] | None = None,
-        local_only: bool | None = None,
+        name: str,
+        is_owner: bool = None,
+        is_active: bool = None,
+        system_generated: bool = None,
+        credentials: Credentials = None,
+        group_ids: list[str] = None,
+        local_only: bool = None,
     ) -> User:
         """Create a new user."""
         if self._users is None:
@@ -170,10 +182,10 @@ class AuthStore:
     async def async_update_user(
         self,
         user: User,
-        name: str | None = None,
-        is_active: bool | None = None,
-        group_ids: list[str] | None = None,
-        local_only: bool | None = None,
+        name: str = None,
+        is_active: bool = None,
+        group_ids: list[str] = None,
+        local_only: bool = None,
     ) -> None:
         """Update a user."""
         assert self._groups is not None
@@ -231,12 +243,12 @@ class AuthStore:
     async def async_create_refresh_token(
         self,
         user: User,
-        client_id: str | None = None,
-        client_name: str | None = None,
-        client_icon: str | None = None,
+        client_id: str = None,
+        client_name: str = None,
+        client_icon: str = None,
         token_type: str = str(TokenType.NORMAL),
         access_token_expiration: datetime.timedelta = Const.ACCESS_TOKEN_EXPIRATION,
-        credential: Credentials | None = None,
+        credential: Credentials = None,
     ) -> RefreshToken:
         """Create a new token for a user."""
         kwargs: dict[str, typing.Any] = {
@@ -268,7 +280,7 @@ class AuthStore:
                 self._async_schedule_save()
                 break
 
-    async def async_get_refresh_token(self, token_id: str) -> RefreshToken | None:
+    async def async_get_refresh_token(self, token_id: str) -> RefreshToken:
         """Get refresh token by id."""
         if self._users is None:
             await self._async_load()
@@ -281,7 +293,7 @@ class AuthStore:
 
         return None
 
-    async def async_get_refresh_token_by_token(self, token: str) -> RefreshToken | None:
+    async def async_get_refresh_token_by_token(self, token: str) -> RefreshToken:
         """Get refresh token by token."""
         if self._users is None:
             await self._async_load()
@@ -296,12 +308,12 @@ class AuthStore:
 
         return found
 
-    @core.callback
+    @callback
     def async_log_refresh_token_usage(
-        self, refresh_token: RefreshToken, remote_ip: str | None = None
+        self, refresh_token: RefreshToken, remote_ip: str = None
     ) -> None:
         """Update refresh token last used information."""
-        refresh_token.last_used_at = core.helpers.utcnow()
+        refresh_token.last_used_at = helpers.utcnow()
         refresh_token.last_used_ip = remote_ip
         self._async_schedule_save()
 
@@ -348,7 +360,7 @@ class AuthStore:
         # was added.
 
         for group_dict in data.get("groups", []):
-            policy: perm.PolicyType | None = None
+            policy: perm.PolicyType = None
 
             if group_dict["id"] == Const.GROUP_ID_ADMIN:
                 has_admin_group = True
@@ -455,7 +467,7 @@ class AuthStore:
             if "jwt_key" not in rt_dict:
                 continue
 
-            created_at = core.helpers.parse_datetime(rt_dict["created_at"])
+            created_at = helpers.parse_datetime(rt_dict["created_at"])
             if created_at is None:
                 _LOGGER.error(
                     "Ignoring refresh token %(id)s with invalid created_at "
@@ -472,7 +484,7 @@ class AuthStore:
 
             # old refresh_token don't have last_used_at (pre-0.78)
             if last_used_at_str := rt_dict.get("last_used_at"):
-                last_used_at = core.helpers.parse_datetime(last_used_at_str)
+                last_used_at = helpers.parse_datetime(last_used_at_str)
             else:
                 last_used_at = None
 
@@ -500,7 +512,7 @@ class AuthStore:
         self._groups = groups
         self._users = users
 
-    @core.callback
+    @callback
     def _async_schedule_save(self) -> None:
         """Save users."""
         if self._users is None:
@@ -508,7 +520,7 @@ class AuthStore:
 
         self._store.async_delay_save(self._data_to_save, 1)
 
-    @core.callback
+    @callback
     def _data_to_save(self) -> dict[str, list[dict[str, typing.Any]]]:
         """Return the data to store."""
         assert self._users is not None

@@ -34,7 +34,7 @@ from . import permissions as perm
 class Group:
     """A group."""
 
-    name: str | None = attr.ib()
+    name: str = attr.ib()
     policy: perm.PolicyType = attr.ib()
     id: str = attr.ib(factory=lambda: uuid.uuid4().hex)
     system_generated: bool = attr.ib(default=False)

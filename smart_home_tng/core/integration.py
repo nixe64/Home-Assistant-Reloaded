@@ -34,24 +34,22 @@ import awesomeversion as asv
 from .circular_dependency import CircularDependency
 from .integration_not_found import IntegrationNotFound
 from .manifest import Manifest
-from .smart_home_controller import SmartHomeController
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
 
+if not typing.TYPE_CHECKING:
 
-@typing.overload
-class Integration:
-    pass
+    class SmartHomeController:
+        ...
 
 
-_cache: dict[str, types.ModuleType] = {}
+if typing.TYPE_CHECKING:
+    from .smart_home_controller import SmartHomeController
 
 
 # pylint: disable=unused-variable
 class Integration:
     """An integration in Smart Home - The Next Generation."""
-
-    _MOVED_ZEROCONF_PROPS: typing.Final = ("macaddress", "model", "manufacturer")
 
     def __init__(
         self,
@@ -68,8 +66,8 @@ class Integration:
         manifest["is_built_in"] = self.is_built_in
 
         if self.dependencies:
-            self._all_dependencies_resolved: bool | None = None
-            self._all_dependencies: set[str] | None = None
+            self._all_dependencies_resolved: bool = None
+            self._all_dependencies: set[str] = None
         else:
             self._all_dependencies_resolved = True
             self._all_dependencies = set()
@@ -79,7 +77,7 @@ class Integration:
     @staticmethod
     def resolve_from_root(
         shc: SmartHomeController, root_module: types.ModuleType, domain: str
-    ) -> Integration | None:
+    ):
         """Resolve an integration from a root module."""
         for base in root_module.__path__:
             manifest_path = pathlib.Path(base) / domain / "manifest.json"
@@ -148,7 +146,7 @@ class Integration:
         return self._manifest["name"]
 
     @property
-    def disabled(self) -> str | None:
+    def disabled(self) -> str:
         """Return reason integration is disabled."""
         return self._manifest.get("disabled")
 
@@ -178,27 +176,27 @@ class Integration:
         return self._manifest.get("config_flow") or False
 
     @property
-    def documentation(self) -> str | None:
+    def documentation(self) -> str:
         """Return documentation."""
         return self._manifest.get("documentation")
 
     @property
-    def issue_tracker(self) -> str | None:
+    def issue_tracker(self) -> str:
         """Return issue tracker link."""
         return self._manifest.get("issue_tracker")
 
     @property
-    def loggers(self) -> list[str] | None:
+    def loggers(self) -> list[str]:
         """Return list of loggers used by the integration."""
         return self._manifest.get("loggers")
 
     @property
-    def quality_scale(self) -> str | None:
+    def quality_scale(self) -> str:
         """Return Integration Quality Scale."""
         return self._manifest.get("quality_scale")
 
     @property
-    def iot_class(self) -> str | None:
+    def iot_class(self) -> str:
         """Return the integration IoT Class."""
         return self._manifest.get("iot_class")
 
@@ -208,42 +206,46 @@ class Integration:
         return self._manifest.get("integration_type", "integration")
 
     @property
-    def mqtt(self) -> list[str] | None:
+    def manifest(self) -> Manifest:
+        return self._manifest.copy()
+
+    @property
+    def mqtt(self) -> list[str]:
         """Return Integration MQTT entries."""
         return self._manifest.get("mqtt")
 
     @property
-    def ssdp(self) -> list[dict[str, str]] | None:
+    def ssdp(self) -> list[dict[str, str]]:
         """Return Integration SSDP entries."""
         return self._manifest.get("ssdp")
 
     @property
-    def zeroconf(self) -> list[str | dict[str, str]] | None:
+    def zeroconf(self) -> list[str | dict[str, str]]:
         """Return Integration zeroconf entries."""
         return self._manifest.get("zeroconf")
 
     @property
-    def dhcp(self) -> list[dict[str, str | bool]] | None:
+    def dhcp(self) -> list[dict[str, str | bool]]:
         """Return Integration dhcp entries."""
         return self._manifest.get("dhcp")
 
     @property
-    def usb(self) -> list[dict[str, str]] | None:
+    def usb(self) -> list[dict[str, str]]:
         """Return Integration usb entries."""
         return self._manifest.get("usb")
 
     @property
-    def homekit(self) -> dict[str, list[str]] | None:
+    def homekit(self) -> dict[str, list[str]]:
         """Return Integration homekit entries."""
         return self._manifest.get("homekit")
 
     @property
     def is_built_in(self) -> bool:
         """Test if package is a built-in integration."""
-        return self._pkg_path.startswith(self._shc.PACKAGE_BUILTIN)
+        return self._pkg_path.startswith(self._shc.setup.PACKAGE_BUILTIN)
 
     @property
-    def version(self) -> asv.AwesomeVersion | None:
+    def version(self) -> asv.AwesomeVersion:
         """Return the version of the integration."""
         if "version" not in self._manifest:
             return None
@@ -268,7 +270,7 @@ class Integration:
             return self._all_dependencies_resolved
 
         try:
-            dependencies = await self._shc.async_component_dependencies(
+            dependencies = await self._shc.setup.async_component_dependencies(
                 self.domain, self, set(), set()
             )
             dependencies.discard(self.domain)
@@ -292,12 +294,14 @@ class Integration:
 
     def get_component(self) -> types.ModuleType:
         """Return the component."""
-        result = _cache.get(self.domain)
-        if result is not None:
-            return result
+        cache: dict[str, types.ModuleType] = self._shc.data.setdefault(
+            self._shc.setup.DATA_COMPONENTS, {}
+        )
+        if self.domain in cache:
+            return cache[self.domain]
 
         try:
-            result = importlib.import_module(self._pkg_path)
+            cache[self.domain] = importlib.import_module(self.pkg_path)
         except ImportError:
             raise
         except Exception as err:
@@ -306,33 +310,33 @@ class Integration:
             )
             raise ImportError(f"Exception importing {self._pkg_path}") from err
 
-        _cache[self.domain] = result
-        return result
+        return cache[self.domain]
 
     def get_platform(self, platform_name: str) -> types.ModuleType:
         """Return a platform for the integration."""
+        cache: dict[str, types.ModuleType] = self._shc.data.setdefault(
+            self._shc.setup.DATA_COMPONENTS, {}
+        )
         full_name = f"{self.domain}.{platform_name}"
-        result = _cache.get(full_name)
-        if result is not None:
-            return result
+        if full_name in cache:
+            return cache[full_name]
 
         try:
-            result = self.import_platform(platform_name)
+            cache[full_name] = self._import_platform(platform_name)
         except ImportError:
             raise
         except Exception as err:
             _LOGGER.exception(
-                "Unexpected exception importing platform "
-                + f"{self._pkg_path}.{platform_name}"
+                f"Unexpected exception importing platform {self._pkg_path}."
+                + f"{platform_name}"
             )
             raise ImportError(
-                f"Exception importing {self._pkg_path}.{platform_name}"
+                f"Exception importing {self.pkg_path}.{platform_name}"
             ) from err
 
-        _cache[full_name] = result
-        return result
+        return cache[full_name]
 
-    def import_platform(self, platform_name: str) -> types.ModuleType:
+    def _import_platform(self, platform_name: str) -> types.ModuleType:
         """Import the platform."""
         return importlib.import_module(f"{self._pkg_path}.{platform_name}")
 

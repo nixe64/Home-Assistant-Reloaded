@@ -1,5 +1,5 @@
 """
-Helper methods for various modules in Smart Home - The Next Generation.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -29,7 +29,7 @@ import typing
 class ResultWrapper:
     """Result wrapper class to store render result."""
 
-    def __init__(self, render_result: str | None) -> None:
+    def __init__(self, render_result: str) -> None:
         super().__init__()
         self.render_result = render_result
 
@@ -40,9 +40,7 @@ class ResultWrapper:
         class Wrapper(kls, ResultWrapper):
             """Wrapper of a kls that can store render_result."""
 
-            def __init__(
-                self, *args: typing.Any, render_result: str | None = None
-            ) -> None:
+            def __init__(self, *args: typing.Any, render_result: str = None) -> None:
                 super().__init__(*args)
                 super().__init__(render_result)
                 self.render_result = render_result

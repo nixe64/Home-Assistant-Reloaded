@@ -24,17 +24,21 @@ http://www.gnu.org/licenses/.
 
 # pylint: disable=unused-variable
 
+import collections.abc
 import typing
 
-_CallableT = typing.TypeVar("_CallableT", bound=typing.Callable[..., typing.Any])
+_CallableT = typing.TypeVar(
+    "_CallableT", bound=collections.abc.Callable[..., typing.Any]
+)
 
 
 def callback(func: _CallableT) -> _CallableT:
     """Annotation to mark method as safe to call from within the event loop."""
-    setattr(func, "_hass_callback", True)
+    setattr(func, "_smart_home_tng_callback", True)
     return func
 
 
-def is_callback(func: typing.Callable[..., typing.Any]) -> bool:
+def is_callback(func: collections.abc.Callable[..., typing.Any]) -> bool:
     """Check if function is safe to be called in the event loop."""
-    return getattr(func, "_hass_callback", False) is True
+    attr = getattr(func, "_smart_home_tng_callback", False)
+    return attr

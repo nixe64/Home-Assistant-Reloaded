@@ -1,5 +1,5 @@
 """
-Helper methods for various modules in Smart Home - The Next Generation.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -27,10 +27,9 @@ import typing
 import voluptuous as vol
 
 from .icon_selector_config import IconSelectorConfig
-from .selector import SELECTORS, Selector
+from .selector import Selector
 
 
-@SELECTORS.register("icon")
 class IconSelector(Selector):
     """Selector for an icon."""
 
@@ -42,7 +41,7 @@ class IconSelector(Selector):
     def config_schema(self, config: typing.Any) -> typing.Callable:
         return IconSelector._CONFIG_SCHEMA(config)
 
-    def __init__(self, config: IconSelectorConfig | None = None) -> None:
+    def __init__(self, config: IconSelectorConfig = None) -> None:
         """Instantiate a selector."""
         super().__init__("icon", config)
 

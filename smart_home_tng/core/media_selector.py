@@ -28,11 +28,10 @@ import voluptuous as vol
 
 from .config_validation import ConfigValidation as cv
 from .media_selector_config import MediaSelectorConfig
-from .selector import SELECTORS, Selector
+from .selector import Selector
 
 
 # pylint: disable=unused-variable
-@SELECTORS.register("media")
 class MediaSelector(Selector):
     """Selector for media."""
 
@@ -52,7 +51,7 @@ class MediaSelector(Selector):
     def config_schema(self, config: typing.Any) -> typing.Callable:
         return MediaSelector._CONFIG_SCHEMA(config)
 
-    def __init__(self, config: MediaSelectorConfig | None = None) -> None:
+    def __init__(self, config: MediaSelectorConfig = None) -> None:
         """Instantiate a selector."""
         super().__init__("media", config)
 

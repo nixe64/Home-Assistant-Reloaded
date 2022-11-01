@@ -22,15 +22,11 @@ License along with this program.  If not, see
 http://www.gnu.org/licenses/.
 """
 
-import collections.abc
 import pathlib
-import typing
-from aiohttp import web, hdrs
 
-_CACHE_TIME: typing.Final = 31 * 86400  # = 1 month
-_CACHE_HEADERS: typing.Final[collections.abc.Mapping[str, str]] = {
-    hdrs.CACHE_CONTROL: f"public, max-age={_CACHE_TIME}"
-}
+from aiohttp import web
+
+from .const import Const
 
 
 # pylint: disable=unused-variable
@@ -64,6 +60,6 @@ class CachingStaticResource(web.StaticResource):
             return web.FileResponse(
                 filepath,
                 chunk_size=self._chunk_size,
-                headers=_CACHE_HEADERS,
+                headers=Const.CACHE_HEADERS,
             )
         raise web.HTTPNotFound

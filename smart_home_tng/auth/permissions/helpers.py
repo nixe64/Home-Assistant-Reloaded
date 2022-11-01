@@ -78,7 +78,7 @@ def compile_policy(
 
     assert isinstance(policy, dict)
 
-    funcs: list[collections.abc.Callable[[str, str], bool | None]] = []
+    funcs: list[collections.abc.Callable[[str, str], bool]] = []
 
     for key, lookup_func in subcategories.items():
         lookup_value = policy.get(key)
@@ -112,10 +112,10 @@ def compile_policy(
 
 def _gen_dict_test_func(
     perm_lookup: PermissionLookup, lookup_func: LookupFunc, lookup_dict: SubCategoryDict
-) -> collections.abc.Callable[[str, str], bool | None]:
+) -> collections.abc.Callable[[str, str], bool]:
     """Generate a lookup function."""
 
-    def test_value(object_id: str, key: str) -> bool | None:
+    def test_value(object_id: str, key: str) -> bool:
         """Test if permission is allowed based on the keys."""
         schema: ValueType = lookup_func(perm_lookup, lookup_dict, object_id)
 
@@ -239,14 +239,14 @@ _ENTITY_POLICY_SCHEMA: typing.Final = vol.Any(
 
 def _lookup_domain(
     _perm_lookup: PermissionLookup, domains_dict: SubCategoryDict, entity_id: str
-) -> ValueType | None:
+) -> ValueType:
     """Look up entity permissions by domain."""
     return domains_dict.get(entity_id.split(".", 1)[0])
 
 
 def _lookup_area(
     perm_lookup: PermissionLookup, area_dict: SubCategoryDict, entity_id: str
-) -> ValueType | None:
+) -> ValueType:
     """Look up entity permissions by area."""
     entity_entry = perm_lookup.entity_registry.async_get(entity_id)
 
@@ -263,7 +263,7 @@ def _lookup_area(
 
 def _lookup_device(
     perm_lookup: PermissionLookup, devices_dict: SubCategoryDict, entity_id: str
-) -> ValueType | None:
+) -> ValueType:
     """Look up entity permissions by device."""
     entity_entry = perm_lookup.entity_registry.async_get(entity_id)
 
@@ -275,7 +275,7 @@ def _lookup_device(
 
 def _lookup_entity_id(
     _perm_lookup: PermissionLookup, entities_dict: SubCategoryDict, entity_id: str
-) -> ValueType | None:
+) -> ValueType:
     """Look up entity permission by entity id."""
     return entities_dict.get(entity_id)
 
