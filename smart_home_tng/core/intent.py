@@ -22,6 +22,7 @@ License along with this program.  If not, see
 http://www.gnu.org/licenses/.
 """
 
+import abc
 import enum
 import typing
 
@@ -32,6 +33,7 @@ from .callback import callback
 from .config_validation import ConfigValidation as _cv
 from .const import Const
 from .context import Context
+from .platform_implementation import PlatformImplementation
 from .smart_home_controller_error import SmartHomeControllerError
 
 if not typing.TYPE_CHECKING:
@@ -291,3 +293,10 @@ class Intent:
 
     class UnexpectedError(IntentError):
         """Unexpected error while handling intent."""
+
+    class Platform(PlatformImplementation):
+        """Required base class for Intent Platform implementations."""
+
+        @abc.abstractmethod
+        async def async_setup_intents(self) -> None:
+            """Setup intents."""

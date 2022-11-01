@@ -33,7 +33,9 @@ from ... import core
 
 
 _cv: typing.TypeAlias = core.ConfigValidation
+_const: typing.TypeAlias = core.Const
 _cover: typing.TypeAlias = core.Cover
+_intent: typing.TypeAlias = core.Intent
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
 
@@ -97,12 +99,13 @@ _STATE_TRIGGER_SCHEMA: typing.Final = core.DeviceAutomation.TRIGGER_BASE_SCHEMA.
 _TRIGGER_SCHEMA = vol.Any(_POSITION_TRIGGER_SCHEMA, _STATE_TRIGGER_SCHEMA)
 
 
-# pylint: disable=unused-variable
+# pylint: disable=unused-variable, too-many-ancestors
 class CoverComponent(
     core.SmartHomeControllerComponent,
     core.ActionPlatform,
     core.ConditionPlatform,
     core.GroupPlatform,
+    core.Intent.Platform,
     core.ReproduceStatePlatform,
     core.TriggerPlatform,
 ):
@@ -113,11 +116,12 @@ class CoverComponent(
         self._entity_component: core.EntityComponent = None
         self._supported_platforms = frozenset(
             [
-                core.ActionPlatform,
-                core.ConditionPlatform,
-                core.GroupPlatform,
-                core.ReproduceStatePlatform,
-                core.TriggerPlatform,
+                core.Platform.ACTION,
+                core.Platform.CONDITION,
+                core.Platform.GROUP,
+                core.Platform.INTENT,
+                core.Platform.REPRODUCE_STATE,
+                core.Platform.TRIGGER,
             ]
         )
 
@@ -451,6 +455,27 @@ class CoverComponent(
         """Describe group on off states."""
         # On means open, Off means closed
         registry.on_off_states({_cover.STATE_OPEN}, _cover.STATE_CLOSED)
+
+    # -------------------- Intent Platform ----------------------------
+
+    async def async_setup_intents(self) -> None:
+        """Set up the cover intents."""
+        self.controller.intents.register_handler(
+            _intent.ServiceHandler(
+                _cover.INTENT_OPEN_COVER,
+                self.domain,
+                _const.SERVICE_OPEN_COVER,
+                "Opened {}",
+            ),
+        )
+        self.controller.intents.register_handler(
+            _intent.ServiceHandler(
+                _cover.INTENT_CLOSE_COVER,
+                self.domain,
+                _const.SERVICE_CLOSE_COVER,
+                "Closed {}",
+            ),
+        )
 
     # ---------------- Reproduce State Platform -----------------------
 

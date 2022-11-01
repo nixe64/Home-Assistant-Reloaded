@@ -27,6 +27,7 @@ setup.cfg @nixe64
 /smart_home_tng/components/climate/ @nixe64
 /smart_home_tng/components/cloud/ @nixe64
 /smart_home_tng/components/config/ @nixe64
+/smart_home_tng/components/conversation/ @nixe64
 /smart_home_tng/components/counter/ @nixe64
 /smart_home_tng/components/cover/ @nixe64
 /smart_home_tng/components/default_config/ @nixe64
@@ -54,6 +55,7 @@ setup.cfg @nixe64
 /smart_home_tng/components/input_number/ @nixe64
 /smart_home_tng/components/input_select/ @nixe64
 /smart_home_tng/components/input_text/ @nixe64
+/smart_home_tng/components/intent/ @nixe64
 /smart_home_tng/components/light/ @nixe64
 /smart_home_tng/components/lock/ @home-assistant/core
 /smart_home_tng/components/logbook/ @nixe64
@@ -73,6 +75,7 @@ setup.cfg @nixe64
 /smart_home_tng/components/pyscript/ @nixe64
 /smart_home_tng/components/radio_browser/ @nixe64
 /smart_home_tng/components/recorder/ @nixe64
+/smart_home_tng/components/safe_mode/ @nixe64
 /smart_home_tng/components/scene/ @nixe64
 /smart_home_tng/components/script/ @home-assistant/core
 /smart_home_tng/components/search/ @nixe64
@@ -92,6 +95,7 @@ setup.cfg @nixe64
 /smart_home_tng/components/tts/ @nixe64
 /smart_home_tng/components/update/ @home-assistant/core
 /smart_home_tng/components/usb/ @nixe64
+/smart_home_tng/components/vacuum/ @nixe64
 /smart_home_tng/components/weather/ @nixe64
 /smart_home_tng/components/webhook/ @nixe64
 /smart_home_tng/components/websocket_api/ @nixe64

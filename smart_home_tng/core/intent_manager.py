@@ -93,7 +93,7 @@ class IntentManager:
 
         try:
             _LOGGER.info(f"Triggering intent handler {handler}")
-            result = await handler.async_handle(intent)
+            result = await handler.async_handle_intent(intent)
             return result
         except vol.Invalid as err:
             _LOGGER.warning(f"Received invalid slot info for {intent_type}: {err}")

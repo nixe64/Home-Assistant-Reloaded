@@ -357,6 +357,9 @@ class Cover:
     STATE_OPEN: typing.Final = Const.STATE_OPEN
     STATE_OPENING: typing.Final = Const.STATE_OPENING
 
+    INTENT_OPEN_COVER: typing.Final = "ControllerOpenCover"
+    INTENT_CLOSE_COVER: typing.Final = "ControllerCloseCover"
+
     @staticmethod
     def is_closed(shc: SmartHomeController, entity_id: str) -> bool:
         """Return if the cover is closed based on the statemachine."""

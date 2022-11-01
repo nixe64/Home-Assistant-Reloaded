@@ -103,6 +103,7 @@ from .config_type import ConfigType
 from .config_validation import ConfigValidation
 from .const import Const
 from .context import Context
+from .conversation import Conversation
 from .coordinator_entity import CoordinatorEntity
 from .core_state import CoreState
 from .cover import Cover

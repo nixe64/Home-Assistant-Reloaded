@@ -49,6 +49,7 @@ class Platform(strenum.LowercaseStrEnum):
     DISCOVERY = enum.auto()
     ENERGY = enum.auto()
     GROUP = enum.auto()
+    INTENT = enum.auto()
     INPUT_BOOLEAN = enum.auto()
     INPUT_BUTTON = enum.auto()
     INPUT_DATETIME = enum.auto()

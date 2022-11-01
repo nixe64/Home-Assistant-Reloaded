@@ -29,11 +29,12 @@ import typing
 import voluptuous as vol
 
 from ... import core
-
+from .light_intent_handler import LightIntentHandler
 
 _cv: typing.TypeAlias = core.ConfigValidation
 _light: typing.TypeAlias = core.Light
 _color: typing.TypeAlias = core.helpers.Color
+_intent: typing.TypeAlias = core.Intent
 _significant_change: typing.TypeAlias = core.SignificantChange
 _toggle: typing.TypeAlias = core.Toggle
 
@@ -62,6 +63,7 @@ class LightComponent(
     core.ActionPlatform,
     core.ConditionPlatform,
     core.GroupPlatform,
+    _intent.Platform,
     core.RecorderPlatform,
     core.ReproduceStatePlatform,
     core.SignificantChangePlatform,
@@ -76,6 +78,7 @@ class LightComponent(
                 core.Platform.ACTION,
                 core.Platform.CONDITION,
                 core.Platform.GROUP,
+                core.Platform.INTENT,
                 core.Platform.RECORDER,
                 core.Platform.REPRODUCE_STATE,
                 core.Platform.SIGNIFICANT_CHANGE,
@@ -427,6 +430,12 @@ class LightComponent(
     ) -> None:
         """Describe group on off states."""
         registry.on_off_states({core.Const.STATE_ON}, core.Const.STATE_OFF)
+
+    # ------------------------ Intent Platform ----------------------------------
+
+    async def async_setup_intents(self) -> None:
+        """Set up the light intents."""
+        self.controller.intents.register_handler(LightIntentHandler(self))
 
     # ---------------------- Recorder Platform ----------------------------------
 
