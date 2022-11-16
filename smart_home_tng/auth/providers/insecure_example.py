@@ -31,18 +31,16 @@ from ... import core
 from ..credentials import Credentials
 from ..invalid_auth_error import InvalidAuthError
 from ..user_meta import UserMeta
-from .auth_provider import AuthProvider, AUTH_PROVIDERS, AUTH_PROVIDER_SCHEMA
+from .auth_provider import AuthProvider, _AUTH_PROVIDERS
 from .login_flow import LoginFlow
 
 
 # pylint: disable=unused-variable
-@AUTH_PROVIDERS.register("insecure_example")
+@_AUTH_PROVIDERS.register("insecure_example")
 class ExampleAuthProvider(AuthProvider):
     """Example auth provider based on hardcoded usernames and passwords."""
 
-    async def async_login_flow(
-        self, _context: dict[str, typing.Any] | None
-    ) -> LoginFlow:
+    async def async_login_flow(self, _context: dict[str, typing.Any]) -> LoginFlow:
         """Return a flow to login."""
         return ExampleLoginFlow(self)
 
@@ -103,7 +101,7 @@ class ExampleLoginFlow(LoginFlow):
     """Handler for the login flow."""
 
     async def async_step_init(
-        self, user_input: dict[str, str] | None = None
+        self, user_input: dict[str, str] = None
     ) -> core.FlowResult:
         """Handle the step of the form."""
         errors = None
@@ -142,6 +140,6 @@ USER_SCHEMA = vol.Schema(
 )
 
 # pylint: disable=unused-variable
-CONFIG_SCHEMA = AUTH_PROVIDER_SCHEMA.extend(
+CONFIG_SCHEMA = AuthProvider.AUTH_PROVIDER_SCHEMA.extend(
     {vol.Required("users"): [USER_SCHEMA]}, extra=vol.PREVENT_EXTRA
 )

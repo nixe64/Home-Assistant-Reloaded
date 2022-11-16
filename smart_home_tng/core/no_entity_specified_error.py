@@ -1,5 +1,5 @@
 """
-The exceptions used by Smart Home - The Next Generation.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -21,6 +21,7 @@ You should have received a copy of the GNU General Public
 License along with this program.  If not, see
 http://www.gnu.org/licenses/.
 """
+
 
 from .smart_home_controller_error import SmartHomeControllerError
 

@@ -32,14 +32,10 @@ import pyotp
 import voluptuous as vol
 
 from ... import core
-from .multi_factor_auth_module import (
-    MULTI_FACTOR_AUTH_MODULE_SCHEMA,
-    MULTI_FACTOR_AUTH_MODULES,
-    MultiFactorAuthModule,
-)
+from .multi_factor_auth_module import MultiFactorAuthModule, _MULTI_FACTOR_AUTH_MODULES
 from .setup_flow import SetupFlow
 
-_cv = core.ConfigValidation
+_cv: typing.TypeAlias = core.ConfigValidation
 
 # pylint: disable=unused-variable
 REQUIREMENTS: typing.Final = ["pyotp>=2.6.0"]
@@ -81,8 +77,8 @@ class _NotifySetting:
 
     secret: str = attr.ib(factory=_generate_secret)  # not persistent
     counter: int = attr.ib(factory=_generate_random)  # not persistent
-    notify_service: str | None = attr.ib(default=None)
-    target: str | None = attr.ib(default=None)
+    notify_service: str = attr.ib(default=None)
+    target: str = attr.ib(default=None)
 
 
 _UsersDict = dict[str, _NotifySetting]
@@ -91,7 +87,7 @@ _UsersDict = dict[str, _NotifySetting]
 _DEFAULT_TITLE = "Notify One-Time Password"
 
 
-@MULTI_FACTOR_AUTH_MODULES.register("notify")
+@_MULTI_FACTOR_AUTH_MODULES.register("notify")
 class NotifyAuthModule(MultiFactorAuthModule):
     """Auth module send hmac-based one time password by notify service."""
 
@@ -100,8 +96,8 @@ class NotifyAuthModule(MultiFactorAuthModule):
     ) -> None:
         """Initialize the user data store."""
         super().__init__(shc, config)
-        self._user_settings: _UsersDict | None = None
-        self._user_store = core.Store(
+        self._user_settings: _UsersDict = None
+        self._user_store = core.Store[dict[str, dict[str, typing.Any]]](
             shc, _STORAGE_VERSION, _STORAGE_KEY, private=True, atomic_writes=True
         )
         self._include = config.get(core.Const.CONF_INCLUDE, [])
@@ -268,7 +264,7 @@ class NotifyAuthModule(MultiFactorAuthModule):
         )
 
     async def async_notify(
-        self, code: str, notify_service: str, target: str | None = None
+        self, code: str, notify_service: str, target: str = None
     ) -> None:
         """Send code by notify service."""
         data = {"message": self._message_template.format(code)}
@@ -293,13 +289,13 @@ class NotifySetupFlow(SetupFlow):
         # to fix typing complaint
         self._auth_module: NotifyAuthModule = auth_module
         self._available_notify_services = available_notify_services
-        self._secret: str | None = None
-        self._count: int | None = None
-        self._notify_service: str | None = None
-        self._target: str | None = None
+        self._secret: str = None
+        self._count: int = None
+        self._notify_service: str = None
+        self._target: str = None
 
     async def async_step_init(
-        self, user_input: dict[str, str] | None = None
+        self, user_input: dict[str, str] = None
     ) -> core.FlowResult:
         """Let user select available notify services."""
         errors: dict[str, str] = {}
@@ -325,7 +321,7 @@ class NotifySetupFlow(SetupFlow):
         )
 
     async def async_step_setup(
-        self, user_input: dict[str, str] | None = None
+        self, user_input: dict[str, str] = None
     ) -> core.FlowResult:
         """Verify user can receive one-time password."""
         errors: dict[str, str] = {}
@@ -367,7 +363,7 @@ class NotifySetupFlow(SetupFlow):
 
 
 # pylint: disable=unused-variable
-CONFIG_SCHEMA = MULTI_FACTOR_AUTH_MODULE_SCHEMA.extend(
+CONFIG_SCHEMA = MultiFactorAuthModule.MODULE_SCHEMA.extend(
     {
         vol.Optional(core.Const.CONF_INCLUDE): vol.All(_cv.ensure_list, [_cv.string]),
         vol.Optional(core.Const.CONF_EXCLUDE): vol.All(_cv.ensure_list, [_cv.string]),

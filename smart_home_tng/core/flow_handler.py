@@ -44,26 +44,30 @@ class FlowHandler:
 
     def __init__(
         self,
-        handler: str,
-        context: dict[str, typing.Any] | None = None,
+        handler: typing.Any,
+        context: dict[str, typing.Any] = None,
         data: typing.Any = None,
         version: int = 1,
     ):
 
         # Set by flow manager
-        self._cur_step: dict[str, typing.Any] | None = None
+        self._cur_step: dict[str, typing.Any] = None
         # While not purely typed, it makes typehinting more useful for us
         # and removes the need for constant None checks or asserts.
         self._flow_id: str = helpers.random_uuid_hex()
-        self._handler: str = handler
+        self._handler = handler
         # Ensure the attribute has a subscriptable, but immutable, default value.
         if context is None:
             self._context: dict[str, typing.Any] = types.MappingProxyType({})
         else:
             self._context = context
 
-        # Set by _async_create_flow callback
-        self._init_step = "init"
+        init_step = self.context.get("source", None)
+        if init_step is not None:
+            self._init_step = str(init_step)
+        else:
+            # Set by _async_create_flow callback
+            self._init_step = "init"
 
         # The initial data that was used to start the flow
         self._init_data: typing.Any = data
@@ -80,15 +84,20 @@ class FlowHandler:
         return self._flow_id
 
     @property
-    def handler(self) -> str:
+    def handler(self) -> typing.Any:
         return self._handler
 
     @property
     def init_data(self) -> typing.Any:
         return self._init_data
 
+    @init_data.setter
+    def init_data(self, value: typing.Any) -> None:
+        if self._init_data is None:
+            self._init_data = value
+
     @property
-    def cur_step(self) -> dict[str, typing.Any] | None:
+    def cur_step(self) -> dict[str, typing.Any]:
         return self._cur_step
 
     @property
@@ -99,8 +108,13 @@ class FlowHandler:
     def init_step(self) -> str:
         return self._init_step
 
+    @init_step.setter
+    def init_step(self, value: str) -> None:
+        if self._init_step == "init":
+            self._init_step = value
+
     @property
-    def source(self) -> str | None:
+    def source(self) -> str:
         """Source that initialized the flow."""
         return self._context.get("source", None)
 
@@ -117,10 +131,10 @@ class FlowHandler:
         self,
         *,
         step_id: str,
-        data_schema: vol.Schema | None = None,
-        errors: dict[str, str] | None = None,
-        description_placeholders: dict[str, typing.Any] | None = None,
-        last_step: bool | None = None,
+        data_schema: vol.Schema = None,
+        errors: dict[str, str] = None,
+        description_placeholders: dict[str, typing.Any] = None,
+        last_step: bool = None,
     ) -> FlowResult:
         """Return the definition of a form to gather user input."""
         return {
@@ -140,8 +154,8 @@ class FlowHandler:
         *,
         title: str,
         data: collections.abc.Mapping[str, typing.Any],
-        description: str | None = None,
-        description_placeholders: dict | None = None,
+        description: str = None,
+        description_placeholders: dict = None,
     ) -> FlowResult:
         """Finish config flow and create a config entry."""
         return {
@@ -157,7 +171,7 @@ class FlowHandler:
 
     @callback
     def async_abort(
-        self, *, reason: str, description_placeholders: dict | None = None
+        self, *, reason: str, description_placeholders: dict = None
     ) -> FlowResult:
         """Abort the config flow."""
         return self.create_abort_data(reason, description_placeholders)
@@ -166,7 +180,7 @@ class FlowHandler:
     def create_abort_data(
         self,
         reason: str,
-        description_placeholders: dict | None = None,
+        description_placeholders: dict = None,
     ) -> FlowResult:
         """Return the definition of an external step for the user to take."""
         return {
@@ -179,7 +193,7 @@ class FlowHandler:
 
     @callback
     def async_external_step(
-        self, *, step_id: str, url: str, description_placeholders: dict | None = None
+        self, *, step_id: str, url: str, description_placeholders: dict = None
     ) -> FlowResult:
         """Return the definition of an external step for the user to take."""
         return {
@@ -207,7 +221,7 @@ class FlowHandler:
         *,
         step_id: str,
         progress_action: str,
-        description_placeholders: dict | None = None,
+        description_placeholders: dict = None,
     ) -> FlowResult:
         """Show a progress message to the user, without user input allowed."""
         return {
@@ -235,7 +249,7 @@ class FlowHandler:
         *,
         step_id: str,
         menu_options: list[str] | dict[str, str],
-        description_placeholders: dict | None = None,
+        description_placeholders: dict = None,
     ) -> FlowResult:
         """Show a navigation menu to the user.
 

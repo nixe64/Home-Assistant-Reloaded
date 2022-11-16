@@ -1,5 +1,5 @@
 """
-Helper methods for various modules in Smart Home - The Next Generation.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -27,10 +27,9 @@ import voluptuous as vol
 
 from .attribute_selector_config import AttributeSelectorConfig
 from .config_validation import ConfigValidation as cv
-from .selector import Selector, SELECTORS
+from .selector import Selector
 
 
-@SELECTORS.register("attribute")
 class AttributeSelector(Selector):
     """Selector for an entity attribute."""
 

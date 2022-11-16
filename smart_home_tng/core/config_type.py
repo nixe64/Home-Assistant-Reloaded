@@ -25,4 +25,4 @@ http://www.gnu.org/licenses/.
 import typing
 
 # pylint: disable=unused-variable
-CONFIG_TYPE: typing.Final = dict[str, typing.Any]
+ConfigType: typing.TypeAlias = dict[str, typing.Any]

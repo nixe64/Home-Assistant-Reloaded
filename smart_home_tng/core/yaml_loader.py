@@ -1,5 +1,5 @@
 """
-Helper methods for various modules in Smart Home - The Next Generation.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -31,27 +31,32 @@ import typing
 import yaml
 
 from . import helpers
+from .const import Const
 from .input import Input
-from .json_type import JSON_TYPE
+from .json_type import JsonType
 from .node_list_class import NodeListClass
 from .node_str_class import NodeStrClass
-from .smart_home_controller import SmartHomeController
 from .smart_home_controller_error import SmartHomeControllerError
+from .undefined_substitution import UndefinedSubstitution
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
 
+
+if not typing.TYPE_CHECKING:
+
+    class Secrets:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from .secrets import Secrets
+
+
 # pylint: disable=unused-variable
-
-
-@typing.overload
-class Secrets:
-    ...
-
-
 class YamlLoader(yaml.SafeLoader):
     """Loader class that keeps track of line numbers."""
 
-    def __init__(self, stream: typing.Any, secrets: Secrets | None = None) -> None:
+    def __init__(self, stream: typing.Any, secrets: Secrets = None) -> None:
         """Initialize a safe line loader."""
         super().__init__(stream)
         self._secrets = secrets
@@ -64,7 +69,7 @@ class YamlLoader(yaml.SafeLoader):
         return node
 
     @staticmethod
-    def load_yaml(fname: str, secrets: Secrets | None = None) -> JSON_TYPE:
+    def load_yaml(fname: str, secrets: Secrets = None) -> JsonType:
         """Load a YAML file."""
         try:
             with open(fname, encoding="utf-8") as conf_file:
@@ -74,9 +79,7 @@ class YamlLoader(yaml.SafeLoader):
             raise SmartHomeControllerError(exc) from exc
 
     @staticmethod
-    def parse_yaml(
-        content: str | typing.TextIO, secrets: Secrets | None = None
-    ) -> JSON_TYPE:
+    def parse_yaml(content: str | typing.TextIO, secrets: Secrets = None) -> JsonType:
         """Load a YAML file."""
         try:
             # If configuration file is empty YAML returns None
@@ -101,7 +104,7 @@ class YamlLoader(yaml.SafeLoader):
         setattr(obj, "__line__", node.start_mark.line)
         return obj
 
-    def _include_yaml(self, node: yaml.nodes.Node) -> JSON_TYPE:
+    def _include_yaml(self, node: yaml.nodes.Node) -> JsonType:
         """Load another YAML file and embeds it using the !include tag.
 
         Example:
@@ -139,7 +142,7 @@ class YamlLoader(yaml.SafeLoader):
         loc = os.path.join(os.path.dirname(self.name), node.value)
         for fname in YamlLoader._find_files(loc, "*.yaml"):
             filename = os.path.splitext(os.path.basename(fname))[0]
-            if os.path.basename(fname) == SmartHomeController.SECRET_YAML:
+            if os.path.basename(fname) == Const.SECRET_YAML:
                 continue
             mapping[filename] = YamlLoader.load_yaml(fname, self._secrets)
         return self._add_reference(mapping, node)
@@ -151,28 +154,28 @@ class YamlLoader(yaml.SafeLoader):
         mapping: collections.OrderedDict = collections.OrderedDict()
         loc = os.path.join(os.path.dirname(self.name), node.value)
         for fname in YamlLoader._find_files(loc, "*.yaml"):
-            if os.path.basename(fname) == SmartHomeController.SECRET_YAML:
+            if os.path.basename(fname) == Const.SECRET_YAML:
                 continue
             loaded_yaml = YamlLoader.load_yaml(fname, self._secrets)
             if isinstance(loaded_yaml, dict):
                 mapping.update(loaded_yaml)
         return self._add_reference(mapping, node)
 
-    def _include_dir_list_yaml(self, node: yaml.nodes.Node) -> list[JSON_TYPE]:
+    def _include_dir_list_yaml(self, node: yaml.nodes.Node) -> list[JsonType]:
         """Load multiple files from directory as a list."""
         loc = os.path.join(os.path.dirname(self.name), node.value)
         return [
             YamlLoader.load_yaml(f, self._secrets)
             for f in YamlLoader._find_files(loc, "*.yaml")
-            if os.path.basename(f) != SmartHomeController.SECRET_YAML
+            if os.path.basename(f) != Const.SECRET_YAML
         ]
 
-    def _include_dir_merge_list_yaml(self, node: yaml.nodes.Node) -> JSON_TYPE:
+    def _include_dir_merge_list_yaml(self, node: yaml.nodes.Node) -> JsonType:
         """Load multiple files from directory as a merged list."""
         loc: str = os.path.join(os.path.dirname(self.name), node.value)
-        merged_list: list[JSON_TYPE] = []
+        merged_list: list[JsonType] = []
         for fname in YamlLoader._find_files(loc, "*.yaml"):
-            if os.path.basename(fname) == SmartHomeController.SECRET_YAML:
+            if os.path.basename(fname) == Const.SECRET_YAML:
                 continue
             loaded_yaml = YamlLoader.load_yaml(fname, self._secrets)
             if isinstance(loaded_yaml, list):
@@ -207,7 +210,7 @@ class YamlLoader(yaml.SafeLoader):
 
         return self._add_reference(collections.OrderedDict(nodes), node)
 
-    def _construct_seq(self, node: yaml.nodes.Node) -> JSON_TYPE:
+    def _construct_seq(self, node: yaml.nodes.Node) -> JsonType:
         """Add line number and file name to Load YAML sequence."""
         (obj,) = self.construct_yaml_seq(node)
         return self._add_reference(obj, node)
@@ -224,7 +227,7 @@ class YamlLoader(yaml.SafeLoader):
         _LOGGER.error(f"Environment variable {node.value} not defined")
         raise SmartHomeControllerError(node.value)
 
-    def _secret_yaml(self, node: yaml.nodes.Node) -> JSON_TYPE:
+    def _secret_yaml(self, node: yaml.nodes.Node) -> JsonType:
         """Load secrets and embed it into the configuration YAML."""
         if self._secrets is None:
             raise SmartHomeControllerError("Secrets not supported in this YAML file")
@@ -254,6 +257,49 @@ class YamlLoader(yaml.SafeLoader):
             "!include_dir_merge_named", YamlLoader._include_dir_merge_named_yaml
         )
         YamlLoader.add_constructor("!input", Input.from_node)
+
+    @staticmethod
+    def substitute(obj: typing.Any, substitutions: dict[str, typing.Any]) -> typing.Any:
+        """Substitute values."""
+        if isinstance(obj, Input):
+            if obj.name not in substitutions:
+                raise UndefinedSubstitution(obj.name)
+            return substitutions[obj.name]
+
+        if isinstance(obj, list):
+            return [YamlLoader.substitute(val, substitutions) for val in obj]
+
+        if isinstance(obj, dict):
+            return {
+                key: YamlLoader.substitute(val, substitutions)
+                for key, val in obj.items()
+            }
+
+        return obj
+
+    @staticmethod
+    def extract_inputs(obj: typing.Any) -> set[str]:
+        """Extract input from a structure."""
+        found: set[str] = set()
+        _extract_inputs(obj, found)
+        return found
+
+
+def _extract_inputs(obj: typing.Any, found: set[str]) -> None:
+    """Extract input from a structure."""
+    if isinstance(obj, Input):
+        found.add(obj.name)
+        return
+
+    if isinstance(obj, list):
+        for val in obj:
+            _extract_inputs(val, found)
+        return
+
+    if isinstance(obj, dict):
+        for val in obj.values():
+            _extract_inputs(val, found)
+        return
 
 
 helpers.block_async_io()

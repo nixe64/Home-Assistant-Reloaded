@@ -28,7 +28,8 @@ import uuid
 
 import attr
 
-from .. import core
+from ..core import helpers
+from ..core.const import Const
 from .credentials import Credentials
 from .token_type import TokenType
 from .user import User
@@ -40,10 +41,10 @@ class RefreshToken:
     """RefreshToken for a user to grant new access tokens."""
 
     user: User = attr.ib()
-    client_id: str | None = attr.ib()
+    client_id: str = attr.ib()
     access_token_expiration: datetime.timedelta = attr.ib()
-    client_name: str | None = attr.ib(default=None)
-    client_icon: str | None = attr.ib(default=None)
+    client_name: str = attr.ib(default=None)
+    client_icon: str = attr.ib(default=None)
     token_type: str = attr.ib(
         default=TokenType.NORMAL,
         validator=attr.validators.in_(
@@ -51,13 +52,13 @@ class RefreshToken:
         ),
     )
     id: str = attr.ib(factory=lambda: uuid.uuid4().hex)
-    created_at: datetime = attr.ib(factory=core.helpers.utcnow)
+    created_at: datetime = attr.ib(factory=helpers.utcnow)
     token: str = attr.ib(factory=lambda: secrets.token_hex(64))
     jwt_key: str = attr.ib(factory=lambda: secrets.token_hex(64))
 
-    last_used_at: datetime.datetime | None = attr.ib(default=None)
-    last_used_ip: str | None = attr.ib(default=None)
+    last_used_at: datetime.datetime = attr.ib(default=None)
+    last_used_ip: str = attr.ib(default=None)
 
-    credential: Credentials | None = attr.ib(default=None)
+    credential: Credentials = attr.ib(default=None)
 
-    version: str | None = attr.ib(default=core.Const.__version__)
+    version: str = attr.ib(default=Const.__version__)

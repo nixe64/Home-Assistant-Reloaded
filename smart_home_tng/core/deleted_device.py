@@ -22,18 +22,28 @@ License along with this program.  If not, see
 http://www.gnu.org/licenses/.
 """
 
-import attr
-
 from .device import Device
 from .device_base import DeviceBase
 
 
 # pylint: disable=unused-variable
-@attr.s(slots=True, frozen=True)
 class DeletedDevice(DeviceBase):
     """Base class for device, will be used for deleted devices."""
 
-    orphaned_timestamp: float | None = (attr.ib(),)
+    def __init__(
+        self,
+        device_id: str,
+        config_entries: set[str] = None,
+        connections: set[tuple[str, str]] = None,
+        identifiers: set[tuple[str, str]] = None,
+        orphaned_timestamp: float = None,
+    ) -> None:
+        super().__init__(device_id, config_entries, connections, identifiers)
+        self._orphaned_timestamp = orphaned_timestamp
+
+    @property
+    def orphaned_timestamp(self) -> float:
+        return self._orphaned_timestamp
 
     def to_device_entry(
         self,
@@ -46,6 +56,6 @@ class DeletedDevice(DeviceBase):
             config_entries={config_entry_id},
             connections=self.connections & connections,
             identifiers=self.identifiers & identifiers,
-            id=self.id,
+            device_id=self.id,
             is_new=True,
         )

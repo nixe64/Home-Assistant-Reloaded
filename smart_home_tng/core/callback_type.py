@@ -24,4 +24,4 @@ http://www.gnu.org/licenses/.
 import typing
 
 # pylint: disable=unused-variable
-CALLBACK_TYPE: typing.Final = typing.Callable[[], None]
+CallbackType: typing.TypeAlias = typing.Callable[[], None]

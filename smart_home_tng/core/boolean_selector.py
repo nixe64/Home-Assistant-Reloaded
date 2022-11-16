@@ -1,5 +1,5 @@
 """
-Helper methods for various modules in Smart Home - The Next Generation.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -27,11 +27,10 @@ import typing
 import voluptuous as vol
 
 from .boolean_selector_config import BooleanSelectorConfig
-from .selector import SELECTORS, Selector
+from .selector import Selector
 
 
 # pylint: disable=unused-variable
-@SELECTORS.register("boolean")
 class BooleanSelector(Selector):
     """Selector of a boolean value."""
 
@@ -40,7 +39,7 @@ class BooleanSelector(Selector):
     def config_schema(self, config: typing.Any) -> typing.Callable:
         return BooleanSelector._CONFIG_SCHEMA(config)
 
-    def __init__(self, config: BooleanSelectorConfig | None = None) -> None:
+    def __init__(self, config: BooleanSelectorConfig = None) -> None:
         """Instantiate a selector."""
         super().__init__("boolean", config)
 

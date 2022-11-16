@@ -25,13 +25,7 @@ http://www.gnu.org/licenses/.
 # pylint: disable=unused-variable
 
 import dataclasses
-import typing
 import yaml
-
-
-@typing.overload
-class Input:
-    ...
 
 
 @dataclasses.dataclass(frozen=True)
@@ -41,6 +35,6 @@ class Input:
     name: str
 
     @classmethod
-    def from_node(cls, _loader: yaml.Loader, node: yaml.nodes.Node) -> Input:
+    def from_node(cls, _loader: yaml.Loader, node: yaml.nodes.Node):
         """Create a new placeholder from a node."""
         return cls(node.value)

@@ -37,9 +37,9 @@ class EntityValues:
 
     def __init__(
         self,
-        exact: dict[str, dict[str, str]] | None = None,
-        domain: dict[str, dict[str, str]] | None = None,
-        glob: dict[str, dict[str, str]] | None = None,
+        exact: dict[str, dict[str, str]] = None,
+        domain: dict[str, dict[str, str]] = None,
+        glob: dict[str, dict[str, str]] = None,
     ) -> None:
         """Initialize an EntityConfigDict."""
         self._cache: dict[str, dict[str, str]] = {}
@@ -47,7 +47,7 @@ class EntityValues:
         self._domain = domain
 
         if glob is None:
-            compiled: dict[re.Pattern[str], typing.Any] | None = None
+            compiled: dict[re.Pattern[str], typing.Any] = None
         else:
             compiled = collections.OrderedDict()
             for key, value in glob.items():

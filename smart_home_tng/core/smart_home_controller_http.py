@@ -23,38 +23,51 @@ http://www.gnu.org/licenses/.
 """
 
 import collections.abc
+import contextlib
 import contextvars
 import datetime
 import ipaddress
 import logging
 import os
+import pathlib
 import re
+import secrets
+import socket
 import ssl
 import tempfile
 import typing
+from urllib import parse
 
 import aiohttp
 import aiohttp_cors
 import certifi
+import jwt
 import voluptuous as vol
+import yaml
 import yarl
-from aiohttp import hdrs, web, web_urldispatcher as web_url
+from aiohttp import hdrs, web
+from aiohttp import web_urldispatcher as web_url
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509 import oid
 
+from .. import auth
+from . import helpers
 from .caching_static_resource import CachingStaticResource
 from .callback import callback
 from .config_validation import ConfigValidation as cv
 from .const import Const
 from .ip_ban import IpBan
 from .no_url_available_error import NoURLAvailableError
-from .smart_home_controller import SmartHomeController
+from .persistent_notification_component import PersistentNotificationComponent
+from .smart_home_controller_component import SmartHomeControllerComponent
 from .smart_home_controller_error import SmartHomeControllerError
-from .smart_home_controller_tcp_site import SmartHomeControllerTCPSite
+from .smart_home_controller_site import SmartHomeControllerSite
 from .smart_home_controller_view import SmartHomeControllerView
-
+from .store import Store
+from .web_socket import WebSocket
+from .yaml_loader import YamlLoader
 
 _ALLOWED_CORS_HEADERS: typing.Final[list[str]] = [
     hdrs.ORIGIN,
@@ -69,47 +82,61 @@ _VALID_CORS_TYPES: typing.Final = (
     web_url.StaticResource,
 )
 
+_current_request: contextvars.ContextVar[web.Request] = contextvars.ContextVar(
+    "current_request", default=None
+)
+_MAX_CLIENT_SIZE: typing.Final = 1024**2 * 16
+_SECURITY_FILTERS: typing.Final = re.compile(
+    r"(?:"
+    # Common exploits
+    + r"proc/self/environ" r"|(<|%3C).*script.*(>|%3E)"
+    # File Injections
+    + r"|(\.\.//?)+"  # ../../anywhere
+    + r"|[a-zA-Z0-9_]=/([a-z0-9_.]//?)+"  # .html?v=/.//test
+    # SQL Injections
+    + r"|union.*select.*\(" r"|union.*all.*select.*" r"|concat.*\(" r")",
+    flags=re.IGNORECASE,
+)
+_SCHEMA_IP_BAN_ENTRY: typing.Final = vol.Schema(
+    {vol.Optional("banned_at"): vol.Any(None, cv.datetime)}
+)
+
 _LOGGER: typing.Final = logging.getLogger(__name__)
+
+_DATA_SIGN_SECRET: typing.Final = "http.auth.sign_secret"
+_SIGN_QUERY_PARAM: typing.Final = "authSig"
+
+_STORAGE_VERSION = 1
+_STORAGE_KEY = "http.auth"
+_CONTENT_USER_NAME = "Smart Home Controller Content"
+
+if not typing.TYPE_CHECKING:
+
+    class SmartHomeController:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from .smart_home_controller import SmartHomeController
 
 
 # pylint: disable=unused-variable
 class SmartHomeControllerHTTP:
     """HTTP server for Smart Home - The Next Generation."""
 
-    _current_request: contextvars.ContextVar[
-        web.Request | None
-    ] = contextvars.ContextVar("current_request", default=None)
-    _MAX_CLIENT_SIZE: typing.Final = 1024**2 * 16
-    _SECURITY_FILTERS: typing.Final = re.compile(
-        r"(?:"
-        # Common exploits
-        + r"proc/self/environ" r"|(<|%3C).*script.*(>|%3E)"
-        # File Injections
-        + r"|(\.\.//?)+"  # ../../anywhere
-        + r"|[a-zA-Z0-9_]=/([a-z0-9_.]//?)+"  # .html?v=/.//test
-        # SQL Injections
-        + r"|union.*select.*\(" r"|union.*all.*select.*" r"|concat.*\(" r")",
-        flags=re.IGNORECASE,
-    )
-    _SCHEMA_IP_BAN_ENTRY: typing.Final = vol.Schema(
-        {vol.Optional("banned_at"): vol.Any(None, cv.datetime)}
-    )
-
     def __init__(
         self,
         shc: SmartHomeController,
-        ssl_certificate: str | None,
-        ssl_peer_certificate: str | None,
-        ssl_key: str | None,
-        server_host: list[str] | None,
+        ssl_certificate: str,
+        ssl_peer_certificate: str,
+        ssl_key: str,
+        server_host: list[str],
         server_port: int,
         trusted_proxies: list[ipaddress.IPv4Network | ipaddress.IPv6Network],
         ssl_profile: str,
     ) -> None:
         """Initialize the Smart Home Controller server."""
-        self._app = web.Application(
-            middlewares=[], client_max_size=self._MAX_CLIENT_SIZE
-        )
+        self._app = web.Application(middlewares=[], client_max_size=_MAX_CLIENT_SIZE)
         self._shc = shc
         self._ssl_certificate = ssl_certificate
         self._ssl_peer_certificate = ssl_peer_certificate
@@ -118,9 +145,17 @@ class SmartHomeControllerHTTP:
         self._server_port = server_port
         self._trusted_proxies = trusted_proxies
         self._ssl_profile = ssl_profile
-        self._runner: web.AppRunner | None = None
-        self._site: SmartHomeControllerTCPSite | None = None
-        self._context: ssl.SSLContext | None = None
+        self._runner: web.AppRunner = None
+        self._site: SmartHomeControllerSite = None
+        self._context: ssl.SSLContext = None
+
+    @property
+    def current_request(self) -> contextvars.ContextVar[web.Request]:
+        return _current_request
+
+    @property
+    def server_port(self) -> int:
+        return self._server_port
 
     async def async_initialize(
         self,
@@ -139,12 +174,12 @@ class SmartHomeControllerHTTP:
 
         self.async_setup_forwarded(use_x_forwarded_for, self._trusted_proxies)
 
-        self.setup_request_context(self._current_request)
+        self.setup_request_context(_current_request)
 
         if is_ban_enabled:
             self.setup_bans(login_threshold)
 
-        await self._shc.async_setup_auth(self._app)
+        await self.async_setup_auth()
 
         self.setup_cors(cors_origins)
 
@@ -152,6 +187,196 @@ class SmartHomeControllerHTTP:
             self._context = await self._shc.async_add_executor_job(
                 self._create_ssl_context
             )
+
+    @callback
+    def async_user_not_allowed_do_auth(
+        self, user: auth.User, request: web.Request = None
+    ) -> str:
+        """Validate that user is not allowed to do auth things."""
+        if not user.is_active:
+            return "User is not active"
+
+        if not user.local_only:
+            return None
+
+        # User is marked as local only, check if they are allowed to do auth
+        if request is None:
+            request = _current_request.get()
+
+        if not request:
+            return "No request available to validate local access"
+
+        try:
+            remote = ipaddress.ip_address(request.remote)
+        except ValueError:
+            return "Invalid remote IP"
+
+        if helpers.is_local(remote):
+            return None
+
+        return "User cannot authenticate remotely"
+
+    @callback
+    def async_sign_path(
+        self,
+        path: str,
+        expiration: datetime.timedelta,
+        *,
+        refresh_token_id: str = None,
+    ) -> str:
+        """Sign a path for temporary access without auth header."""
+        if (secret := self._shc.data.get(_DATA_SIGN_SECRET)) is None:
+            secret = self._shc.data[_DATA_SIGN_SECRET] = secrets.token_hex()
+
+        if refresh_token_id is None:
+            comp = self._shc.components.websocket_api
+            connection = None
+            if isinstance(comp, WebSocket.Component):
+                active_conn = comp.active_connection
+                if isinstance(active_conn, contextvars.ContextVar):
+                    connection = active_conn.get()
+                elif isinstance(active_conn, WebSocket.Connection):
+                    connection = active_conn
+            if connection:
+                refresh_token_id = connection.refresh_token_id
+            elif (
+                request := _current_request.get()
+            ) and Const.KEY_SHC_REFRESH_TOKEN_ID in request:
+                refresh_token_id = request[Const.KEY_SHC_REFRESH_TOKEN_ID]
+            else:
+                refresh_token_id = self._shc.data[_STORAGE_KEY]
+
+        now = helpers.utcnow()
+        encoded = jwt.encode(
+            {
+                "iss": refresh_token_id,
+                "path": parse.unquote(path),
+                "iat": now,
+                "exp": now + expiration,
+            },
+            secret,
+            algorithm="HS256",
+        )
+        return f"{path}?{_SIGN_QUERY_PARAM}={encoded}"
+
+    async def async_setup_auth(self) -> None:
+        """Create auth middleware for the app."""
+
+        store = Store[dict[str, typing.Any]](self._shc, _STORAGE_VERSION, _STORAGE_KEY)
+        if (data := await store.async_load()) is None or not isinstance(data, dict):
+            data = {}
+
+        refresh_token = None
+        if "content_user" in data:
+            user = await self._shc.auth.async_get_user(data["content_user"])
+            if user and user.refresh_tokens:
+                refresh_token = list(user.refresh_tokens.values())[0]
+
+        if refresh_token is None:
+            user = await self._shc.auth.async_create_system_user(
+                _CONTENT_USER_NAME, group_ids=[auth.Const.GROUP_ID_READ_ONLY]
+            )
+            refresh_token = await self._shc.auth.async_create_refresh_token(user)
+            data["content_user"] = user.id
+            await store.async_save(data)
+
+        self._shc.data[_STORAGE_KEY] = refresh_token.id
+
+        async def async_validate_auth_header(request: web.Request) -> bool:
+            """
+            Test authorization header against access token.
+
+            Basic auth_type is legacy code, should be removed with api_password.
+            """
+            try:
+                auth_type, auth_val = request.headers.get(hdrs.AUTHORIZATION, "").split(
+                    " ", 1
+                )
+            except ValueError:
+                # If no space in authorization header
+                return False
+
+            if auth_type != "Bearer":
+                return False
+
+            refresh_token = await self._shc.auth.async_validate_access_token(auth_val)
+
+            if refresh_token is None:
+                return False
+
+            if self.async_user_not_allowed_do_auth(refresh_token.user, request):
+                return False
+
+            request[Const.KEY_SHC_USER] = refresh_token.user
+            request[Const.KEY_SHC_REFRESH_TOKEN_ID] = refresh_token.id
+            return True
+
+        async def async_validate_signed_request(request: web.Request) -> bool:
+            """Validate a signed request."""
+            if (secret := self._shc.data.get(_DATA_SIGN_SECRET)) is None:
+                return False
+
+            if (signature := request.query.get(_SIGN_QUERY_PARAM)) is None:
+                return False
+
+            try:
+                claims = jwt.decode(
+                    signature,
+                    secret,
+                    algorithms=["HS256"],
+                    options={"verify_iss": False},
+                )
+            except jwt.InvalidTokenError:
+                return False
+
+            if claims["path"] != request.path:
+                return False
+
+            refresh_token = await self._shc.auth.async_get_refresh_token(claims["iss"])
+
+            if refresh_token is None:
+                return False
+
+            request[Const.KEY_SHC_USER] = refresh_token.user
+            request[Const.KEY_SHC_REFRESH_TOKEN_ID] = refresh_token.id
+            return True
+
+        @web.middleware
+        async def auth_middleware(
+            request: web.Request,
+            handler: collections.abc.Callable[
+                [web.Request], collections.abc.Awaitable[web.StreamResponse]
+            ],
+        ) -> web.StreamResponse:
+            """Authenticate as middleware."""
+            authenticated = False
+
+            if (
+                hdrs.AUTHORIZATION in request.headers
+                and await async_validate_auth_header(request)
+            ):
+                authenticated = True
+                auth_type = "bearer token"
+
+            # We first start with a string check to avoid parsing query params
+            # for every request.
+            elif (
+                request.method == "GET"
+                and _SIGN_QUERY_PARAM in request.query
+                and await async_validate_signed_request(request)
+            ):
+                authenticated = True
+                auth_type = "signed request"
+
+            if authenticated:
+                _LOGGER.debug(
+                    f"Authenticated {request.remote} for {request.path} using {auth_type}",
+                )
+
+            request[Const.KEY_AUTHENTICATED] = authenticated
+            return await handler(request)
+
+        self._app.middlewares.append(auth_middleware)
 
     @callback
     def setup_cors(self, origins: list[str]) -> None:
@@ -173,7 +398,7 @@ class SmartHomeControllerHTTP:
 
         def _allow_cors(
             route: web_url.AbstractRoute | web_url.AbstractResource,
-            config: dict[str, aiohttp_cors.ResourceOptions] | None = None,
+            config: dict[str, aiohttp_cors.ResourceOptions] = None,
         ) -> None:
             """Allow CORS on a route."""
             if isinstance(route, web_url.AbstractRoute):
@@ -222,13 +447,13 @@ class SmartHomeControllerHTTP:
             ],
         ) -> web.StreamResponse:
             """Process request and tblock commonly known exploit attempts."""
-            if self._SECURITY_FILTERS.search(request.path):
+            if _SECURITY_FILTERS.search(request.path):
                 _LOGGER.warning(
                     f"Filtered a potential harmful request to: {request.raw_path}"
                 )
                 raise web.HTTPBadRequest
 
-            if self._SECURITY_FILTERS.search(request.query_string):
+            if _SECURITY_FILTERS.search(request.query_string):
                 _LOGGER.warning(
                     "Filtered a request with a potential harmful query string: "
                     + f"{request.raw_path}"
@@ -242,7 +467,7 @@ class SmartHomeControllerHTTP:
     @callback
     def async_setup_forwarded(
         self,
-        use_x_forwarded_for: bool | None,
+        use_x_forwarded_for: bool,
         trusted_proxies: list[ipaddress.IPv4Network | ipaddress.IPv6Network],
     ) -> None:
         """Create forwarded middleware for the app.
@@ -441,7 +666,7 @@ class SmartHomeControllerHTTP:
 
     @callback
     def setup_request_context(
-        self, context: contextvars.ContextVar[web.Request | None]
+        self, context: contextvars.ContextVar[web.Request]
     ) -> None:
         """Create request context middleware for the app."""
 
@@ -473,8 +698,8 @@ class SmartHomeControllerHTTP:
         self._app.on_startup.append(ban_startup)
 
     @aiohttp.web_middlewares.middleware
-    @staticmethod
     async def ban_middleware(
+        self,
         request: web.Request,
         handler: typing.Callable[
             [web.Request], collections.abc.Awaitable[web.StreamResponse]
@@ -498,19 +723,19 @@ class SmartHomeControllerHTTP:
         try:
             return await handler(request)
         except web.HTTPUnauthorized:
-            shc: SmartHomeController = request.app[Const.KEY_SHC]
-            await shc.process_wrong_login(request)
+            await self.process_wrong_login(request)
             raise
 
     async def async_load_ip_bans_config(self) -> list[IpBan]:
         """Load list of banned IPs from config file."""
         ip_list: list[IpBan] = []
-        path = self._shc.config_path(Const.IP_BANS_FILE)
+        path = self._shc.config.path(Const.IP_BANS_FILE)
+
+        if not pathlib.Path(path).is_file():
+            return ip_list
 
         try:
-            list_ = await self._shc.async_add_executor_job(
-                self._shc.load_yaml_config_file, path
-            )
+            list_ = await self._shc.async_add_executor_job(YamlLoader.load_yaml, path)
         except FileNotFoundError:
             return ip_list
         except SmartHomeControllerError as err:
@@ -519,13 +744,116 @@ class SmartHomeControllerHTTP:
 
         for ip_ban, ip_info in list_.items():
             try:
-                ip_info = self._SCHEMA_IP_BAN_ENTRY(ip_info)
+                ip_info = _SCHEMA_IP_BAN_ENTRY(ip_info)
                 ip_list.append(IpBan(ip_ban, ip_info["banned_at"]))
             except vol.Invalid as err:
                 _LOGGER.error(f"Failed to load IP ban {ip_info}: {err}")
                 continue
 
         return ip_list
+
+    async def process_wrong_login(self, request: web.Request) -> None:
+        """Process a wrong login attempt.
+
+        Increase failed login attempts counter for remote IP address.
+        Add ip ban entry if failed login attempts exceeds threshold.
+        """
+
+        remote_addr = ipaddress.ip_address(request.remote)
+        remote_host = request.remote
+        with contextlib.suppress(socket.herror):
+            remote_host, _, _ = await self._shc.async_add_executor_job(
+                socket.gethostbyaddr, request.remote
+            )
+
+        base_msg = (
+            "Login attempt or request with invalid authentication from "
+            + f"{remote_host} ({remote_addr})."
+        )
+
+        # The user-agent is unsanitized input so we only include it in the log
+        user_agent = request.headers.get("user-agent")
+        log_msg = f"{base_msg} ({user_agent})"
+
+        notification_msg = f"{base_msg} See the log for details."
+
+        _LOGGER.warning(log_msg)
+
+        comp = SmartHomeControllerComponent.get_component(
+            Const.PERSISTENT_NOTIFICATION_COMPONENT_NAME
+        )
+        if isinstance(comp, PersistentNotificationComponent):
+            comp.async_create(
+                notification_msg, "Login attempt failed", Const.NOTIFICATION_ID_LOGIN
+            )
+
+        # Check if ban middleware is loaded
+        if (
+            Const.KEY_BANNED_IPS not in request.app
+            or request.app[Const.KEY_LOGIN_THRESHOLD] < 1
+        ):
+            return
+
+        request.app[Const.KEY_FAILED_LOGIN_ATTEMPTS][remote_addr] += 1
+
+        if (
+            request.app[Const.KEY_FAILED_LOGIN_ATTEMPTS][remote_addr]
+            >= request.app[Const.KEY_LOGIN_THRESHOLD]
+        ):
+            new_ban = IpBan(remote_addr)
+            request.app[Const.KEY_BANNED_IPS].append(new_ban)
+
+            await self._shc.async_add_executor_job(self.update_ip_bans_config, new_ban)
+
+            _LOGGER.warning(f"Banned IP {remote_addr} for too many login attempts")
+
+            comp = SmartHomeControllerComponent.get_component(
+                Const.PERSISTENT_NOTIFICATION_COMPONENT_NAME
+            )
+            if isinstance(comp, PersistentNotificationComponent):
+                comp.async_create(
+                    f"Too many login attempts from {remote_addr}",
+                    "Banning IP address",
+                    Const.NOTIFICATION_ID_BAN,
+                )
+
+    def update_ip_bans_config(self, ip_ban: IpBan) -> None:
+        """Update config file with new banned IP address."""
+        path = self._shc.config.path(Const.IP_BANS_FILE)
+        with open(path, "a", encoding="utf8") as out:
+            ip_ = {
+                str(ip_ban.ip_address): {
+                    Const.ATTR_BANNED_AT: ip_ban.banned_at.isoformat()
+                }
+            }
+            out.write("\n")
+            out.write(yaml.dump(ip_))
+
+    @staticmethod
+    async def process_success_login(request: web.Request) -> None:
+        """Process a success login attempt.
+
+        Reset failed login attempts counter for remote IP address.
+        No release IP address from banned list function, it can only be done by
+        manual modify ip bans config file.
+        """
+        remote_addr = ipaddress.ip_address(request.remote)  # type: ignore[arg-type]
+
+        # Check if ban middleware is loaded
+        if (
+            Const.KEY_BANNED_IPS not in request.app
+            or request.app[Const.KEY_LOGIN_THRESHOLD] < 1
+        ):
+            return
+
+        if (
+            remote_addr in request.app[Const.KEY_FAILED_LOGIN_ATTEMPTS]
+            and request.app[Const.KEY_FAILED_LOGIN_ATTEMPTS][remote_addr] > 0
+        ):
+            _LOGGER.debug(
+                f"Login success, reset failed login attempts counter from {remote_addr}"
+            )
+            request.app[Const.KEY_FAILED_LOGIN_ATTEMPTS].pop(remote_addr)
 
     def register_view(
         self, view: SmartHomeControllerView | type[SmartHomeControllerView]
@@ -600,8 +928,11 @@ class SmartHomeControllerHTTP:
             self._app.router.add_route("GET", url_path, serve_file)
         )
 
-    def _create_ssl_context(self) -> ssl.SSLContext | None:
-        context: ssl.SSLContext | None = None
+    def register_resource(self, resource: web.AbstractResource):
+        self._app.router.register_resource(resource)
+
+    def _create_ssl_context(self) -> ssl.SSLContext:
+        context: ssl.SSLContext = None
         assert self._ssl_certificate is not None
         try:
             if self._ssl_profile == Const.SSL_INTERMEDIATE:
@@ -696,7 +1027,7 @@ class SmartHomeControllerHTTP:
         return context
 
     @staticmethod
-    def _client_context() -> ssl.SSLContext:
+    def client_context() -> ssl.SSLContext:
         """Return an SSL context for making requests."""
 
         # Reuse environment variable definition from requests, since it's already a requirement
@@ -801,7 +1132,7 @@ class SmartHomeControllerHTTP:
         self._runner = web.AppRunner(self._app)
         await self._runner.setup()
 
-        self._site = SmartHomeControllerTCPSite(
+        self._site = SmartHomeControllerSite(
             self._runner,
             self._server_host,
             self._server_port,

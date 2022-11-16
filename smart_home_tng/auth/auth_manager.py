@@ -29,15 +29,17 @@ import typing
 
 import jwt
 
-from .. import core
+from ..core import helpers
+from ..core.callback import callback
+from ..core.callback_type import CallbackType
 from .auth_manager_flow_manager import AuthManagerFlowManager
 from .auth_store import AuthStore
 from .const import Const
 from .credentials import Credentials
 from .group import Group
 from .invalid_provider import InvalidProvider
-from .mfa_modules import MultiFactorAuthModule, auth_mfa_module_from_config
-from .providers import AuthProvider, auth_provider_from_config
+from .mfa_modules import MultiFactorAuthModule
+from .providers import AuthProvider
 from .refresh_token import RefreshToken
 from .token_type import TokenType
 from .user import User
@@ -46,17 +48,26 @@ _MfaModuleDict = dict[str, MultiFactorAuthModule]
 _ProviderKey = tuple[str, typing.Optional[str]]
 _ProviderDict = dict[_ProviderKey, AuthProvider]
 
+if not typing.TYPE_CHECKING:
+
+    class SmartHomeController:
+        pass
+
+
+if typing.TYPE_CHECKING:
+    from ..core.smart_home_controller import SmartHomeController
+
 
 # pylint: disable=unused-variable
 class AuthManager:
-    """Manage the authentication for Home Assistant."""
+    """Manage the authentication for Smart Home - The Next Generation."""
 
-    EVENT_USER_ADDED: typing.Final = "user_added"
-    EVENT_USER_REMOVED: typing.Final = "user_removed"
+    EVENT_USER_ADDED: typing.Final = "user.added"
+    EVENT_USER_REMOVED: typing.Final = "user.removed"
 
     def __init__(
         self,
-        shc: core.SmartHomeController,
+        shc: SmartHomeController,
         store: AuthStore,
         providers: _ProviderDict,
         mfa_modules: _MfaModuleDict,
@@ -67,7 +78,11 @@ class AuthManager:
         self._providers = providers
         self._mfa_modules = mfa_modules
         self._login_flow = AuthManagerFlowManager(shc, self)
-        self._revoke_callbacks: dict[str, list[core.CALLBACK_TYPE]] = {}
+        self._revoke_callbacks: dict[str, list[CallbackType]] = {}
+
+    @property
+    def login_flow(self) -> AuthManagerFlowManager:
+        return self._login_flow
 
     @property
     def auth_providers(self) -> list[AuthProvider]:
@@ -79,9 +94,7 @@ class AuthManager:
         """Return a list of available auth modules."""
         return list(self._mfa_modules.values())
 
-    def get_auth_provider(
-        self, provider_type: str, provider_id: str | None
-    ) -> AuthProvider | None:
+    def get_auth_provider(self, provider_type: str, provider_id: str) -> AuthProvider:
         """Return an auth provider, None if not found."""
         return self._providers.get((provider_type, provider_id))
 
@@ -93,7 +106,7 @@ class AuthManager:
             if p_type == provider_type
         ]
 
-    def get_auth_mfa_module(self, module_id: str) -> MultiFactorAuthModule | None:
+    def get_auth_mfa_module(self, module_id: str) -> MultiFactorAuthModule:
         """Return a multi-factor auth module, None if not found."""
         return self._mfa_modules.get(module_id)
 
@@ -101,22 +114,20 @@ class AuthManager:
         """Retrieve all users."""
         return await self._store.async_get_users()
 
-    async def async_get_user(self, user_id: str) -> User | None:
+    async def async_get_user(self, user_id: str) -> User:
         """Retrieve a user."""
         return await self._store.async_get_user(user_id)
 
-    async def async_get_owner(self) -> User | None:
+    async def async_get_owner(self) -> User:
         """Retrieve the owner."""
         users = await self.async_get_users()
         return next((user for user in users if user.is_owner), None)
 
-    async def async_get_group(self, group_id: str) -> Group | None:
+    async def async_get_group(self, group_id: str) -> Group:
         """Retrieve all groups."""
         return await self._store.async_get_group(group_id)
 
-    async def async_get_user_by_credentials(
-        self, credentials: Credentials
-    ) -> User | None:
+    async def async_get_user_by_credentials(self, credentials: Credentials) -> User:
         """Get a user by credential, return None if not found."""
         for user in await self.async_get_users():
             for creds in user.credentials:
@@ -129,8 +140,8 @@ class AuthManager:
         self,
         name: str,
         *,
-        group_ids: list[str] | None = None,
-        local_only: bool | None = None,
+        group_ids: list[str] = None,
+        local_only: bool = None,
     ) -> User:
         """Create a system user."""
         user = await self._store.async_create_user(
@@ -149,8 +160,8 @@ class AuthManager:
         self,
         name: str,
         *,
-        group_ids: list[str] | None = None,
-        local_only: bool | None = None,
+        group_ids: list[str] = None,
+        local_only: bool = None,
     ) -> User:
         """Create a user."""
         kwargs: dict[str, typing.Any] = {
@@ -222,10 +233,10 @@ class AuthManager:
     async def async_update_user(
         self,
         user: User,
-        name: str | None = None,
-        is_active: bool | None = None,
-        group_ids: list[str] | None = None,
-        local_only: bool | None = None,
+        name: str = None,
+        is_active: bool = None,
+        group_ids: list[str] = None,
+        local_only: bool = None,
     ) -> None:
         """Update a user."""
         kwargs: dict[str, typing.Any] = {}
@@ -301,12 +312,12 @@ class AuthManager:
     async def async_create_refresh_token(
         self,
         user: User,
-        client_id: str | None = None,
-        client_name: str | None = None,
-        client_icon: str | None = None,
-        token_type: str | None = None,
+        client_id: str = None,
+        client_name: str = None,
+        client_icon: str = None,
+        token_type: str = None,
         access_token_expiration: datetime.timedelta = Const.ACCESS_TOKEN_EXPIRATION,
-        credential: Credentials | None = None,
+        credential: Credentials = None,
     ) -> RefreshToken:
         """Create a new refresh token for a user."""
         if not user.is_active:
@@ -355,11 +366,11 @@ class AuthManager:
             credential,
         )
 
-    async def async_get_refresh_token(self, token_id: str) -> RefreshToken | None:
+    async def async_get_refresh_token(self, token_id: str) -> RefreshToken:
         """Get refresh token by id."""
         return await self._store.async_get_refresh_token(token_id)
 
-    async def async_get_refresh_token_by_token(self, token: str) -> RefreshToken | None:
+    async def async_get_refresh_token_by_token(self, token: str) -> RefreshToken:
         """Get refresh token by token."""
         return await self._store.async_get_refresh_token_by_token(token)
 
@@ -371,10 +382,10 @@ class AuthManager:
         for revoke_callback in callbacks:
             revoke_callback()
 
-    @core.callback
+    @callback
     def async_register_revoke_token_callback(
-        self, refresh_token_id: str, revoke_callback: core.CALLBACK_TYPE
-    ) -> core.CALLBACK_TYPE:
+        self, refresh_token_id: str, revoke_callback: CallbackType
+    ) -> CallbackType:
         """Register a callback to be called when the refresh token id is revoked."""
         if refresh_token_id not in self._revoke_callbacks:
             self._revoke_callbacks[refresh_token_id] = []
@@ -382,23 +393,23 @@ class AuthManager:
         callbacks = self._revoke_callbacks[refresh_token_id]
         callbacks.append(revoke_callback)
 
-        @core.callback
+        @callback
         def unregister() -> None:
             if revoke_callback in callbacks:
                 callbacks.remove(revoke_callback)
 
         return unregister
 
-    @core.callback
+    @callback
     def async_create_access_token(
-        self, refresh_token: RefreshToken, remote_ip: str | None = None
+        self, refresh_token: RefreshToken, remote_ip: str = None
     ) -> str:
         """Create a new access token."""
         self.async_validate_refresh_token(refresh_token, remote_ip)
 
         self._store.async_log_refresh_token_usage(refresh_token, remote_ip)
 
-        now = core.helpers.utcnow()
+        now = helpers.utcnow()
         return jwt.encode(
             {
                 "iss": refresh_token.id,
@@ -409,10 +420,8 @@ class AuthManager:
             algorithm="HS256",
         )
 
-    @core.callback
-    def _async_resolve_provider(
-        self, refresh_token: RefreshToken
-    ) -> AuthProvider | None:
+    @callback
+    def _async_resolve_provider(self, refresh_token: RefreshToken) -> AuthProvider:
         """Get the auth provider for the given refresh token.
 
         Raises an exception if the expected provider is no longer available or return
@@ -432,9 +441,9 @@ class AuthManager:
             )
         return provider
 
-    @core.callback
+    @callback
     def async_validate_refresh_token(
-        self, refresh_token: RefreshToken, remote_ip: str | None = None
+        self, refresh_token: RefreshToken, remote_ip: str = None
     ) -> None:
         """Validate that a refresh token is usable.
 
@@ -443,7 +452,7 @@ class AuthManager:
         if provider := self._async_resolve_provider(refresh_token):
             provider.async_validate_refresh_token(refresh_token, remote_ip)
 
-    async def async_validate_access_token(self, token: str) -> RefreshToken | None:
+    async def async_validate_access_token(self, token: str) -> RefreshToken:
         """Return refresh token if an access token is valid."""
         try:
             unverif_claims = jwt.decode(
@@ -473,8 +482,8 @@ class AuthManager:
 
         return refresh_token
 
-    @core.callback
-    def _async_get_auth_provider(self, credentials: Credentials) -> AuthProvider | None:
+    @callback
+    def _async_get_auth_provider(self, credentials: Credentials) -> AuthProvider:
         """Get auth provider from a set of credentials."""
         auth_provider_key = (
             credentials.auth_provider_type,
@@ -494,43 +503,45 @@ class AuthManager:
 
         return True
 
+    @staticmethod
+    async def from_config(
+        shc: SmartHomeController,
+        provider_configs: list[dict[str, typing.Any]],
+        module_configs: list[dict[str, typing.Any]],
+    ):
+        """Initialize an auth manager from config.
 
-async def auth_manager_from_config(
-    shc: core.SmartHomeController,
-    provider_configs: list[dict[str, typing.Any]],
-    module_configs: list[dict[str, typing.Any]],
-) -> AuthManager:
-    """Initialize an auth manager from config.
-
-    CORE_CONFIG_SCHEMA will make sure do duplicated auth providers or
-    mfa modules exist in configs.
-    """
-    store = AuthStore(shc)
-    if provider_configs:
-        providers = await asyncio.gather(
-            *(
-                auth_provider_from_config(shc, store, config)
-                for config in provider_configs
+        CORE_CONFIG_SCHEMA will make sure do duplicated auth providers or
+        mfa modules exist in configs.
+        """
+        store = AuthStore(shc)
+        if provider_configs:
+            providers = await asyncio.gather(
+                *(
+                    AuthProvider.from_config(shc, store, config)
+                    for config in provider_configs
+                )
             )
-        )
-    else:
-        providers = []
-    # So returned auth providers are in same order as config
-    provider_hash: _ProviderDict = collections.OrderedDict()
-    for provider in providers:
-        key = (provider.type, provider.id)
-        provider_hash[key] = provider
+        else:
+            providers = []
+        # So returned auth providers are in same order as config
+        provider_hash: _ProviderDict = collections.OrderedDict()
+        for provider in providers:
+            key = (provider.type, provider.id)
+            provider_hash[key] = provider
 
-    if module_configs:
-        modules = await asyncio.gather(
-            *(auth_mfa_module_from_config(shc, config) for config in module_configs)
-        )
-    else:
-        modules = []
-    # So returned auth modules are in same order as config
-    module_hash: _MfaModuleDict = collections.OrderedDict()
-    for module in modules:
-        module_hash[module.id] = module
+        if module_configs:
+            modules = await asyncio.gather(
+                *(
+                    MultiFactorAuthModule.from_config(shc, config)
+                    for config in module_configs
+                )
+            )
+        else:
+            modules = []
+        # So returned auth modules are in same order as config
+        module_hash: _MfaModuleDict = collections.OrderedDict()
+        for module in modules:
+            module_hash[module.id] = module
 
-    manager = AuthManager(shc, store, provider_hash, module_hash)
-    return manager
+        return AuthManager(shc, store, provider_hash, module_hash)

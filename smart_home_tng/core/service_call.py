@@ -39,14 +39,30 @@ class ServiceCall:
         self,
         domain: str,
         service: str,
-        data: dict[str, typing.Any] | None = None,
-        context: Context | None = None,
+        data: dict[str, typing.Any] = None,
+        context: Context = None,
     ) -> None:
         """Initialize a service call."""
         self._domain = domain.lower()
         self._service = service.lower()
         self._data = ReadOnlyDict(data or {})
         self._context = context or Context()
+
+    @property
+    def data(self) -> dict[str, typing.Any]:
+        return self._data
+
+    @property
+    def context(self) -> Context:
+        return self._context
+
+    @property
+    def domain(self) -> str:
+        return self._domain
+
+    @property
+    def service(self) -> str:
+        return self._service
 
     def __repr__(self) -> str:
         """Return the representation of the service."""

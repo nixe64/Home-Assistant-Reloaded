@@ -23,24 +23,37 @@ http://www.gnu.org/licenses/.
 """
 
 
-import attr
-
-
 # pylint: disable=unused-variable
-@attr.s(slots=True, frozen=True)
 class DeviceBase:
     """
     Base class for device, will be used for deleted devices
     and device registry entries.
     """
 
-    id: str = attr.ib()
-    config_entries: set[str] = set(
-        attr.ib(),
-    )
-    connections: set[tuple[str, str]] = set(
-        attr.ib(),
-    )
-    identifiers: set[tuple[str, str]] = set(
-        attr.ib(),
-    )
+    def __init__(
+        self,
+        device_id: str,
+        config_entries: set[str] = None,
+        connections: set[tuple[str, str]] = None,
+        identitifiers: set[tuple[str, str]] = None,
+    ) -> None:
+        self._id = device_id
+        self._config_entries = config_entries or set()
+        self._connections = connections or set()
+        self._identifiers = identitifiers or set()
+
+    @property
+    def id(self) -> str:
+        return self._id
+
+    @property
+    def config_entries(self) -> set[str]:
+        return self._config_entries
+
+    @property
+    def connections(self) -> set[tuple[str, str]]:
+        return self._connections
+
+    @property
+    def identifiers(self) -> set[tuple[str, str]]:
+        return self._identifiers

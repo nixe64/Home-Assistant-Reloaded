@@ -1,4 +1,26 @@
-"""Helpers for config validation using voluptuous."""
+"""
+Core components of Smart Home - The Next Generation.
+
+Smart Home - TNG is a Home Automation framework for observing the state
+of entities and react to changes. It is based on Home Assistant from
+home-assistant.io and the Home Assistant Community.
+
+Copyright (c) 2022, Andreas Nixdorf
+
+This program is free software: you can redistribute it and/or
+modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of
+the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public
+License along with this program.  If not, see
+http://www.gnu.org/licenses/.
+"""
 
 # pylint: disable=unused-variable
 
@@ -16,12 +38,14 @@ import uuid
 
 import voluptuous as vol
 import voluptuous_serialize as vs
+import yarl
 from urllib3.util import url as util_url
 
 from ..backports import strenum
 from . import helpers
+from .binary_sensor import BinarySensor
 from .const import Const
-from .result_wrapper import ResultWrapper
+from .entity_category import EntityCategory
 from .script_variables import ScriptVariables
 from .selector import Selector
 from .template import Template
@@ -38,14 +62,61 @@ class _ScriptAction(strenum.LowercaseStrEnum):
     EVENT = enum_types.auto()
     CALL_SERVICE = enum_types.auto()
     DEVICE = enum_types.auto()
-    SCENE = enum_types.auto
+    SCENE = enum_types.auto()
     REPEAT = enum_types.auto()
     CHOOSE = enum_types.auto()
     WAIT_FOR_TRIGGER = enum_types.auto()
     VARIABLES = enum_types.auto()
     STOP = enum_types.auto()
     IF = enum_types.auto()
-    PARALLEL = enum_types.auto
+    PARALLEL = enum_types.auto()
+
+
+def _entities_domain(
+    domain: str | list[str],
+) -> collections.abc.Callable[[str | list], list[str]]:
+    """Validate that entities belong to domain."""
+    if isinstance(domain, str):
+
+        def check_invalid(val: str) -> bool:
+            return val != domain
+
+    else:
+
+        def check_invalid(val: str) -> bool:
+            return val not in domain
+
+    def validate(values: str | list) -> list[str]:
+        """Test if entity domain is domain."""
+        values = ConfigValidation.entity_ids(values)
+        for ent_id in values:
+            if check_invalid(helpers.split_entity_id(ent_id)[0]):
+                raise vol.Invalid(
+                    f"Entity ID '{ent_id}' does not belong to domain '{domain}'"
+                )
+        return values
+
+    return validate
+
+
+def _deprecated_tts_platform(value):
+    """Validate if platform is deprecated."""
+    if value == "google":
+        raise vol.Invalid(
+            "google tts service has been renamed to google_translate,"
+            + " please update your configuration."
+        )
+    return value
+
+
+def _valid_tts_base_url(value: str) -> str:
+    """Validate base url, return value."""
+    url = yarl.URL(ConfigValidation.url(value))
+
+    if url.path != "/":
+        raise vol.Invalid("Path should be empty")
+
+    return helpers.normalize_url(value)
 
 
 class ConfigValidation:
@@ -58,7 +129,7 @@ class ConfigValidation:
     # Smart Home - The Next Generation types
     byte = vol.All(vol.Coerce(int), vol.Range(min=0, max=255))
     small_float = vol.All(vol.Coerce(float), vol.Range(min=0, max=1))
-    positive_int = vol.All(vol.Coerce(int), vol.Range(min=0))
+    positive_int = helpers.positive_int
     positive_float = vol.All(vol.Coerce(float), vol.Range(min=0))
     latitude = vol.All(
         vol.Coerce(float), vol.Range(min=-90, max=90), msg="invalid latitude"
@@ -71,6 +142,21 @@ class ConfigValidation:
         vol.Lower, vol.Any(Const.SUN_EVENT_SUNSET, Const.SUN_EVENT_SUNRISE)
     )
     port = vol.All(vol.Coerce(int), vol.Range(min=1, max=65535))
+
+    SCRIPT_ACTION_DELAY: typing.Final = _ScriptAction.DELAY
+    SCRIPT_ACTION_WAIT_TEMPLATE: typing.Final = _ScriptAction.WAIT_TEMPLATE
+    SCRIPT_ACTION_CHECK_CONDITION: typing.Final = _ScriptAction.CONDITION
+    SCRIPT_ACTION_FIRE_EVENT: typing.Final = _ScriptAction.EVENT
+    SCRIPT_ACTION_CALL_SERVICE: typing.Final = _ScriptAction.CALL_SERVICE
+    SCRIPT_ACTION_DEVICE_AUTOMATION: typing.Final = _ScriptAction.DEVICE
+    SCRIPT_ACTION_ACTIVATE_SCENE: typing.Final = _ScriptAction.SCENE
+    SCRIPT_ACTION_REPEAT: typing.Final = _ScriptAction.REPEAT
+    SCRIPT_ACTION_CHOOSE: typing.Final = _ScriptAction.CHOOSE
+    SCRIPT_ACTION_WAIT_FOR_TRIGGER: typing.Final = _ScriptAction.WAIT_FOR_TRIGGER
+    SCRIPT_ACTION_VARIABLES: typing.Final = _ScriptAction.VARIABLES
+    SCRIPT_ACTION_STOP: typing.Final = _ScriptAction.STOP
+    SCRIPT_ACTION_IF: typing.Final = _ScriptAction.IF
+    SCRIPT_ACTION_PARALLEL: typing.Final = _ScriptAction.PARALLEL
 
     @staticmethod
     def path(value: typing.Any) -> str:
@@ -88,7 +174,9 @@ class ConfigValidation:
     # Adapted from:
     # https://github.com/alecthomas/voluptuous/issues/115#issuecomment-144464666
     @staticmethod
-    def has_at_least_one_key(*keys: typing.Any) -> typing.Callable[[dict], dict]:
+    def has_at_least_one_key(
+        *keys: typing.Any,
+    ) -> collections.abc.Callable[[dict], dict]:
         """Validate that at least one key exists."""
 
         def validate(obj: dict) -> dict:
@@ -105,7 +193,9 @@ class ConfigValidation:
         return validate
 
     @staticmethod
-    def has_at_most_one_key(*keys: typing.Any) -> typing.Callable[[dict], dict]:
+    def has_at_most_one_key(
+        *keys: typing.Any,
+    ) -> collections.abc.Callable[[dict], dict]:
         """Validate that zero keys exist or one key exists."""
 
         def validate(obj: dict) -> dict:
@@ -140,7 +230,7 @@ class ConfigValidation:
             raise vol.Invalid(f"No device at {value} found") from err
 
     @staticmethod
-    def matches_regex(regex: str) -> typing.Callable[[typing.Any], str]:
+    def matches_regex(regex: str) -> collections.abc.Callable[[typing.Any], str]:
         """Validate that the value is a string that matches a regex."""
         compiled = re.compile(regex)
 
@@ -200,7 +290,7 @@ class ConfigValidation:
         return dir_in
 
     @staticmethod
-    def ensure_list(value: _T | None) -> list[_T] | list[typing.Any]:
+    def ensure_list(value: _T) -> list[_T] | list[typing.Any]:
         """Wrap value in list if it is not one."""
         if value is None:
             return []
@@ -262,9 +352,11 @@ class ConfigValidation:
     )
 
     @staticmethod
-    def entity_domain(domain: str | list[str]) -> typing.Callable[[typing.Any], str]:
+    def entity_domain(
+        domain: str | list[str],
+    ) -> collections.abc.Callable[[typing.Any], str]:
         """Validate that entity belong to domain."""
-        ent_domain = ConfigValidation.entities_domain(domain)
+        ent_domain = _entities_domain(domain)
 
         def validate(value: str) -> str:
             """Test if entity domain is domain."""
@@ -278,29 +370,9 @@ class ConfigValidation:
     @staticmethod
     def entities_domain(
         domain: str | list[str],
-    ) -> typing.Callable[[str | list], list[str]]:
+    ) -> collections.abc.Callable[[str | list], list[str]]:
         """Validate that entities belong to domain."""
-        if isinstance(domain, str):
-
-            def check_invalid(val: str) -> bool:
-                return val != domain
-
-        else:
-
-            def check_invalid(val: str) -> bool:
-                return val not in domain
-
-        def validate(values: str | list) -> list[str]:
-            """Test if entity domain is domain."""
-            values = ConfigValidation.entity_ids(values)
-            for ent_id in values:
-                if check_invalid(helpers.split_entity_id(ent_id)[0]):
-                    raise vol.Invalid(
-                        f"Entity ID '{ent_id}' does not belong to domain '{domain}'"
-                    )
-            return values
-
-        return validate
+        return _entities_domain(domain)
 
     @staticmethod
     def enum(enum_class: type[enum_types.Enum]) -> vol.All:
@@ -456,10 +528,10 @@ class ConfigValidation:
 
     @staticmethod
     def schema_with_slug_keys(
-        value_schema: _T | typing.Callable,
+        value_schema: _T | collections.abc.Callable,
         *,
-        slug_validator: typing.Callable[[typing.Any], str] = slug,
-    ) -> typing.Callable:
+        slug_validator: collections.abc.Callable[[typing.Any], str] = slug,
+    ) -> collections.abc.Callable:
         """Ensure dicts have slugs as keys.
 
         Replacement of vol.Schema({cv.slug: value_schema}) to prevent misleading
@@ -489,19 +561,7 @@ class ConfigValidation:
             return slg
         raise vol.Invalid(f"Unable to slugify {value}")
 
-    @staticmethod
-    def string(value: typing.Any) -> str:
-        """Coerce value to string, except for None."""
-        if value is None:
-            raise vol.Invalid("string value is None")
-
-        if isinstance(value, ResultWrapper):
-            value = value.render_result
-
-        elif isinstance(value, (list, dict)):
-            raise vol.Invalid("value should be a string")
-
-        return str(value)
+    string = helpers.string
 
     @staticmethod
     def string_with_no_html(value: typing.Any) -> str:
@@ -528,7 +588,7 @@ class ConfigValidation:
     )
 
     @staticmethod
-    def template(value: typing.Any | None) -> Template:
+    def template(value: typing.Any) -> Template:
         """Validate a jinja2 template."""
         if value is None:
             raise vol.Invalid("template value is None")
@@ -544,7 +604,7 @@ class ConfigValidation:
             raise vol.Invalid(f"invalid template ({ex})") from ex
 
     @staticmethod
-    def dynamic_template(value: typing.Any | None) -> Template:
+    def dynamic_template(value: typing.Any) -> Template:
         """Validate a dynamic (non static) jinja2 template."""
         if value is None:
             raise vol.Invalid("template value is None")
@@ -613,7 +673,7 @@ class ConfigValidation:
     weekdays = vol.All(ensure_list, [vol.In(Const.WEEKDAYS)])
 
     @staticmethod
-    def socket_timeout(value: typing.Any | None) -> object:
+    def socket_timeout(value: typing.Any) -> object:
         """Validate timeout float > 0.0.
 
         None coerced to socket._GLOBAL_DEFAULT_TIMEOUT bare object.
@@ -691,7 +751,6 @@ class ConfigValidation:
             return [member.strip() for member in value.split(",")]
         return ConfigValidation.ensure_list(value)
 
-    @staticmethod
     class MultiSelect:
         """Multi select validator returning list of selected values."""
 
@@ -710,14 +769,16 @@ class ConfigValidation:
 
             return selected
 
+    multi_select = MultiSelect
+
     @staticmethod
     def _deprecated_or_removed(
         key: str,
-        replacement_key: str | None,
-        default: typing.Any | None,
+        replacement_key: str,
+        default: typing.Any,
         raise_if_present: bool,
         option_removed: bool,
-    ) -> typing.Callable[[dict], dict]:
+    ) -> collections.abc.Callable[[dict], dict]:
         """
         Log key as deprecated and provide a replacement (if exists) or fail.
 
@@ -788,10 +849,10 @@ class ConfigValidation:
     @staticmethod
     def deprecated(
         key: str,
-        replacement_key: str | None = None,
-        default: typing.Any | None = None,
-        raise_if_present: bool | None = False,
-    ) -> typing.Callable[[dict], dict]:
+        replacement_key: str = None,
+        default: typing.Any = None,
+        raise_if_present: bool = False,
+    ) -> collections.abc.Callable[[dict], dict]:
         """
         Log key as deprecated and provide a replacement (if exists).
 
@@ -814,9 +875,9 @@ class ConfigValidation:
     @staticmethod
     def removed(
         key: str,
-        default: typing.Any | None = None,
-        raise_if_present: bool | None = True,
-    ) -> typing.Callable[[dict], dict]:
+        default: typing.Any = None,
+        raise_if_present: bool = True,
+    ) -> collections.abc.Callable[[dict], dict]:
         """
         Log key as deprecated and fail the config validation.
 
@@ -836,9 +897,11 @@ class ConfigValidation:
     def key_value_schemas(
         key: str,
         value_schemas: dict[collections.abc.Hashable, vol.Schema],
-        default_schema: vol.Schema | None = None,
-        default_description: str | None = None,
-    ) -> typing.Callable[[typing.Any], dict[collections.abc.Hashable, typing.Any]]:
+        default_schema: vol.Schema = None,
+        default_description: str = None,
+    ) -> collections.abc.Callable[
+        [typing.Any], dict[collections.abc.Hashable, typing.Any]
+    ]:
         """Create a validator that validates based on a value for specific key.
 
         This gives better error messages.
@@ -882,7 +945,7 @@ class ConfigValidation:
     @staticmethod
     def key_dependency(
         key: collections.abc.Hashable, dependency: collections.abc.Hashable
-    ) -> typing.Callable[
+    ) -> collections.abc.Callable[
         [dict[collections.abc.Hashable, typing.Any]],
         dict[collections.abc.Hashable, typing.Any],
     ]:
@@ -926,7 +989,7 @@ class ConfigValidation:
         return vs.UNSUPPORTED
 
     @staticmethod
-    def expand_condition_shorthand(value: typing.Any | None) -> typing.Any:
+    def expand_condition_shorthand(value: typing.Any) -> typing.Any:
         """Expand boolean condition shorthand notations."""
 
         if not isinstance(value, dict) or Const.CONF_CONDITIONS in value:
@@ -1355,6 +1418,12 @@ class ConfigValidation:
         )
     )
 
+    TRACE_CONFIG_SCHEMA: typing.Final = {
+        vol.Optional(
+            Const.CONF_STORED_TRACES, default=Const.DEFAULT_STORED_TRACES
+        ): positive_int
+    }
+
     dynamic_template_condition_action = vol.All(
         # Wrap a shorthand template condition action in a template condition
         vol.Schema(
@@ -1443,6 +1512,10 @@ class ConfigValidation:
 
     DEVICE_ACTION_SCHEMA: typing.Final = DEVICE_ACTION_BASE_SCHEMA.extend(
         {}, extra=vol.ALLOW_EXTRA
+    )
+
+    DEVICE_CLASSES_SCHEMA: typing.Final = vol.All(
+        vol.Lower, vol.Coerce(BinarySensor.DeviceClass)
     )
 
     _SCRIPT_SCENE_SCHEMA: typing.Final = vol.Schema(
@@ -1561,7 +1634,7 @@ class ConfigValidation:
     @staticmethod
     def determine_script_action(action: dict[str, typing.Any]) -> _ScriptAction:
         """Determine action type."""
-        result: _ScriptAction | None = None
+        result: _ScriptAction = None
 
         if Const.CONF_DELAY in action:
             result = _ScriptAction.DELAY
@@ -1612,6 +1685,34 @@ class ConfigValidation:
         _ScriptAction.IF: _SCRIPT_IF_SCHEMA,
         _ScriptAction.PARALLEL: _SCRIPT_PARALLEL_SCHEMA,
     }
+
+    DEVICE_TRIGGER_BASE_SCHEMA: typing.Final = TRIGGER_BASE_SCHEMA.extend(
+        {
+            vol.Required(Const.CONF_PLATFORM): "device",
+            vol.Required(Const.CONF_DOMAIN): str,
+            vol.Required(Const.CONF_DEVICE_ID): str,
+            vol.Remove("metadata"): dict,
+        }
+    )
+
+    NOTIFY_SERVICE_SCHEMA: typing.Final = vol.Schema(
+        {
+            vol.Required(Const.ATTR_MESSAGE): template,
+            vol.Optional(Const.ATTR_TITLE): template,
+            vol.Optional(Const.ATTR_TARGET): vol.All(ensure_list, [string]),
+            vol.Optional(Const.ATTR_DATA): dict,
+        }
+    )
+
+    NOTIFY_PLATFORM_SCHEMA: typing.Final = vol.Schema(
+        {
+            vol.Required(Const.CONF_PLATFORM): string,
+            vol.Optional(Const.CONF_NAME): string,
+        },
+        extra=vol.ALLOW_EXTRA,
+    )
+
+    ENTITY_CATEGORIES_SCHEMA: typing.Final = vol.Coerce(EntityCategory)
 
     # Validate currencies adopted by countries
     currency = vol.In(

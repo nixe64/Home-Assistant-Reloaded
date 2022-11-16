@@ -66,11 +66,11 @@ class State:
         self,
         entity_id: str,
         state: str,
-        attributes: collections.abc.Mapping[str, typing.Any] | None = None,
-        last_changed: datetime.datetime | None = None,
-        last_updated: datetime.datetime | None = None,
-        context: Context | None = None,
-        validate_entity_id: bool | None = True,
+        attributes: collections.abc.Mapping[str, typing.Any] = None,
+        last_changed: datetime.datetime = None,
+        last_updated: datetime.datetime = None,
+        context: Context = None,
+        validate_entity_id: bool = True,
     ) -> None:
         """Initialize a new state."""
         state = str(state)
@@ -94,13 +94,23 @@ class State:
         self._last_changed = last_changed or self._last_updated
         self._context = context or Context()
         self._domain, self._object_id = helpers.split_entity_id(self._entity_id)
-        self._as_dict: ReadOnlyDict[
-            str, collections.abc.Collection[typing.Any]
-        ] | None = None
+        self._as_dict: ReadOnlyDict[str, collections.abc.Collection[typing.Any]] = None
 
     def _valid_state(state: str) -> bool:
         """Test if a state is valid."""
         return len(state) <= Const.MAX_LENGTH_STATE_STATE
+
+    @property
+    def domain(self) -> str:
+        return self._domain
+
+    @property
+    def context(self) -> Context:
+        return self._context
+
+    @property
+    def entity_id(self) -> str:
+        return self._entity_id
 
     @property
     def name(self) -> str:
@@ -116,6 +126,14 @@ class State:
     @property
     def attributes(self) -> ReadOnlyDict[str, typing.Any]:
         return self._attributes
+
+    @property
+    def last_changed(self) -> datetime.datetime:
+        return self._last_changed
+
+    @property
+    def last_updated(self) -> datetime.datetime:
+        return self._last_updated
 
     def as_dict(self) -> ReadOnlyDict[str, collections.abc.Collection[typing.Any]]:
         """Return a dict representation of the State.
@@ -144,9 +162,7 @@ class State:
         return self._as_dict
 
     @classmethod
-    def from_dict(
-        cls: type[_StateT], json_dict: dict[str, typing.Any]
-    ) -> _StateT | None:
+    def from_dict(cls: type[_StateT], json_dict: dict[str, typing.Any]) -> _StateT:
         """Initialize a state from a dict.
 
         Async friendly.

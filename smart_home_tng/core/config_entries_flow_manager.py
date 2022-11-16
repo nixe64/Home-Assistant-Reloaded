@@ -28,21 +28,33 @@ import typing
 from .callback import callback
 from .config_entry import ConfigEntry
 from .config_entry_source import ConfigEntrySource
-from .config_flow import ConfigFlow, CONFIG_HANDLERS
-from .config_type import CONFIG_TYPE
+from .config_flow import ConfigFlow, _CONFIG_HANDLERS
+from .config_flow_platform import ConfigFlowPlatform
+from .config_type import ConfigType
 from .const import Const
 from .flow_handler import FlowHandler
 from .flow_manager import FlowManager
 from .flow_result import FlowResult
 from .flow_result_type import FlowResultType
 from .integration_not_found import IntegrationNotFound
-from .smart_home_controller import SmartHomeController
+from .persistent_notification_component import PersistentNotificationComponent
+from .platform import Platform
+from .smart_home_controller_component import SmartHomeControllerComponent
 from .unknown_handler import UnknownHandler
 
 
-@typing.overload
-class ConfigEntries:
-    ...
+if not typing.TYPE_CHECKING:
+
+    class ConfigEntries:
+        ...
+
+    class SmartHomeController:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from .config_entries import ConfigEntries
+    from .smart_home_controller import SmartHomeController
 
 
 _DISCOVERY_SOURCES: typing.Final = (
@@ -69,7 +81,7 @@ class ConfigEntriesFlowManager(FlowManager):
         self,
         shc: SmartHomeController,
         config_entries: ConfigEntries,
-        config: CONFIG_TYPE,
+        config: ConfigType,
     ) -> None:
         """Initialize the config entry flow manager."""
         super().__init__(shc)
@@ -92,10 +104,11 @@ class ConfigEntriesFlowManager(FlowManager):
 
         # Remove notification if no other discovery config entries in progress
         if not self._async_has_other_discovery_flows(flow.flow_id):
-            self._shc.bus.async_fire(
-                Const.EVENT_PERSISTENT_NOTIFICATION_DISMISS,
-                {"notification_id": ConfigEntry.DISCOVERY_NOTIFICATION_ID},
+            comp = SmartHomeControllerComponent.get_component(
+                Const.PERSISTENT_NOTIFICATION_COMPONENT_NAME
             )
+            if isinstance(comp, PersistentNotificationComponent):
+                comp.async_dismiss(ConfigEntry.DISCOVERY_NOTIFICATION_ID)
 
         if result["type"] != FlowResultType.CREATE_ENTRY:
             return result
@@ -152,7 +165,7 @@ class ConfigEntriesFlowManager(FlowManager):
         self,
         handler_key: typing.Any,
         *,
-        context: dict | None = None,
+        context: dict = None,
         data: typing.Any = None,
     ) -> FlowHandler:
         """Create a flow for specified handler.
@@ -160,60 +173,55 @@ class ConfigEntriesFlowManager(FlowManager):
         Handler key is the domain of the component that we want to set up.
         """
         try:
-            integration = await self._shc.async_get_integration(handler_key)
+            integration = await self._shc.setup.async_get_integration(handler_key)
         except IntegrationNotFound as err:
             _LOGGER.error(f"Cannot find integration {handler_key}")
             raise UnknownHandler from err
 
         # Make sure requirements and dependencies of component are resolved
-        await self._shc.async_process_deps_reqs(self._config, integration)
+        await self._shc.setup.async_process_deps_reqs(self._config, integration)
 
-        try:
-            integration.get_platform("config_flow")
-        except ImportError as err:
-            _LOGGER.error(
-                "Error occurred loading configuration flow for integration "
-                + f"{handler_key}: {err}"
-            )
-            raise UnknownHandler from err
+        integration.get_component()
 
-        if (handler := CONFIG_HANDLERS.get(handler_key)) is None:
+        platform = _CONFIG_HANDLERS.get(handler_key)
+        if platform is None:
+            comp = SmartHomeControllerComponent.get_component(handler_key)
+            if isinstance(comp, SmartHomeControllerComponent):
+                platform = comp.get_platform(Platform.CONFIG_FLOW)
+                if not isinstance(platform, ConfigFlowPlatform):
+                    platform = None
+        if platform is None:
             raise UnknownHandler
 
         if not context or "source" not in context:
             raise KeyError("Context not set or doesn't have a source set")
 
-        flow = handler(self._shc)
-        flow.init_step = context["source"]
-        return flow
+        return platform.create_config_flow(context, data)
 
     async def async_post_init(self, flow: FlowHandler, result: FlowResult) -> None:
         """After a flow is initialised trigger new flow notifications."""
         source = flow.context["source"]
+        comp = SmartHomeControllerComponent.get_component(
+            Const.PERSISTENT_NOTIFICATION_COMPONENT_NAME
+        )
+        if not isinstance(comp, PersistentNotificationComponent):
+            comp = None
 
         # Create notification.
         if source in _DISCOVERY_SOURCES:
             self._shc.bus.async_fire(ConfigEntry.EVENT_FLOW_DISCOVERED)
-            event_data = {
-                "notification_id": ConfigEntry.DISCOVERY_NOTIFICATION_ID,
-                "title": "New devices discovered",
-                "message": (
+            if comp is not None:
+                comp.async_create(
                     "We have discovered new devices on your network. "
-                    + "[Check it out](/config/integrations)."
-                ),
-            }
-            self._shc.bus.async_fire(
-                Const.EVENT_PERSISTENT_NOTIFICATION_CREATE, event_data
-            )
+                    + "[Check it out](/config/integrations).",
+                    "New devices discovered",
+                    ConfigEntry.DISCOVERY_NOTIFICATION_ID,
+                )
         elif source == ConfigEntrySource.REAUTH:
-            event_data = {
-                "notification_id": ConfigEntry.RECONFIGURE_NOTIFICATION_ID,
-                "title": "Integration requires reconfiguration",
-                "message": (
+            if comp is not None:
+                comp.async_create(
                     "At least one of your integrations requires reconfiguration to "
-                    + "continue functioning. [Check it out](/config/integrations)."
-                ),
-            }
-            self._shc.bus.async_fire(
-                Const.EVENT_PERSISTENT_NOTIFICATION_CREATE, event_data
-            )
+                    + "continue functioning. [Check it out](/config/integrations).",
+                    "Integration requires reconfiguration",
+                    Const.CONFIG_ENTRY_RECONFIGURE_NOTIFICATION_ID,
+                )

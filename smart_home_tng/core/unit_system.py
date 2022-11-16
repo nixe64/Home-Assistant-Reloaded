@@ -126,7 +126,7 @@ _PRESSURE_UNITS: typing.Final = (
     Const.PRESSURE_MMHG,
 )
 
-_PRESSURE_CONVERSION: typing.Final = {
+_PRESSURE_CONVERSION: typing.Final[dict[str, float]] = {
     Const.PRESSURE_PA: 1,
     Const.PRESSURE_HPA: 1 / 100,
     Const.PRESSURE_KPA: 1 / 1000,
@@ -139,13 +139,25 @@ _PRESSURE_CONVERSION: typing.Final = {
 }
 
 
-@typing.overload
-class UnitSystem:
-    ...
-
-
 class UnitSystem:
     """A container for units of measure."""
+
+    _metric = None
+    _imperial = None
+
+    PRESSURE_RATIO: typing.Final = _PRESSURE_CONVERSION
+    TEMPERATURE_RATIO: typing.Final = {
+        Const.TEMP_CELSIUS: 1.0,
+        Const.TEMP_FAHRENHEIT: 1.8,
+        Const.TEMP_KELVIN: 1.0,
+    }
+
+    LENGTH_UNITS: typing.Final = _LENGTH_UNITS
+    MASS_UNITS: typing.Final = _MASS_UNITS
+    PRESSURE_UNITS: typing.Final = _PRESSURE_UNITS
+    SPEED_UNITS: typing.Final = _SPEED_UNITS
+    TEMPERATURE_UNITS: typing.Final = _TEMPERATURE_UNITS
+    VOLUME_UNITS: typing.Final = _VOLUME_UNITS
 
     def __init__(
         self,
@@ -185,6 +197,38 @@ class UnitSystem:
         self._volume_unit = volume
         self._wind_speed_unit = wind_speed
 
+    @staticmethod
+    def IMPERIAL():  # pylint: disable=invalid-name
+        """The imperial unit system."""
+        if UnitSystem._imperial is None:
+            UnitSystem._imperial = UnitSystem(
+                Const.CONF_UNIT_SYSTEM_IMPERIAL,
+                Const.TEMP_FAHRENHEIT,
+                Const.LENGTH_MILES,
+                Const.SPEED_MILES_PER_HOUR,
+                Const.VOLUME_GALLONS,
+                Const.MASS_POUNDS,
+                Const.PRESSURE_PSI,
+                Const.LENGTH_INCHES,
+            )
+        return UnitSystem._imperial
+
+    @staticmethod
+    def METRIC():  # pylint: disable=invalid-name
+        """The metric unit system."""
+        if UnitSystem._metric is None:
+            UnitSystem._metric = UnitSystem(
+                Const.CONF_UNIT_SYSTEM_METRIC,
+                Const.TEMP_CELSIUS,
+                Const.LENGTH_KILOMETERS,
+                Const.SPEED_METERS_PER_SECOND,
+                Const.VOLUME_LITERS,
+                Const.MASS_GRAMS,
+                Const.PRESSURE_PA,
+                Const.LENGTH_MILLIMETERS,
+            )
+        return UnitSystem._metric
+
     @property
     def name(self) -> str:
         return self._name
@@ -218,6 +262,10 @@ class UnitSystem:
         return self._wind_speed_unit
 
     @staticmethod
+    def is_valid_unit(unit: str, unit_type: str) -> bool:
+        return UnitSystem._is_valid_unit(unit, unit_type)
+
+    @staticmethod
     def _is_valid_unit(unit: str, unit_type: str) -> bool:
         """Check if the unit is valid for it's type."""
         if unit_type == Const.LENGTH:
@@ -237,6 +285,10 @@ class UnitSystem:
         else:
             return False
         return unit in units
+
+    @staticmethod
+    def convert_length(value: float, from_unit: str, to_unit: str) -> float:
+        return UnitSystem._convert_length(value, from_unit, to_unit)
 
     @staticmethod
     def _convert_length(value: float, unit_1: str, unit_2: str) -> float:
@@ -278,6 +330,10 @@ class UnitSystem:
 
         grams = value * _MASS_CONVERSION[unit_1]
         return grams / _MASS_CONVERSION[unit_2]
+
+    @staticmethod
+    def convert_speed(value: float, from_unit: str, to_unit: str) -> float:
+        return UnitSystem._convert_speed(value, from_unit, to_unit)
 
     @staticmethod
     def _convert_speed(value: float, unit_1: str, unit_2: str) -> float:
@@ -327,6 +383,10 @@ class UnitSystem:
         if interval:
             return celsius
         return celsius + 273.15
+
+    @staticmethod
+    def convert_temperature(temperature: float, from_unit: str, to_unit: str) -> float:
+        return UnitSystem._convert_temperature(temperature, from_unit, to_unit)
 
     @staticmethod
     def _convert_temperature(
@@ -423,6 +483,10 @@ class UnitSystem:
         return result
 
     @staticmethod
+    def convert_pressure(pressure: float, from_unit: str, to_unit: str) -> float:
+        return UnitSystem._convert_pressure(pressure, from_unit, to_unit)
+
+    @staticmethod
     def _convert_pressure(value: float, unit_1: str, unit_2: str) -> float:
         """Convert one unit of measurement to another."""
         if unit_1 not in _PRESSURE_UNITS:
@@ -456,20 +520,20 @@ class UnitSystem:
             temperature, from_unit, self._temperature_unit
         )
 
-    def mass(self, mass: float | None, from_unit: str) -> float:
+    def mass(self, mass: float, from_unit: str) -> float:
         """Convert the given mass to this unit system."""
         if not isinstance(mass, numbers.Number):
             raise TypeError(f"{mass!s} is not a numeric value.")
         return UnitSystem._convert_mass(mass, from_unit, self._mass_unit)
 
-    def length(self, length: float | None, from_unit: str) -> float:
+    def length(self, length: float, from_unit: str) -> float:
         """Convert the given length to this unit system."""
         if not isinstance(length, numbers.Number):
             raise TypeError(f"{length!s} is not a numeric value.")
 
         return UnitSystem._convert_length(length, from_unit, self._length_unit)
 
-    def accumulated_precipitation(self, precip: float | None, from_unit: str) -> float:
+    def accumulated_precipitation(self, precip: float, from_unit: str) -> float:
         """Convert the given length to this unit system."""
         if not isinstance(precip, numbers.Number):
             raise TypeError(f"{precip!s} is not a numeric value.")
@@ -478,21 +542,21 @@ class UnitSystem:
             precip, from_unit, self._accumulated_precipitation_unit
         )
 
-    def pressure(self, pressure: float | None, from_unit: str) -> float:
+    def pressure(self, pressure: float, from_unit: str) -> float:
         """Convert the given pressure to this unit system."""
         if not isinstance(pressure, numbers.Number):
             raise TypeError(f"{pressure!s} is not a numeric value.")
 
         return UnitSystem._convert_pressure(pressure, from_unit, self._pressure_unit)
 
-    def wind_speed(self, wind_speed: float | None, from_unit: str) -> float:
+    def wind_speed(self, wind_speed: float, from_unit: str) -> float:
         """Convert the given wind_speed to this unit system."""
         if not isinstance(wind_speed, numbers.Number):
             raise TypeError(f"{wind_speed!s} is not a numeric value.")
 
         return UnitSystem._convert_speed(wind_speed, from_unit, self.wind_speed_unit)
 
-    def volume(self, volume: float | None, from_unit: str) -> float:
+    def volume(self, volume: float, from_unit: str) -> float:
         """Convert the given volume to this unit system."""
         if not isinstance(volume, numbers.Number):
             raise TypeError(f"{volume!s} is not a numeric value.")
@@ -510,24 +574,3 @@ class UnitSystem:
             Const.VOLUME: self.volume_unit,
             Const.WIND_SPEED: self.wind_speed_unit,
         }
-
-    METRIC: typing.Final[UnitSystem] = UnitSystem(
-        Const.CONF_UNIT_SYSTEM_METRIC,
-        Const.TEMP_CELSIUS,
-        Const.LENGTH_KILOMETERS,
-        Const.SPEED_METERS_PER_SECOND,
-        Const.VOLUME_LITERS,
-        Const.MASS_GRAMS,
-        Const.PRESSURE_PA,
-        Const.LENGTH_MILLIMETERS,
-    )
-    IMPERIAL: typing.Final[UnitSystem] = UnitSystem(
-        Const.CONF_UNIT_SYSTEM_IMPERIAL,
-        Const.TEMP_FAHRENHEIT,
-        Const.LENGTH_MILES,
-        Const.SPEED_MILES_PER_HOUR,
-        Const.VOLUME_GALLONS,
-        Const.MASS_POUNDS,
-        Const.PRESSURE_PSI,
-        Const.LENGTH_INCHES,
-    )

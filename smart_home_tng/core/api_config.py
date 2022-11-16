@@ -34,7 +34,23 @@ class ApiConfig:  # pylint: disable=unused-variable
         use_ssl: bool,
     ) -> None:
         """Initialize a new API config object."""
-        self.local_ip = local_ip
-        self.host = host
-        self.port = port
-        self.use_ssl = use_ssl
+        self._local_ip = local_ip
+        self._host = host
+        self._port = port
+        self._use_ssl = use_ssl
+
+    @property
+    def local_ip(self) -> str:
+        return self._local_ip
+
+    @property
+    def host(self) -> str:
+        return self._host
+
+    @property
+    def port(self) -> int:
+        return self._port
+
+    @property
+    def use_ssl(self) -> bool:
+        return self._use_ssl

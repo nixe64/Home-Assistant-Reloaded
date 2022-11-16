@@ -33,7 +33,7 @@ class Credentials:
     """Credentials for a user on an auth provider."""
 
     auth_provider_type: str = attr.ib()
-    auth_provider_id: str | None = attr.ib()
+    auth_provider_id: str = attr.ib()
 
     # Allow the auth provider to store data to represent their auth.
     data: dict = attr.ib()

@@ -26,117 +26,53 @@ import abc
 import asyncio
 import collections.abc
 import concurrent.futures
-import datetime
-import functools
-import logging
-import multiprocessing.synchronize
-import traceback
-import types
+import http
+import ipaddress
 import typing
 
+import yarl
 from aiohttp import web
 
+from ..auth.auth_manager import AuthManager
+from ..auth.providers.homeassistant import SmartHomeControllerAuthProvider
+from . import helpers
+from .area_registry import AreaRegistry
 from .callback import callback
-from .callback_type import CALLBACK_TYPE
-from .config_type import CONFIG_TYPE
+from .callback_type import CallbackType
+from .components import Components
+from .config import Config
+from .config_entries import ConfigEntries
+from .const import Const
 from .core_state import CoreState
-from .missing_integration_frame import MissingIntegrationFrame
-from .registry import Registry
+from .current_controller import _current_controller
+from .device_registry import DeviceRegistry
+from .dispatcher import Dispatcher
+from .entity_registry import EntityRegistry
+from .event import Event
+from .event_bus import EventBus
+from .event_tracker import EventTracker
+from .flow_dispatcher import FlowDispatcher
+from .intent_manager import IntentManager
+from .service_registry import ServiceRegistry
+from .setup_manager import SetupManager
 from .smart_home_controller_error import SmartHomeControllerError
-
-
-@typing.overload
-class AreaRegistry:
-    ...
-
-
-@typing.overload
-class AuthManager:
-    ...
-
-
-@typing.overload
-class Components:
-    ...
-
-
-@typing.overload
-class Config:
-    ...
-
-
-@typing.overload
-class ConfigEntries:
-    ...
-
-
-@typing.overload
-class DeviceRegistry:
-    ...
-
-
-@typing.overload
-class EntityRegistry:
-    ...
-
-
-@typing.overload
-class EventBus:
-    ...
-
-
-@typing.overload
-class Integration:
-    ...
-
-
-@typing.overload
-class ShcAuthProvider:
-    ...
-
-
-@typing.overload
-class SmartHomeControllerHTTP:
-    ...
-
-
-@typing.overload
-class SmartHomeControllerJob:
-    ...
-
-
-@typing.overload
-class Secrets:
-    ...
-
-
-@typing.overload
-class ServiceRegistry:
-    ...
-
-
-@typing.overload
-class StateMachine:
-    ...
-
-
-@typing.overload
-class Store:
-    ...
-
+from .smart_home_controller_http import SmartHomeControllerHTTP
+from .smart_home_controller_job import SmartHomeControllerJob
+from .smart_home_controller_view import SmartHomeControllerView
+from .state_machine import StateMachine
+from .store import Store
+from .sun import Sun
+from .timeout_manager import TimeoutManager
+from .translations import Translations
 
 _T = typing.TypeVar("_T")
 _R = typing.TypeVar("_R")
-_CallableT = typing.TypeVar("_CallableT", bound=typing.Callable)
 
-_LOGGER: typing.Final = logging.getLogger(__name__)
-_reported_integrations: set[str] = set()
-
+_SmartHomeControllerT = typing.TypeVar(
+    "_SmartHomeControllerT", bound="SmartHomeController"
+)
 
 # pylint: disable=unused-variable
-@typing.overload
-class SmartHomeController:
-    ...
 
 
 class SmartHomeController(abc.ABC):
@@ -146,48 +82,65 @@ class SmartHomeController(abc.ABC):
     Necessary to avoid circular imports.
     """
 
-    INVALID_CONFIG_NOTIFICATION_ID: typing.Final = "invalid_config"
-
-    _the_instance: SmartHomeController | None = None
-
-    def __init__(self):
-        if SmartHomeController._the_instance is not None:
-            raise SmartHomeControllerError("There can be only one!")
-        SmartHomeController._the_instance = self
-
-    _DATA_COMPONENTS: typing.Final = "components"
-    _DATA_INTEGRATIONS: typing.Final = "integrations"
-    _DATA_CUSTOM_COMPONENTS: typing.Final = "custom_components"
-    _PACKAGE_CUSTOM_COMPONENTS: typing.Final = "custom_components"
-    PACKAGE_BUILTIN: typing.Final = "smart_home_tng.components"
     CUSTOM_WARNING: typing.Final = (
         "We found a custom integration %s which has not "
         + "been tested by Smart Home - The Next Generation. This component might "
         + "cause stability problems, be sure to disable it if you "
         + "experience issues with Smart Home - The Next Generation"
     )
-    MAX_EXPECTED_ENTITY_IDS: typing.Final = 16384
-    MAX_LOAD_CONCURRENTLY: typing.Final = 4
-    SECRET_YAML: typing.Final = "secrets.yaml"
-    STORAGE_DIR: typing.Final = ".storage"
+
+    def __init__(self):
+        if _current_controller.get() is not None:
+            raise SmartHomeControllerError("There can be only one!")
+        _current_controller.set(self)
+
+    @staticmethod
+    def current():
+        return _current_controller.get()
+
+    @abc.abstractmethod
+    async def async_get_instance_id(self) -> str:
+        """Get unique ID for the Smart Home - The Next Generation instance."""
 
     @property
     @abc.abstractmethod
-    def area_registry(self) -> AreaRegistry | None:
+    def sun(self) -> Sun:
+        """Returns a helper for Sun Events."""
+
+    @property
+    @abc.abstractmethod
+    def translations(self) -> Translations:
+        """Get the translation helper."""
+
+    @property
+    @abc.abstractmethod
+    def area_registry(self) -> AreaRegistry:
         """Return the Area Registry for the Smart Home Controller."""
 
     @property
     @abc.abstractmethod
-    def auth(self) -> AuthManager | None:
+    def auth(self) -> AuthManager:
         """Return the Authorization Manager for the Smart Home Controller."""
 
+    @auth.setter
+    @abc.abstractmethod
+    def auth(self, auth: AuthManager) -> None:
+        """Set the Authorization Manager on startup."""
+
+    @property
+    @abc.abstractmethod
+    def dispatcher(self) -> Dispatcher:
+        """Return the Signal Handler for the Smart Home Controller."""
+
+    @property
+    @abc.abstractmethod
+    def flow_dispatcher(self) -> FlowDispatcher:
+        """Return the Flow Handler for the Smart Home Controller."""
+
+    @abc.abstractmethod
     @callback
-    def async_get_shc_auth_provider(self) -> ShcAuthProvider:
-        """Get the provider."""
-        for prv in self.auth.auth_providers:
-            if prv.type == "smart_home_tng":
-                return typing.cast(ShcAuthProvider, prv)
-        raise RuntimeError("Provider not found")
+    def async_get_shc_auth_provider(self) -> SmartHomeControllerAuthProvider:
+        """Get the internal auth provider."""
 
     @property
     @abc.abstractmethod
@@ -206,22 +159,27 @@ class SmartHomeController(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def config_flow_handlers(self) -> Registry:
-        """Return the registered Config Flow Handlers"""
-
-    @property
-    @abc.abstractmethod
     def config_entries(self) -> ConfigEntries:
         """Return the Config Entries of the Smart Home Controller."""
 
+    @config_entries.setter
+    @abc.abstractmethod
+    def config_entries(self, entries: ConfigEntries) -> None:
+        """Set Config Entries during setup."""
+
     @property
     @abc.abstractmethod
-    def device_registry(self) -> DeviceRegistry | None:
+    def data(self) -> dict[str, typing.Any]:
+        """Return non-persistent data store for components."""
+
+    @property
+    @abc.abstractmethod
+    def device_registry(self) -> DeviceRegistry:
         """Return the Device Registry of the Smart Home Controller."""
 
     @property
     @abc.abstractmethod
-    def entity_registry(self) -> EntityRegistry | None:
+    def entity_registry(self) -> EntityRegistry:
         """Return the Entity Registry of the Smart Home Controller."""
 
     @property
@@ -231,7 +189,7 @@ class SmartHomeController(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def http(self) -> SmartHomeControllerHTTP | None:
+    def http(self) -> SmartHomeControllerHTTP:
         """Get the HTTP Server of the Smart Home Controller."""
 
     @property
@@ -241,8 +199,28 @@ class SmartHomeController(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def setup(self) -> SetupManager:
+        """Return the Setup Manager of the Smart Home Controller."""
+
+    @property
+    @abc.abstractmethod
     def states(self) -> StateMachine:
         """Return the State Machine of the Smart Home Controller."""
+
+    @property
+    @abc.abstractmethod
+    def timeout(self) -> TimeoutManager:
+        """Return the Timeout Manager of the Smart Home Controller."""
+
+    @property
+    @abc.abstractmethod
+    def tracker(self) -> EventTracker:
+        """Get the Event Tracker Helpers of the Smart Home Controller."""
+
+    @property
+    @abc.abstractmethod
+    def intents(self) -> IntentManager:
+        """Get the Intent Manager of the Smart Home Controller."""
 
     @property
     @abc.abstractmethod
@@ -265,45 +243,12 @@ class SmartHomeController(abc.ABC):
     def state(self) -> CoreState:
         """Returns the state of the Smart Home Controller."""
 
-    @property
-    @abc.abstractmethod
-    def legacy_templates(self) -> bool:
-        """Use legacy template behaviour?"""
-
     @abc.abstractmethod
     def start(self) -> int:
         """Start the Smart Home Controller.
 
         Note: This function is only used for testing.
         For regular use, use "await hass.run()".
-        """
-
-    @abc.abstractmethod
-    async def async_get_integration(self, domain: str) -> Integration:
-        """Get an integration."""
-
-    @abc.abstractmethod
-    async def async_get_custom_components(self) -> dict[str, Integration]:
-        """Return list of custom integrations."""
-
-    @abc.abstractmethod
-    def async_mount_config_dir(self) -> bool:
-        """Mount config dir in order to load custom_component.
-
-        Async friendly but not a coroutine.
-        """
-
-    @abc.abstractmethod
-    async def async_component_dependencies(
-        self,
-        start_domain: str,
-        integration: Integration,
-        loaded: set[str],
-        loading: set[str],
-    ) -> set[str]:
-        """Recursive function to get component dependencies.
-
-        Async friendly.
         """
 
     @abc.abstractmethod
@@ -315,8 +260,8 @@ class SmartHomeController(abc.ABC):
         This method is a coroutine.
         """
 
-    @callback
     @abc.abstractmethod
+    @callback
     def async_register_signal_handling(self) -> None:
         """Register system signal handler for core."""
 
@@ -330,8 +275,8 @@ class SmartHomeController(abc.ABC):
     @abc.abstractmethod
     def add_job(
         self,
-        target: typing.Callable[..., typing.Any]
-        | asyncio.coroutines.Coroutine[typing.Any, typing.Any, typing.Any],
+        target: collections.abc.Callable[..., typing.Any]
+        | collections.abc.Coroutine[typing.Any, typing.Any, typing.Any],
         *args: typing.Any,
     ) -> None:
         """Add a job to be executed by the event loop or by an executor.
@@ -343,16 +288,47 @@ class SmartHomeController(abc.ABC):
         args: parameters for method to call.
         """
 
+    @typing.overload
     @callback
-    @abc.abstractmethod
     def async_add_job(
         self,
-        target: typing.Callable[
-            ..., asyncio.coroutines.Coroutine[typing.Any, typing.Any, _R] | _R
-        ]
-        | asyncio.coroutines.Coroutine[typing.Any, typing.Any, _R],
+        target: collections.abc.Callable[
+            ..., collections.abc.Coroutine[typing.Any, typing.Any, _R]
+        ],
         *args: typing.Any,
-    ) -> asyncio.Future[_R] | None:
+    ) -> asyncio.Future[_R]:
+        ...
+
+    @typing.overload
+    @callback
+    def async_add_job(
+        self,
+        target: collections.abc.Callable[
+            ..., collections.abc.Coroutine[typing.Any, typing.Any, _R] | _R
+        ],
+        *args: typing.Any,
+    ) -> asyncio.Future[_R]:
+        ...
+
+    @typing.overload
+    @callback
+    def async_add_job(
+        self,
+        target: collections.abc.Coroutine[typing.Any, typing.Any, _R],
+        *args: typing.Any,
+    ) -> asyncio.Future[_R]:
+        ...
+
+    @abc.abstractmethod
+    @callback
+    def async_add_job(
+        self,
+        target: collections.abc.Callable[
+            ..., collections.abc.Coroutine[typing.Any, typing.Any, _R] | _R
+        ]
+        | collections.abc.Coroutine[typing.Any, typing.Any, _R],
+        *args: typing.Any,
+    ) -> asyncio.Future[_R]:
         """Add a job to be executed by the event loop or by an executor.
 
         If the job is either a coroutine or decorated with @callback, it will be
@@ -364,15 +340,37 @@ class SmartHomeController(abc.ABC):
         args: parameters for method to call.
         """
 
+    @typing.overload
     @callback
-    @abc.abstractmethod
     def async_add_shc_job(
         self,
         job: SmartHomeControllerJob[
-            asyncio.coroutines.Coroutine[typing.Any, typing.Any, _R] | _R
+            collections.abc.Coroutine[typing.Any, typing.Any, _R]
         ],
         *args: typing.Any,
-    ) -> asyncio.Future[_R] | None:
+    ) -> asyncio.Future[_R]:
+        ...
+
+    @typing.overload
+    @callback
+    def async_add_shc_job(
+        self,
+        job: SmartHomeControllerJob[
+            collections.abc.Coroutine[typing.Any, typing.Any, _R] | _R
+        ],
+        *args: typing.Any,
+    ) -> asyncio.Future[_R]:
+        ...
+
+    @abc.abstractmethod
+    @callback
+    def async_add_shc_job(
+        self,
+        job: SmartHomeControllerJob[
+            collections.abc.Coroutine[typing.Any, typing.Any, _R] | _R
+        ],
+        *args: typing.Any,
+    ) -> asyncio.Future[_R]:
         """Add a SmartHomeControllerJob from within the event loop.
 
         This method must be run in the event loop.
@@ -382,17 +380,19 @@ class SmartHomeController(abc.ABC):
 
     @abc.abstractmethod
     def create_task(
-        self, target: asyncio.coroutines.Coroutine[typing.Any, typing.Any, typing.Any]
-    ) -> None:
+        self, target: collections.abc.Coroutine[typing.Any, typing.Any, typing.Any]
+    ):
         """Add task to the executor pool.
 
         target: target to call.
         """
 
-    @callback
     @abc.abstractmethod
+    @callback
     def async_create_task(
-        self, target: asyncio.coroutines.Coroutine[typing.Any, typing.Any, _R]
+        self,
+        target: collections.abc.Coroutine[typing.Any, typing.Any, _R],
+        never_track: bool = False,
     ) -> asyncio.Task[_R]:
         """Create a task from within the eventloop.
 
@@ -401,32 +401,44 @@ class SmartHomeController(abc.ABC):
         target: target to call.
         """
 
-    @callback
     @abc.abstractmethod
+    def call_later(self, delay: float, func: typing.Any, *args) -> asyncio.TimerHandle:
+        """Schedule task."""
+
+    @abc.abstractmethod
+    def call_soon_threadsafe(self, func: typing.Any, *args) -> None:
+        """Schedule task for asap execution."""
+
+    @abc.abstractmethod
+    def run_in_executor(self, executor, func, *args):
+        """Run a func in an executor pool."""
+
+    @abc.abstractmethod
+    @callback
     def async_add_executor_job(
-        self, target: typing.Callable[..., _T], *args: typing.Any
+        self, target: collections.abc.Callable[..., _T], *args: typing.Any
     ) -> asyncio.Future[_T]:
         """Add an executor job from within the event loop."""
 
-    @callback
     @abc.abstractmethod
+    @callback
     def async_track_tasks(self) -> None:
         """Track tasks so you can wait for all tasks to be done."""
 
-    @callback
     @abc.abstractmethod
+    @callback
     def async_stop_track_tasks(self) -> None:
         """Stop track tasks so you can't wait for all tasks to be done."""
 
-    @callback
     @abc.abstractmethod
+    @callback
     def async_run_shc_job(
         self,
         job: SmartHomeControllerJob[
-            asyncio.coroutines.Coroutine[typing.Any, typing.Any, _R] | _R
+            collections.abc.Coroutine[typing.Any, typing.Any, _R] | _R
         ],
         *args: typing.Any,
-    ) -> asyncio.Future[_R] | None:
+    ) -> asyncio.Future[_R]:
         """Run a Smart Home Controller Job from within the event loop.
 
         This method must be run in the event loop.
@@ -435,16 +447,47 @@ class SmartHomeController(abc.ABC):
         args: parameters for method to call.
         """
 
+    @typing.overload
     @callback
-    @abc.abstractmethod
     def async_run_job(
         self,
-        target: typing.Callable[
-            ..., asyncio.coroutines.Coroutine[typing.Any, typing.Any, _R] | _R
-        ]
-        | asyncio.coroutines.Coroutine[typing.Any, typing.Any, _R],
+        target: collections.abc.Callable[
+            ..., collections.abc.Coroutine[typing.Any, typing.Any, _R]
+        ],
         *args: typing.Any,
-    ) -> asyncio.Future[_R] | None:
+    ) -> asyncio.Future[_R]:
+        ...
+
+    @typing.overload
+    @callback
+    def async_run_job(
+        self,
+        target: collections.abc.Callable[
+            ..., collections.abc.Coroutine[typing.Any, typing.Any, _R] | _R
+        ],
+        *args: typing.Any,
+    ) -> asyncio.Future[_R]:
+        ...
+
+    @typing.overload
+    @callback
+    def async_run_job(
+        self,
+        target: collections.abc.Coroutine[typing.Any, typing.Any, _R],
+        *args: typing.Any,
+    ) -> asyncio.Future[_R]:
+        ...
+
+    @abc.abstractmethod
+    @callback
+    def async_run_job(
+        self,
+        target: collections.abc.Callable[
+            ..., collections.abc.Coroutine[typing.Any, typing.Any, _R] | _R
+        ]
+        | collections.abc.Coroutine[typing.Any, typing.Any, _R],
+        *args: typing.Any,
+    ) -> asyncio.Future[_R]:
         """Run a job from within the event loop.
 
         This method must be run in the event loop.
@@ -456,12 +499,6 @@ class SmartHomeController(abc.ABC):
     @abc.abstractmethod
     def block_till_done(self) -> None:
         """Block until all pending work is done."""
-
-    @abc.abstractmethod
-    async def await_and_log_pending(
-        pending: collections.abc.Iterable[collections.abc.Awaitable[typing.Any]],
-    ) -> None:
-        """Await and log tasks that take a long time."""
 
     @abc.abstractmethod
     async def async_block_till_done(self) -> None:
@@ -483,282 +520,39 @@ class SmartHomeController(abc.ABC):
         """
 
     @abc.abstractmethod
-    async def load_auth_provider_module(self, provider: str) -> types.ModuleType:
-        """Load an auth provider."""
-
-    @abc.abstractmethod
-    async def load_mfa_module(self, module_name: str) -> types.ModuleType:
-        """Load an mfa auth module."""
-
-    @abc.abstractmethod
-    def get_default_config_dir() -> str:
-        """Put together the default configuration directory based on the OS."""
-
-    @abc.abstractmethod
-    async def async_ensure_config_exists(self) -> bool:
-        """Ensure a configuration file exists in given configuration directory.
-
-        Creating a default one if needed.
-        Return boolean if configuration dir is ready to go.
-        """
-
-    @abc.abstractmethod
-    async def async_create_default_config(self) -> bool:
-        """Create a default configuration file in given configuration directory.
-
-        Return if creation was successful.
-        """
-
-    @abc.abstractmethod
-    async def async_shc_config_yaml(self) -> dict:
-        """Load YAML from a Smart Home Controller configuration file.
-
-        This function allow a component inside the asyncio loop to reload its
-        configuration by itself. Include package merge.
-        """
-
-    @staticmethod
-    @abc.abstractmethod
-    def load_yaml_config_file(
-        config_path: str, secrets: Secrets | None = None
-    ) -> dict[typing.Any, typing.Any]:
-        """Parse a YAML configuration file.
-
-        Raises FileNotFoundError or NextGenerationError.
-
-        This method needs to run in an executor.
-        """
-
-    @abc.abstractmethod
-    def process_shc_config_upgrade(self) -> None:
-        """Upgrade configuration if necessary.
-
-        This method needs to run in an executor.
-        """
-
-    @callback
-    @abc.abstractmethod
-    def async_log_exception(
-        self,
-        ex: Exception,
-        domain: str,
-        config: dict,
-        link: str | None = None,
-    ) -> None:
-        """Log an error for configuration validation.
-
-        This method must be run in the event loop.
-        """
-
-    @abc.abstractmethod
-    async def async_process_shc_core_config(self, config: dict) -> None:
-        """Process the core configuration section from the configuration.
-
-        This method is a coroutine.
-        """
-
-    @abc.abstractmethod
     async def async_migrator(
         self,
         old_path: str,
         store: Store,
         *,
-        old_conf_load_func: typing.Callable | None = None,
-        old_conf_migrate_func: typing.Callable | None = None,
+        old_conf_load_func: collections.abc.Callable = None,
+        old_conf_migrate_func: collections.abc.Callable = None,
     ) -> typing.Any:
         """Migrate old data to a store and then load data.
 
         async def old_conf_migrate_func(old_data)
         """
 
-    async def async_process_component_config(
-        self, config: CONFIG_TYPE, integration: Integration
-    ) -> CONFIG_TYPE | None:
-        """Check component configuration and return processed configuration.
-
-        Returns None on error.
-
-        This method must be run in the event loop.
-        """
-
-    @callback
-    @staticmethod
     @abc.abstractmethod
-    def config_without_domain(config: CONFIG_TYPE, domain: str) -> CONFIG_TYPE:
-        """Return a config with all configuration for a domain removed."""
-
-    @abc.abstractmethod
-    async def async_check_shc_config_file(self) -> str | None:
-        """Check if Smart Home Controller configuration file is valid.
-
-        This method is a coroutine.
-        """
-
-    @callback
-    @abc.abstractmethod
-    def async_notify_setup_error(
-        self, component: str, display_link: str | None = None
-    ) -> None:
-        """Print a persistent notification.
-
-        This method must be run in the event loop.
-        """
-
-    @callback
-    @abc.abstractmethod
-    def async_call_later(
-        self,
-        delay: float | datetime.timedelta,
-        action: SmartHomeControllerJob[collections.abc.Awaitable[None] | None]
-        | typing.Callable[[datetime.datetime], collections.abc.Awaitable[None] | None],
-    ) -> CALLBACK_TYPE:
-        """Add a action that is called in <delay>."""
-
-    @abc.abstractmethod
-    def call_later(
-        self, delay: float, func: typing.Callable[..., typing.Any], *args: typing.Any
-    ) -> asyncio.TimerHandle:
-        """
-        Put a delayed function call in the Event Loop
-        of the Smart Home Controller.
-        """
-
-    @callback
-    @abc.abstractmethod
-    def async_track_time_interval(
-        self,
-        action: typing.Callable[
-            [datetime.datetime], collections.abc.Awaitable[None] | None
-        ],
-        interval: datetime.timedelta,
-    ) -> CALLBACK_TYPE:
-        """Add a listener that fires repetitively at every timedelta interval."""
-
-    @callback
-    @abc.abstractmethod
-    def async_track_point_in_utc_time(
-        self,
-        action: SmartHomeControllerJob[collections.abc.Awaitable[None] | None]
-        | typing.Callable[[datetime.datetime], collections.abc.Awaitable[None] | None],
-        point_in_time: datetime.datetime,
-    ) -> CALLBACK_TYPE:
-        """Add a listener that fires once after a specific point in UTC time."""
-
-    @abc.abstractmethod
-    def lookup_path(self) -> list[str]:
-        """Return the lookup paths for legacy lookups."""
-
-    @abc.abstractmethod
-    def load_file(
-        self, comp_or_platform: str, base_paths: list[str]
-    ) -> types.ModuleType | None:
-        """Try to load specified file.
-
-        Looks in config dir first, then built-in components.
-        Only returns it if also found to be valid.
-        Async friendly.
-        """
-
-    @abc.abstractmethod
-    async def async_get_integration_with_requirements(
-        self, domain: str, done: set[str] | None = None
-    ) -> Integration:
-        """Get an integration with all requirements installed, including the dependencies.
-
-        This can raise IntegrationNotFound if manifest or integration
-        is invalid, RequirementNotFound if there was some type of
-        failure to install requirements.
-        """
-
-    @abc.abstractmethod
-    async def async_process_integration(
-        self, integration: Integration, done: set[str]
-    ) -> None:
-        """Process an integration and requirements."""
-
-    @callback
-    @abc.abstractmethod
-    def async_clear_install_history(self) -> None:
-        """Forget the install history."""
-
-    @abc.abstractmethod
-    async def async_process_requirements(
-        self, name: str, requirements: list[str]
-    ) -> None:
-        """Install the requirements for a component or platform.
-
-        This method is a coroutine. It will raise RequirementsNotFound
-        if an requirement can't be satisfied.
-        """
-
-    @abc.abstractmethod
-    def pip_kwargs(config_dir: str | None) -> dict[str, typing.Any]:
-        """Return keyword arguments for PIP install."""
-
-    @staticmethod
-    @abc.abstractmethod
-    def is_virtual_env() -> bool:
+    def is_virtual_env(self) -> bool:
         """Return if we run in a virtual environment."""
         # Check supports venv && virtualenv
 
-    @staticmethod
     @abc.abstractmethod
-    def is_docker_env() -> bool:
+    def is_docker_env(self) -> bool:
         """Return True if we run in a docker env."""
 
-    @staticmethod
     @abc.abstractmethod
-    def is_installed(package: str) -> bool:
-        """Check if a package is installed and will be loaded when we import it.
-
-        Returns True when the requirement is met.
-        Returns False when the package is not installed or doesn't meet req.
-        """
-
-    @staticmethod
-    @abc.abstractmethod
-    def install_package(
-        package: str,
-        upgrade: bool = True,
-        target: str | None = None,
-        constraints: str | None = None,
-        find_links: str | None = None,
-        install_timeout: int | None = None,
-        no_cache_dir: bool | None = False,
-    ) -> bool:
-        """Install a package on PyPi. Accepts pip compatible package strings.
-
-        Return boolean if install successful.
-        """
-
-    @abc.abstractmethod
-    @staticmethod
-    async def async_get_user_site(deps_dir: str) -> str:
+    async def async_get_user_site(self, deps_dir: str) -> str:
         """Return user local library path.
 
         This function is a coroutine.
         """
 
     @abc.abstractmethod
-    async def async_setup_auth(
-        self,
-        aiohttp_app: web.Application,
-        provider_configs: list[CONFIG_TYPE] | None = None,
-        module_configs: list[CONFIG_TYPE] | None = None,
-        setup_api=False,
-    ) -> None:
-        """Set up authentication and create an HTTP client."""
-
-    @abc.abstractmethod
-    async def async_setup_component(self, domain: str, config: CONFIG_TYPE) -> bool:
-        """Set up a component and all its dependencies.
-
-        This method is a coroutine.
-        """
-
-    @abc.abstractmethod
     def run_callback_threadsafe(
-        callback_func: typing.Callable[..., _T],
+        self,
+        callback_func: collections.abc.Callable[..., _T],
         *args: typing.Any,
     ) -> concurrent.futures.Future[_T]:
         """Submit a callback object to the main event loop.
@@ -768,7 +562,7 @@ class SmartHomeController(abc.ABC):
 
     @abc.abstractmethod
     def run_coroutine_threadsafe(
-        coro: asyncio.coroutines.Coroutine[typing.Any, typing.Any, typing.Any]
+        self, coro: collections.abc.Coroutine[typing.Any, typing.Any, typing.Any]
     ) -> concurrent.futures.Future[_T]:
         """Submit a coroutine object to a given event loop.
 
@@ -784,158 +578,130 @@ class SmartHomeController(abc.ABC):
         require_standard_port: bool = False,
         allow_internal: bool = True,
         allow_external: bool = True,
-        allow_ip: bool | None = None,
-        prefer_external: bool | None = None,
+        allow_ip: bool = None,
+        prefer_external: bool = None,
     ) -> str:
         """Get a URL to this instance."""
 
     @abc.abstractmethod
-    def config_path(self, *filename: str) -> str:
-        """Generate path to the file within the configuration directory.
-
-        Async friendly.
-        """
+    async def start_http_server_and_save_config(
+        self, conf: dict, server: SmartHomeControllerHTTP
+    ) -> None:
+        """Startup the http server and save the config."""
 
     @abc.abstractmethod
-    async def process_wrong_login(self, request: web.Request) -> None:
-        """Process a wrong login attempt.
-
-        Increase failed login attempts counter for remote IP address.
-        Add ip ban entry if failed login attempts exceeds threshold.
-        """
-
-    @abc.abstractmethod
-    def get_semaphore(
-        self, key: str, counter: int
-    ) -> multiprocessing.synchronize.Semaphore:
-        """
-        Get or create the semaphore for [key].
-
-        If the Semaphore doesn't exist, a new one is created with [counter].
-        """
-
-    # ----------------------- Frame Helpers -------------------------------------
-    def get_integration_frame(
-        self,
-        exclude_integrations: set | None = None,
-    ) -> tuple[traceback.FrameSummary, str, str]:
-        """Return the frame, integration and integration path of the current stack frame."""
-        found_frame = None
-        path = None
-        if not exclude_integrations:
-            exclude_integrations = set()
-
-        for frame in reversed(traceback.extract_stack()):
-            for path in self.lookup_path():
-                try:
-                    index = frame.filename.index(path)
-                    start = index + len(path)
-                    end = frame.filename.index("/", start)
-                    integration = frame.filename[start:end]
-                    if integration not in exclude_integrations:
-                        found_frame = frame
-
-                    break
-                except ValueError:
-                    continue
-
-            if found_frame is not None:
-                break
-
-        if found_frame is None:
-            raise MissingIntegrationFrame
-
-        return found_frame, integration, path
-
-    def report(
-        self,
-        what: str,
-        exclude_integrations: set | None = None,
-        error_if_core: bool = True,
-        level: int = logging.WARNING,
-    ) -> None:
-        """Report incorrect usage.
-
-        Async friendly.
-        """
-        try:
-            integration_frame = self.get_integration_frame(
-                exclude_integrations=exclude_integrations
-            )
-        except MissingIntegrationFrame as err:
-            msg = f"Detected code that {what}. Please report this issue."
-            if error_if_core:
-                raise RuntimeError(msg) from err
-            _LOGGER.warning(msg, stack_info=True)
-            return
-
-        self.report_integration(what, integration_frame, level)
-
-    def report_integration(
-        self,
-        what: str,
-        integration_frame: tuple[traceback.FrameSummary, str, str],
-        level: int = logging.WARNING,
-    ) -> None:
-        """Report incorrect usage in an integration.
-
-        Async friendly.
-        """
-        found_frame, integration, path = integration_frame
-
-        # Keep track of integrations already reported to prevent flooding
-        key = f"{found_frame.filename}:{found_frame.lineno}"
-        if key in _reported_integrations:
-            return
-        _reported_integrations.add(key)
-
-        index = found_frame.filename.index(path)
-        if path == "custom_components/":
-            extra = " to the custom component author"
-        else:
-            extra = ""
-
-        source_code = (found_frame.line or "?").strip()
-        _LOGGER.log(
-            level,
-            f"Detected integration that {what}. "
-            + f"Please report issue{extra} for {integration} using this method at "
-            + f"{found_frame.filename[index:]}, line {found_frame.lineno}: "
-            + f"{source_code}",
-        )
-
-    def warn_use(self, func: _CallableT, what: str) -> _CallableT:
-        """Mock a function to warn when it was about to be used."""
-        if asyncio.iscoroutinefunction(func):
-
-            @functools.wraps(func)
-            async def report_use(*_args: typing.Any, **_kwargs: typing.Any) -> None:
-                self.report(what)
-
-        else:
-
-            @functools.wraps(func)
-            def report_use(*_args: typing.Any, **_kwargs: typing.Any) -> None:
-                self.report(what)
-
-        return typing.cast(_CallableT, report_use)
+    def _attach_server(self, server: SmartHomeControllerHTTP):
+        """Prepare Server Startup."""
 
     @staticmethod
-    def report_(
-        what: str,
-        exclude_integrations: set | None = None,
-        error_if_core: bool = True,
-        level: int = logging.WARNING,
+    def log_invalid_auth(
+        func: collections.abc.Callable[
+            ..., collections.abc.Awaitable[web.StreamResponse]
+        ]
+    ) -> collections.abc.Callable[..., collections.abc.Awaitable[web.StreamResponse]]:
+        """Decorate function to handle invalid auth or failed login attempts."""
+
+        async def handle_req(
+            view: SmartHomeControllerView,
+            request: web.Request,
+            *args: typing.Any,
+            **kwargs: typing.Any,
+        ) -> web.StreamResponse:
+            """Try to log failed login attempts if response status >= BAD_REQUEST."""
+            resp = await func(view, request, *args, **kwargs)
+            if resp.status >= http.HTTPStatus.BAD_REQUEST:
+                shc = request.app[Const.KEY_SHC]
+                if shc is not None:
+                    await shc.http.process_wrong_login(request)
+            return resp
+
+        return handle_req
+
+    @callback
+    def async_at_start(
+        self,
+        at_start_cb: collections.abc.Callable[
+            [_SmartHomeControllerT], collections.abc.Awaitable[None]
+        ],
+    ) -> CallbackType:
+        """Execute something when Home Assistant is started.
+
+        Will execute it now if Home Assistant is already started.
+        """
+        at_start_job = SmartHomeControllerJob(at_start_cb)
+        if self.is_running:
+            self.async_run_shc_job(at_start_job, self)
+            return lambda: None
+
+        unsub: CallbackType = None
+
+        @callback
+        def _matched_event(_event: Event) -> None:
+            """Call the callback when Home Assistant started."""
+            self.async_run_shc_job(at_start_job, self)
+            nonlocal unsub
+            unsub = None
+
+        @callback
+        def cancel() -> None:
+            if unsub:
+                unsub()
+
+        unsub = self.bus.async_listen_once(Const.EVENT_SHC_START, _matched_event)
+        return cancel
+
+    @abc.abstractmethod
+    def register_view(
+        self, view: SmartHomeControllerView | type[SmartHomeControllerView]
     ) -> None:
-        if SmartHomeController._the_instance is not None:
-            SmartHomeController._the_instance.report(
-                what, exclude_integrations, error_if_core, level
+        """Register a view with the WSGI server.
+
+        The view argument must be a class that inherits from NextGenerationView.
+        It is optional to instantiate it before registering; this method will
+        handle it either way.
+        """
+
+    def is_shc_url(self, url: str) -> bool:
+        """Return if the URL points at this Home Assistant instance."""
+        parsed = yarl.URL(url)
+
+        if not parsed.is_absolute():
+            return False
+
+        if parsed.is_default_port():
+            parsed = parsed.with_port(None)
+
+        def host_ip() -> str:
+            if self.config.api is None or helpers.is_loopback(
+                ipaddress.ip_address(self.config.api.local_ip)
+            ):
+                return None
+
+            return str(
+                yarl.URL.build(
+                    scheme="http",
+                    host=self.config.api.local_ip,
+                    port=self.config.api.port,
+                )
             )
 
-    @abc.abstractmethod
-    async def support_entry_unload(self, domain: str) -> bool:
-        """Test if a domain supports entry unloading."""
+        potential_base_factory: typing.Callable[[], str]
+        for potential_base_factory in (
+            lambda: self.config.internal_url,
+            lambda: self.config.external_url,
+            host_ip,
+        ):
+            potential_base = potential_base_factory()
 
-    @abc.abstractmethod
-    async def support_remove_from_device(domain: str) -> bool:
-        """Test if a domain supports being removed from a device."""
+            if potential_base is None:
+                continue
+
+            potential_parsed = yarl.URL(helpers.normalize_url(potential_base))
+
+            if (
+                parsed.scheme == potential_parsed.scheme
+                and parsed.authority == potential_parsed.authority
+            ):
+                return True
+
+        return False

@@ -1,5 +1,5 @@
 """
-Helper methods for various modules in Smart Home - The Next Generation.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -29,11 +29,10 @@ import voluptuous as vol
 from .const import Const
 from .number_selector_config import NumberSelectorConfig
 from .number_selector_mode import NumberSelectorMode
-from .selector import SELECTORS, Selector
+from .selector import Selector
 
 
 # pylint: disable=unused-variable
-@SELECTORS.register("number")
 class NumberSelector(Selector):
     """Selector of a numeric value."""
 
@@ -69,7 +68,7 @@ class NumberSelector(Selector):
     def config_schema(self, config: typing.Any) -> typing.Callable:
         return NumberSelector._CONFIG_SCHEMA(config)
 
-    def __init__(self, config: NumberSelectorConfig | None = None) -> None:
+    def __init__(self, config: NumberSelectorConfig = None) -> None:
         """Instantiate a selector."""
         super().__init__("number", config)
 

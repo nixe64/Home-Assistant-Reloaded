@@ -26,12 +26,8 @@ import datetime
 import typing
 
 from . import helpers
+from .context import Context
 from .event_origin import EventOrigin
-
-
-@typing.overload
-class Context:
-    ...
 
 
 class Event:  # pylint: disable=unused-variable
@@ -42,10 +38,10 @@ class Event:  # pylint: disable=unused-variable
     def __init__(
         self,
         event_type: str,
-        data: dict[str, typing.Any] | None = None,
+        data: dict[str, typing.Any] = None,
         origin: EventOrigin = EventOrigin.LOCAL,
-        time_fired: datetime.datetime | None = None,
-        context: Context | None = None,
+        time_fired: datetime.datetime = None,
+        context: Context = None,
     ) -> None:
         """Initialize a new event."""
         self._event_type = event_type
@@ -79,7 +75,7 @@ class Event:  # pylint: disable=unused-variable
     def __hash__(self) -> int:
         """Make hashable."""
         # The only event type that shares context are the TIME_CHANGED
-        return hash((self.event_type, self.context.id, self.time_fired))
+        return hash((self.event_type, self.context.context_id, self.time_fired))
 
     def as_dict(self) -> dict[str, typing.Any]:
         """Create a dict representation of this Event.

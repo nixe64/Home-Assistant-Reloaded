@@ -1,5 +1,5 @@
 """
-Helper methods for various modules in Smart Home - The Next Generation.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -26,8 +26,8 @@ import logging
 import pathlib
 import typing
 
+from .const import Const
 from .smart_home_controller_error import SmartHomeControllerError
-from .smart_home_controller import SmartHomeController
 from .yaml_loader import YamlLoader
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ class Secrets:
 
     def _load_secret_yaml(self, secret_dir: pathlib.Path) -> dict[str, str]:
         """Load the secrets yaml from path."""
-        secret_path = pathlib.Path(secret_dir, SmartHomeController.SECRET_YAML)
+        secret_path = pathlib.Path(secret_dir, Const.SECRET_YAML)
         if secret_path in self._cache:
             return self._cache[secret_path]
 

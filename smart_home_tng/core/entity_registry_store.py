@@ -83,5 +83,5 @@ class EntityRegistryStore(Store):
                 entity["hidden_by"] = None
 
         if old_major_version > 1:
-            raise NotImplementedError
+            raise NotImplementedError()
         return data

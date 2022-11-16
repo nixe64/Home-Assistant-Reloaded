@@ -27,6 +27,6 @@ http://www.gnu.org/licenses/.
 import dataclasses
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass()
 class BaseServiceInfo:
     """Base class for discovery ServiceInfo."""

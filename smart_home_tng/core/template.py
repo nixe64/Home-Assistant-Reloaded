@@ -1,5 +1,5 @@
 """
-Template helper methods for Smart Home - The Next Generation.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -22,7 +22,6 @@ License along with this program.  If not, see
 http://www.gnu.org/licenses/.
 """
 
-
 import asyncio
 import collections.abc
 import contextlib
@@ -41,19 +40,25 @@ from . import helpers
 from .callback import callback
 from .render_info import RenderInfo
 from .result_wrapper import ResultWrapper
-from .smart_home_controller import SmartHomeController
+from .smart_home_controller_error import SmartHomeControllerError
 from .template_context import template_context as context
 from .template_environment import TemplateEnvironment
 from .template_environment_type import TemplateEnvironmentType
 from .template_error import TemplateError
-from .template_vars_type import TEMPLATE_VARS_TYPE
+from .template_vars_type import TemplateVarsType
 from .thread_with_exception import ThreadWithException
 from .tuple_wrapper import TupleWrapper
 
-# from homeassistant.util.thread import ThreadWithException
+
+if not typing.TYPE_CHECKING:
+
+    class SmartHomeController:
+        ...
 
 
-# mypy: allow-untyped-defs, no-check-untyped-defs
+if typing.TYPE_CHECKING:
+    from .smart_home_controller import SmartHomeController
+
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
 
@@ -83,19 +88,31 @@ class Template:
     # Match "simple" ints and floats. -1.0, 1, +5, 5.0
     _IS_NUMERIC: typing.Final = re.compile(r"^[+-]?(?!0\d)\d*(?:\.\d*)?$")
 
-    def __init__(self, template: str, shc: SmartHomeController | None = None):
+    def __init__(self, template: str, shc: SmartHomeController = None):
         """Instantiate a template."""
         if not isinstance(template, str):
             raise TypeError("Expected template to be a string")
 
         self._template: str = template.strip()
         self._compiled_code = None
-        self._compiled: jinja2.Template | None = None
+        self._compiled: jinja2.Template = None
         self._shc = shc
         self._is_static = not Template.is_template_string(template)
         self._exc_info = None
         self._limited = None
         self._strict = None
+
+    @property
+    def controller(self) -> SmartHomeController:
+        return self._shc
+
+    @controller.setter
+    def controller(self, shc: SmartHomeController) -> None:
+        if shc is None:
+            return
+        if self._shc is not None and self._shc is not shc:
+            raise SmartHomeControllerError("There can be only one!")
+        self._shc = shc
 
     @property
     def _env(self) -> TemplateEnvironment:
@@ -114,6 +131,10 @@ class Template:
     def template_code(self) -> str:
         return self._template
 
+    @property
+    def is_static(self):
+        return self._is_static
+
     def ensure_valid(self) -> None:
         """Return if template is valid."""
         with Template.set_template(self._template, "compiling"):
@@ -127,7 +148,7 @@ class Template:
 
     def render(
         self,
-        variables: TEMPLATE_VARS_TYPE = None,
+        variables: TemplateVarsType = None,
         parse_result: bool = True,
         limited: bool = False,
         **kwargs: typing.Any,
@@ -138,7 +159,7 @@ class Template:
         or filter depending on tng or the state machine.
         """
         if self._is_static:
-            if not parse_result or self._shc.legacy_templates:
+            if not parse_result or self._shc.config.legacy_templates:
                 return self._template
             return self._parse_result(self._template)
 
@@ -151,7 +172,7 @@ class Template:
     @callback
     def async_render(
         self,
-        variables: TEMPLATE_VARS_TYPE = None,
+        variables: TemplateVarsType = None,
         parse_result: bool = True,
         limited: bool = False,
         strict: bool = False,
@@ -165,7 +186,7 @@ class Template:
         filter depending on tng or the state machine.
         """
         if self._is_static:
-            if not parse_result or self._shc.legacy_templates:
+            if not parse_result or self._shc.config.legacy_templates:
                 return self._template
             return self._parse_result(self._template)
 
@@ -183,7 +204,7 @@ class Template:
 
         render_result = render_result.strip()
 
-        if self._shc.legacy_templates or not parse_result:
+        if self._shc.config.legacy_templates or not parse_result:
             return render_result
 
         return self._parse_result(render_result)
@@ -225,7 +246,7 @@ class Template:
     async def async_render_will_timeout(
         self,
         timeout: float,
-        variables: TEMPLATE_VARS_TYPE = None,
+        variables: TemplateVarsType = None,
         strict: bool = False,
         **kwargs: typing.Any,
     ) -> bool:
@@ -253,6 +274,9 @@ class Template:
         self._exc_info = None
         finish_event = asyncio.Event()
 
+        async def _templated_rendered():
+            finish_event.set()
+
         def _render_template() -> None:
             try:
                 Template._render_with_context(self._template, compiled, **kwargs)
@@ -261,7 +285,7 @@ class Template:
             except Exception:  # pylint: disable=broad-except
                 self._exc_info = sys.exc_info()
             finally:
-                self._shc.run_callback_threadsafe(finish_event.set)
+                self._shc.run_coroutine_threadsafe(_templated_rendered())
 
         try:
             template_render_thread = ThreadWithException(target=_render_template)
@@ -280,16 +304,18 @@ class Template:
     @callback
     def async_render_to_info(
         self,
-        variables: TEMPLATE_VARS_TYPE = None,
+        variables: TemplateVarsType = None,
         strict: bool = False,
         **kwargs: typing.Any,
     ) -> RenderInfo:
         """Render the template and collect an entity filter."""
-        assert self._shc
+        # pylint: disable=protected-access
+
+        assert self._shc and RenderInfo._active_instance is None
 
         render_info = RenderInfo(self)
 
-        # pylint: disable=protected-access
+        RenderInfo._active_instance = render_info
         if self._is_static:
             render_info.set_static_result(self._template.strip())
             return render_info
@@ -301,7 +327,9 @@ class Template:
         except TemplateError as ex:
             render_info.set_result(ex)
         finally:
-            render_info.freeze()
+            RenderInfo._active_instance = None
+
+        render_info.freeze()
 
         return render_info
 
@@ -415,7 +443,7 @@ class Template:
             return template.render(**kwargs)
 
     @staticmethod
-    def result_as_boolean(template_result: typing.Any | None) -> bool:
+    def result_as_boolean(template_result: typing.Any) -> bool:
         """Convert the template result to a boolean.
 
         True/not 0/'1'/'true'/'yes'/'on'/'enable' are considered truthy
@@ -447,7 +475,7 @@ class Template:
     @staticmethod
     def render_complex(
         value: typing.Any,
-        variables: TEMPLATE_VARS_TYPE = None,
+        variables: TemplateVarsType = None,
         limited: bool = False,
         parse_result: bool = True,
     ) -> typing.Any:

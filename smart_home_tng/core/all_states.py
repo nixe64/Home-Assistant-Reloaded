@@ -1,5 +1,5 @@
 """
-Helper methods for various modules in Smart Home - The Next Generation.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -27,11 +27,19 @@ import typing
 from . import helpers
 from .const import Const
 from .domain_states import DomainStates
+from .helpers.template import get_template_state_if_valid, template_state_for_entity
 from .render_info import RenderInfo as ri
-from .smart_home_controller import SmartHomeController
-from .template_environment import TemplateEnvironment
 from .template_error import TemplateError
 from .template_state import TemplateState
+
+if not typing.TYPE_CHECKING:
+
+    class SmartHomeController:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from .smart_home_controller import SmartHomeController
 
 
 # pylint: disable=unused-variable
@@ -51,7 +59,7 @@ class AllStates:
     def __getattr__(self, name):
         """Return the domain state."""
         if "." in name:
-            return TemplateEnvironment.get_state_if_valid(self._shc, name)
+            return get_template_state_if_valid(self._shc, name)
 
         if name in AllStates._RESERVED_NAMES:
             return None
@@ -87,7 +95,7 @@ class AllStates:
 
     def __call__(self, entity_id):
         """Return the states."""
-        state = TemplateEnvironment.get_state(self._shc, entity_id)
+        state = template_state_for_entity(self._shc, entity_id)
         return Const.STATE_UNKNOWN if state is None else state.state
 
     def __repr__(self) -> str:

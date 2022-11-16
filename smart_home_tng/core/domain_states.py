@@ -1,5 +1,5 @@
 """
-Helper methods for various modules in Smart Home - The Next Generation.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -22,10 +22,20 @@ License along with this program.  If not, see
 http://www.gnu.org/licenses/.
 """
 
-from .smart_home_controller import SmartHomeController
+import typing
+
+from .helpers.template import get_template_state_if_valid
 from .render_info import RenderInfo as ri
-from .template_environment import TemplateEnvironment
 from .template_state import TemplateState
+
+if not typing.TYPE_CHECKING:
+
+    class SmartHomeController:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from .smart_home_controller import SmartHomeController
 
 
 # pylint: disable=unused-variable
@@ -39,16 +49,14 @@ class DomainStates:
 
     def __getattr__(self, name):
         """Return the states."""
-        return TemplateEnvironment.get_state_if_valid(
-            self._shc, f"{self._domain}.{name}"
-        )
+        return get_template_state_if_valid(self._shc, f"{self._domain}.{name}")
 
     # Jinja will try __getitem__ first and it avoids the need
     # to call is_safe_attribute
     __getitem__ = __getattr__
 
     def _collect_domain(self) -> None:
-        entity_collect = ri.current
+        entity_collect = ri.current()
         if entity_collect is not None:
             entity_collect.add_domain(self._domain)
 
@@ -65,7 +73,7 @@ class DomainStates:
     def __len__(self) -> int:
         """Return number of states."""
         self._collect_domain_lifecycle()
-        return self._hass.states.async_entity_ids_count(self._domain)
+        return self._shc.states.async_entity_ids_count(self._domain)
 
     def __repr__(self) -> str:
         """Representation of Domain States."""

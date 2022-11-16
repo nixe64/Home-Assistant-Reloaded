@@ -1,5 +1,5 @@
 """
-Helper methods for various modules in Smart Home - The Next Generation.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -29,22 +29,21 @@ import typing
 from . import helpers
 from .template_error import TemplateError
 
+if not typing.TYPE_CHECKING:
 
-@typing.overload
-class Template:
-    ...
+    class Template:
+        ...
 
 
-@typing.overload
-class RenderInfo:
-    ...
+if typing.TYPE_CHECKING:
+    from .template import Template
 
 
 # pylint: disable=unused-variable
 class RenderInfo:
     """Holds information about a template render."""
 
-    _active_instance: RenderInfo | None = None
+    _active_instance = None
 
     _ALL_STATES_RATE_LIMIT: typing.Final = datetime.timedelta(minutes=1)
     _DOMAIN_STATES_RATE_LIMIT: typing.Final = datetime.timedelta(seconds=1)
@@ -57,29 +56,26 @@ class RenderInfo:
     def _false(_arg: str) -> bool:
         return False
 
-    @property
     @staticmethod
-    def current() -> RenderInfo | None:
+    def current():
         return RenderInfo._active_instance
 
     def __init__(self, template: Template) -> None:
         """Initialise."""
-        assert RenderInfo._active_instance is None
-        RenderInfo._active_instance = self
 
         self._template = template
         # Will be set sensibly once frozen.
         self._filter_lifecycle: typing.Callable[[str], bool] = RenderInfo._true
         self._filter: typing.Callable[[str], bool] = RenderInfo._true
-        self._result: str | None = None
+        self._result: str = None
         self._is_static = False
-        self._exception: TemplateError | None = None
+        self._exception: TemplateError = None
         self._all_states = False
         self._all_states_lifecycle = False
         self._domains: collections.abc.Set[str] = set()
         self._domains_lifecycle: collections.abc.Set[str] = set()
         self._entities: collections.abc.Set[str] = set()
-        self._rate_limit: datetime.timedelta | None = None
+        self._rate_limit: datetime.timedelta = None
         self._has_time = False
 
     def __repr__(self) -> str:
@@ -113,7 +109,6 @@ class RenderInfo:
         """Template should re-render if the entity is added or removed with domains watched."""
         return helpers.split_entity_id(entity_id)[0] in self._domains_lifecycle
 
-    @property
     def result(self) -> str:
         """Results of the template computation."""
         if self._exception is not None:
@@ -190,3 +185,43 @@ class RenderInfo:
 
     def collect_all_states_lifecycle(self):
         self._all_states_lifecycle = True
+
+    @property
+    def exception(self) -> TemplateError:
+        return self._exception
+
+    @property
+    def all_states(self) -> bool:
+        return self._all_states
+
+    @property
+    def all_states_lifecycle(self) -> bool:
+        return self._all_states_lifecycle
+
+    @property
+    def domains(self) -> collections.abc.Set[str]:
+        return self._domains
+
+    @property
+    def domains_lifecycle(self) -> collections.abc.Set[str]:
+        return self._domains_lifecycle
+
+    @property
+    def entities(self) -> collections.abc.Set[str]:
+        return self._entities
+
+    @property
+    def rate_limit(self) -> datetime.timedelta:
+        return self._rate_limit
+
+    @property
+    def has_time(self) -> bool:
+        return self._has_time
+
+    @property
+    def filter(self) -> typing.Callable[[str], bool]:
+        return self._filter
+
+    @property
+    def filter_lifecycle(self) -> typing.Callable[[str], bool]:
+        return self._filter_lifecycle

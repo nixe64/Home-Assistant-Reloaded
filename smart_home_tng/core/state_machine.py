@@ -47,7 +47,7 @@ class StateMachine:
         self._bus = bus
         self._loop = loop
 
-    def entity_ids(self, domain_filter: str | None = None) -> list[str]:
+    def entity_ids(self, domain_filter: str = None) -> list[str]:
         """List of entity ids that are being tracked."""
         future = helpers.run_callback_threadsafe(
             self._loop, self.async_entity_ids, domain_filter
@@ -56,7 +56,7 @@ class StateMachine:
 
     @callback
     def async_entity_ids(
-        self, domain_filter: str | collections.abc.Iterable[str] | None = None
+        self, domain_filter: str | collections.abc.Iterable[str] = None
     ) -> list[str]:
         """List of entity ids that are being tracked.
 
@@ -76,7 +76,7 @@ class StateMachine:
 
     @callback
     def async_entity_ids_count(
-        self, domain_filter: str | collections.abc.Iterable[str] | None = None
+        self, domain_filter: str | collections.abc.Iterable[str] = None
     ) -> int:
         """Count the entity ids that are being tracked.
 
@@ -93,7 +93,7 @@ class StateMachine:
         )
 
     def all(
-        self, domain_filter: str | collections.abc.Iterable[str] | None = None
+        self, domain_filter: str | collections.abc.Iterable[str] = None
     ) -> list[State]:
         """Create a list of all states."""
         return helpers.run_callback_threadsafe(
@@ -102,7 +102,7 @@ class StateMachine:
 
     @callback
     def async_all(
-        self, domain_filter: str | collections.abc.Iterable[str] | None = None
+        self, domain_filter: str | collections.abc.Iterable[str] = None
     ) -> list[State]:
         """Create a list of all states matching the filter.
 
@@ -118,7 +118,7 @@ class StateMachine:
             state for state in self._states.values() if state.domain in domain_filter
         ]
 
-    def get(self, entity_id: str) -> State | None:
+    def get(self, entity_id: str) -> State:
         """Retrieve state of entity_id or None if not found.
 
         Async friendly.
@@ -143,7 +143,7 @@ class StateMachine:
         ).result()
 
     @callback
-    def async_remove(self, entity_id: str, context: Context | None = None) -> bool:
+    def async_remove(self, entity_id: str, context: Context = None) -> bool:
         """Remove the state of an entity.
 
         Returns boolean to indicate if an entity was removed.
@@ -171,9 +171,9 @@ class StateMachine:
         self,
         entity_id: str,
         new_state: str,
-        attributes: collections.abc.Mapping[str, typing.Any] | None = None,
+        attributes: collections.abc.Mapping[str, typing.Any] = None,
         force_update: bool = False,
-        context: Context | None = None,
+        context: Context = None,
     ) -> None:
         """Set the state of an entity, add entity if it does not exist.
 
@@ -220,9 +220,9 @@ class StateMachine:
         self,
         entity_id: str,
         new_state: str,
-        attributes: collections.abc.Mapping[str, typing.Any] | None = None,
+        attributes: collections.abc.Mapping[str, typing.Any] = None,
         force_update: bool = False,
-        context: Context | None = None,
+        context: Context = None,
     ) -> None:
         """Set the state of an entity, add entity if it does not exist.
 

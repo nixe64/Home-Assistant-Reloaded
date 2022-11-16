@@ -24,12 +24,15 @@ http://www.gnu.org/licenses/.
 
 import typing
 
-from .config_flow import CONFIG_HANDLERS
+from .config_flow import _CONFIG_HANDLERS
+from .config_flow_platform import ConfigFlowPlatform
 from .flow_handler import FlowHandler
 from .flow_manager import FlowManager
 from .flow_result import FlowResult
 from .flow_result_type import FlowResultType
 from .options_flow import OptionsFlow
+from .platform import Platform
+from .smart_home_controller_component import SmartHomeControllerComponent
 from .unknown_entry import UnknownEntry
 from .unknown_handler import UnknownHandler
 
@@ -42,8 +45,8 @@ class OptionsFlowManager(FlowManager):
         self,
         handler_key: typing.Any,
         *,
-        context: dict[str, typing.Any] | None = None,
-        data: dict[str, typing.Any] | None = None
+        context: dict[str, typing.Any] = None,
+        data: dict[str, typing.Any] = None
     ) -> FlowHandler:
         """Create an options flow for a config entry.
 
@@ -53,10 +56,19 @@ class OptionsFlowManager(FlowManager):
         if entry is None:
             raise UnknownEntry(handler_key)
 
-        if entry.domain not in CONFIG_HANDLERS:
-            raise UnknownHandler
+        config_flow = None
+        if entry.domain not in _CONFIG_HANDLERS:
+            comp = SmartHomeControllerComponent.get_component(entry.domain)
+            if isinstance(comp, SmartHomeControllerComponent):
+                platform = comp.get_platform(Platform.CONFIG_FLOW)
+                if isinstance(platform, ConfigFlowPlatform):
+                    config_flow = platform
+            if config_flow is None:
+                raise UnknownHandler
+        else:
+            config_flow = _CONFIG_HANDLERS[entry.domain]
 
-        return CONFIG_HANDLERS[entry.domain].async_get_options_flow(entry)
+        return await config_flow.async_get_options_flow(entry, context, data)
 
     async def async_finish_flow(
         self, flow: FlowHandler, result: FlowResult

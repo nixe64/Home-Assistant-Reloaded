@@ -32,12 +32,12 @@ class Unauthorized(SmartHomeControllerError):
 
     def __init__(
         self,
-        context: Context | None = None,
-        user_id: str | None = None,
-        entity_id: str | None = None,
-        config_entry_id: str | None = None,
-        perm_category: str | None = None,
-        permission: str | None = None,
+        context: Context = None,
+        user_id: str = None,
+        entity_id: str = None,
+        config_entry_id: str = None,
+        perm_category: str = None,
+        permission: str = None,
     ) -> None:
         """Unauthorized error."""
         super().__init__(self.__class__.__name__)

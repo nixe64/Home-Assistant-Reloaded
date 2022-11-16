@@ -26,11 +26,7 @@ import typing
 import voluptuous as vol
 
 from ... import core
-from .multi_factor_auth_module import (
-    MULTI_FACTOR_AUTH_MODULE_SCHEMA,
-    MULTI_FACTOR_AUTH_MODULES,
-    MultiFactorAuthModule,
-)
+from .multi_factor_auth_module import MultiFactorAuthModule, _MULTI_FACTOR_AUTH_MODULES
 from .setup_flow import SetupFlow
 
 
@@ -38,7 +34,7 @@ _DEFAULT_TITLE = "Insecure Personal Identify Number"
 
 
 # pylint: disable=unused-variable
-@MULTI_FACTOR_AUTH_MODULES.register("insecure_example")
+@_MULTI_FACTOR_AUTH_MODULES.register("insecure_example")
 class InsecureExampleModule(MultiFactorAuthModule):
     """Example auth module validate pin."""
 
@@ -110,7 +106,7 @@ class InsecureExampleModule(MultiFactorAuthModule):
 
 
 # pylint: disable=unused-variable
-CONFIG_SCHEMA = MULTI_FACTOR_AUTH_MODULE_SCHEMA.extend(
+CONFIG_SCHEMA = MultiFactorAuthModule.MODULE_SCHEMA.extend(
     {
         vol.Required("data"): [
             vol.Schema({vol.Required("user_id"): str, vol.Required("pin"): str})

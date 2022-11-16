@@ -35,6 +35,14 @@ class ServiceNotFound(SmartHomeControllerError):
         self._domain = domain
         self._service = service
 
+    @property
+    def domain(self) -> str:
+        return self._domain
+
+    @property
+    def service(self) -> str:
+        return self._service
+
     def __str__(self) -> str:
         """Return string representation."""
         return f"Unable to find service {self._domain}.{self._service}"

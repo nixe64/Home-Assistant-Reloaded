@@ -22,8 +22,8 @@ License along with this program.  If not, see
 http://www.gnu.org/licenses/.
 """
 
-# pylint: disable=unused-variable, unused-import
+# pylint: disable=unused-variable
 
-from .auth_provider import AuthProvider, auth_provider_from_config, AUTH_PROVIDER_SCHEMA
+from .auth_provider import AuthProvider
 from .login_flow import LoginFlow
-from .smart_home_tng import ShcAuthProvider
+from .homeassistant import SmartHomeControllerAuthProvider
