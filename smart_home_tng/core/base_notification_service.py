@@ -46,6 +46,10 @@ class BaseNotificationService:
         self._registered_targets: dict[str, str] = None
         self._services_dict: dict = None
 
+    @property
+    def registered_targets(self):
+        return self._registered_targets
+
     # pylint: disable=unused-argument
     def send_message(self, message: str, **kwargs: typing.Any) -> None:
         """Send a message.
@@ -116,8 +120,8 @@ class BaseNotificationService:
                 if target_name in stale_targets:
                     stale_targets.remove(target_name)
                 if (
-                    target_name in self.registered_targets
-                    and target == self.registered_targets[target_name]
+                    target_name in self._registered_targets
+                    and target == self._registered_targets[target_name]
                 ):
                     continue
                 self._registered_targets[target_name] = target
@@ -134,7 +138,7 @@ class BaseNotificationService:
                         "Sends a notification message using "
                         + f"the {target_name} integration."
                     ),
-                    Const.CONF_FIELDS: self.services_dict[Const.SERVICE_NOTIFY][
+                    Const.CONF_FIELDS: self._services_dict[Const.SERVICE_NOTIFY][
                         Const.CONF_FIELDS
                     ],
                 }

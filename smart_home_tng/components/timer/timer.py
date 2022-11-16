@@ -26,9 +26,9 @@ import datetime as dt
 import typing
 
 from ... import core
-from .const import Const
 
 _cv: typing.TypeAlias = core.ConfigValidation
+_timer: typing.TypeAlias = core.Timer
 
 
 # pylint: disable=unused-variable
@@ -41,13 +41,13 @@ class Timer(core.RestoreEntity):
         """Initialize a timer."""
         self._config: dict = config
         self._editable: bool = True
-        self._state: str = Const.STATUS_IDLE
-        self._duration = _cv.time_period_str(config[Const.CONF_DURATION])
+        self._state: str = _timer.STATUS_IDLE
+        self._duration = _cv.time_period_str(config[_timer.CONF_DURATION])
         self._remaining: dt.timedelta = None
         self._end: dt.datetime = None
         self._listener: typing.Callable[[], None] = None
         self._restore: bool = self._config.get(
-            Const.CONF_RESTORE, Const.DEFAULT_RESTORE
+            _timer.CONF_RESTORE, _timer.DEFAULT_RESTORE
         )
 
         self._attr_should_poll = False
@@ -85,15 +85,15 @@ class Timer(core.RestoreEntity):
     def extra_state_attributes(self):
         """Return the state attributes."""
         attrs = {
-            Const.ATTR_DURATION: _format_timedelta(self._duration),
+            _timer.ATTR_DURATION: _format_timedelta(self._duration),
             core.Const.ATTR_EDITABLE: self.editable,
         }
         if self._end is not None:
-            attrs[Const.ATTR_FINISHES_AT] = self._end.isoformat()
+            attrs[_timer.ATTR_FINISHES_AT] = self._end.isoformat()
         if self._remaining is not None:
-            attrs[Const.ATTR_REMAINING] = _format_timedelta(self._remaining)
+            attrs[_timer.ATTR_REMAINING] = _format_timedelta(self._remaining)
         if self._restore:
-            attrs[Const.ATTR_RESTORE] = self._restore
+            attrs[_timer.ATTR_RESTORE] = self._restore
 
         return attrs
 
@@ -107,31 +107,31 @@ class Timer(core.RestoreEntity):
         # If we don't need to restore a previous state or no previous state exists,
         # start at idle
         if not self._restore or (state := await self.async_get_last_state()) is None:
-            self._state = Const.STATUS_IDLE
+            self._state = _timer.STATUS_IDLE
             return
 
         # Begin restoring state
         self._state = state.state
-        self._duration = _cv.time_period(state.attributes[Const.ATTR_DURATION])
+        self._duration = _cv.time_period(state.attributes[_timer.ATTR_DURATION])
 
         # Nothing more to do if the timer is idle
-        if self._state == Const.STATUS_IDLE:
+        if self._state == _timer.STATUS_IDLE:
             return
 
         # If the timer was paused, we restore the remaining time
-        if self._state == Const.STATUS_PAUSED:
-            self._remaining = _cv.time_period(state.attributes[Const.ATTR_REMAINING])
+        if self._state == _timer.STATUS_PAUSED:
+            self._remaining = _cv.time_period(state.attributes[_timer.ATTR_REMAINING])
             return
         # If we get here, the timer must have been active so we need to decide what
         # to do based on end time and the current time
-        end = _cv.datetime(state.attributes[Const.ATTR_FINISHES_AT])
+        end = _cv.datetime(state.attributes[_timer.ATTR_FINISHES_AT])
         # If there is time remaining in the timer, restore the remaining time then
         # start the timer
         if (
             remaining := end - core.helpers.utcnow().replace(microsecond=0)
         ) > dt.timedelta(0):
             self._remaining = remaining
-            self._state = Const.STATUS_PAUSED
+            self._state = _timer.STATUS_PAUSED
             self.async_start()
         # If the timer ended before now, finish the timer. The event will indicate
         # when the timer was expected to fire.
@@ -146,11 +146,11 @@ class Timer(core.RestoreEntity):
             self._listener()
             self._listener = None
 
-        event = Const.EVENT_TIMER_STARTED
-        if self._state in (Const.STATUS_ACTIVE, Const.STATUS_PAUSED):
-            event = Const.EVENT_TIMER_RESTARTED
+        event = _timer.EVENT_TIMER_STARTED
+        if self._state in (_timer.STATUS_ACTIVE, _timer.STATUS_PAUSED):
+            event = _timer.EVENT_TIMER_RESTARTED
 
-        self._state = Const.STATUS_ACTIVE
+        self._state = _timer.STATUS_ACTIVE
         start = core.helpers.utcnow().replace(microsecond=0)
 
         # Set remaining to new value if needed
@@ -177,10 +177,10 @@ class Timer(core.RestoreEntity):
         self._listener()
         self._listener = None
         self._remaining = self._end - core.helpers.utcnow().replace(microsecond=0)
-        self._state = Const.STATUS_PAUSED
+        self._state = _timer.STATUS_PAUSED
         self._end = None
         self._shc.bus.async_fire(
-            Const.EVENT_TIMER_PAUSED, {core.Const.ATTR_ENTITY_ID: self.entity_id}
+            _timer.EVENT_TIMER_PAUSED, {core.Const.ATTR_ENTITY_ID: self.entity_id}
         )
         self.async_write_state()
 
@@ -190,32 +190,32 @@ class Timer(core.RestoreEntity):
         if self._listener:
             self._listener()
             self._listener = None
-        self._state = Const.STATUS_IDLE
+        self._state = _timer.STATUS_IDLE
         self._end = None
         self._remaining = None
         self._shc.bus.async_fire(
-            Const.EVENT_TIMER_CANCELLED, {core.Const.ATTR_ENTITY_ID: self.entity_id}
+            _timer.EVENT_TIMER_CANCELLED, {core.Const.ATTR_ENTITY_ID: self.entity_id}
         )
         self.async_write_state()
 
     @core.callback
     def async_finish(self):
         """Reset and updates the states, fire finished event."""
-        if self._state != Const.STATUS_ACTIVE:
+        if self._state != _timer.STATUS_ACTIVE:
             return
 
         if self._listener:
             self._listener()
             self._listener = None
         end = self._end
-        self._state = Const.STATUS_IDLE
+        self._state = _timer.STATUS_IDLE
         self._end = None
         self._remaining = None
         self._shc.bus.async_fire(
-            Const.EVENT_TIMER_FINISHED,
+            _timer.EVENT_TIMER_FINISHED,
             {
                 core.Const.ATTR_ENTITY_ID: self.entity_id,
-                Const.ATTR_FINISHED_AT: end.isoformat(),
+                _timer.ATTR_FINISHED_AT: end.isoformat(),
             },
         )
         self.async_write_state()
@@ -223,19 +223,19 @@ class Timer(core.RestoreEntity):
     @core.callback
     def _async_finished(self, _time):
         """Reset and updates the states, fire finished event."""
-        if self._state != Const.STATUS_ACTIVE:
+        if self._state != _timer.STATUS_ACTIVE:
             return
 
         self._listener = None
-        self._state = Const.STATUS_IDLE
+        self._state = _timer.STATUS_IDLE
         end = self._end
         self._end = None
         self._remaining = None
         self._shc.bus.async_fire(
-            Const.EVENT_TIMER_FINISHED,
+            _timer.EVENT_TIMER_FINISHED,
             {
                 core.Const.ATTR_ENTITY_ID: self.entity_id,
-                Const.ATTR_FINISHED_AT: end.isoformat(),
+                _timer.ATTR_FINISHED_AT: end.isoformat(),
             },
         )
         self.async_write_state()
@@ -243,8 +243,8 @@ class Timer(core.RestoreEntity):
     async def async_update_config(self, config: dict) -> None:
         """Handle when the config is updated."""
         self._config = config
-        self._duration = _cv.time_period_str(config[Const.CONF_DURATION])
-        self._restore = config.get(Const.CONF_RESTORE, Const.DEFAULT_RESTORE)
+        self._duration = _cv.time_period_str(config[_timer.CONF_DURATION])
+        self._restore = config.get(_timer.CONF_RESTORE, _timer.DEFAULT_RESTORE)
         self.async_write_state()
 
 

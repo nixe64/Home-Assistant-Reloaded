@@ -1,5 +1,5 @@
 """
-Timer Component for Smart Home - The Next Generation.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -23,15 +23,15 @@ http://www.gnu.org/licenses/.
 """
 
 import typing
+
 import voluptuous as vol
 
-from ... import core
-
-_cv: typing.TypeAlias = core.ConfigValidation
+from .config_validation import ConfigValidation as _cv
+from .const import Const
 
 
 # pylint: disable=unused-variable
-class Const:
+class Timer:
     """ "Constants for the Timer Component."""
 
     DEFAULT_DURATION: typing.Final = 0
@@ -62,14 +62,14 @@ class Const:
     SERVICE_FINISH: typing.Final = "finish"
 
     CREATE_FIELDS: typing.Final = {
-        vol.Required(core.Const.CONF_NAME): _cv.string,
-        vol.Optional(core.Const.CONF_ICON): _cv.icon,
+        vol.Required(Const.CONF_NAME): _cv.string,
+        vol.Optional(Const.CONF_ICON): _cv.icon,
         vol.Optional(CONF_DURATION, default=DEFAULT_DURATION): _cv.time_period,
         vol.Optional(CONF_RESTORE, default=DEFAULT_RESTORE): _cv.boolean,
     }
     UPDATE_FIELDS: typing.Final = {
-        vol.Optional(core.Const.CONF_NAME): _cv.string,
-        vol.Optional(core.Const.CONF_ICON): _cv.icon,
+        vol.Optional(Const.CONF_NAME): _cv.string,
+        vol.Optional(Const.CONF_ICON): _cv.icon,
         vol.Optional(CONF_DURATION): _cv.time_period,
         vol.Optional(CONF_RESTORE): _cv.boolean,
     }

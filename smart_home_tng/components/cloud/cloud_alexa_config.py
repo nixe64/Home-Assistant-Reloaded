@@ -38,6 +38,8 @@ from ... import core
 from .cloud_preferences import CloudPreferences
 from .const import Const
 
+_alexa: typing.TypeAlias = core.Alexa
+
 _LOGGER: typing.Final = logging.getLogger(__name__)
 
 # Time to wait when entity preferences have changed before syncing it to
@@ -46,7 +48,7 @@ _SYNC_DELAY: typing.Final = 1
 
 
 # pylint: disable=unused-variable
-class CloudAlexaConfig(core.AbstractAlexaConfig):
+class CloudAlexaConfig(_alexa.AbstractConfig):
     """Alexa Configuration."""
 
     def __init__(
@@ -187,9 +189,9 @@ class CloudAlexaConfig(core.AbstractAlexaConfig):
                         "Alexa state reporting disabled",
                         "cloud_alexa_report",
                     )
-                raise core.RequireRelink
+                raise _alexa.RequireRelink
 
-            raise core.NoTokenAvailable
+            raise _alexa.NoTokenAvailable
 
         self._token = body["access_token"]
         self._endpoint = body["event_endpoint"]
@@ -222,7 +224,7 @@ class CloudAlexaConfig(core.AbstractAlexaConfig):
             if self.should_report_state:
                 try:
                     await self.async_enable_proactive_mode()
-                except (core.NoTokenAvailable, core.RequireRelink):
+                except (_alexa.NoTokenAvailable, _alexa.RequireRelink):
                     await self.set_authorized(False)
             else:
                 await self.async_disable_proactive_mode()
@@ -307,7 +309,7 @@ class CloudAlexaConfig(core.AbstractAlexaConfig):
         # We only set the prefs when update is successful, that way we will
         # retry when next change comes in.
         alexa = self._shc.components.alexa
-        if not isinstance(alexa, core.AlexaComponent):
+        if not isinstance(alexa, _alexa.Component):
             alexa = None
 
         if await self._sync_helper(alexa, to_update, to_remove):
@@ -326,7 +328,7 @@ class CloudAlexaConfig(core.AbstractAlexaConfig):
         is_enabled = self.enabled
 
         alexa = self._shc.components.alexa
-        if not isinstance(alexa, core.AlexaComponent):
+        if not isinstance(alexa, _alexa.Component):
             alexa = None
         else:
             for entity in alexa.async_get_entities(self):
@@ -337,9 +339,7 @@ class CloudAlexaConfig(core.AbstractAlexaConfig):
 
         return await self._sync_helper(alexa, to_update, to_remove)
 
-    async def _sync_helper(
-        self, alexa: core.AlexaComponent, to_update, to_remove
-    ) -> bool:
+    async def _sync_helper(self, alexa: _alexa.Component, to_update, to_remove) -> bool:
         """Sync entities to Alexa.
 
         Return boolean if it was successful.
@@ -402,7 +402,7 @@ class CloudAlexaConfig(core.AbstractAlexaConfig):
                 to_remove.append(event.data["old_entity_id"])
 
         alexa = self._shc.components.alexa
-        if not isinstance(alexa, core.AlexaComponent):
+        if not isinstance(alexa, _alexa.Component):
             alexa = None
-        with contextlib.suppress(core.NoTokenAvailable):
+        with contextlib.suppress(_alexa.NoTokenAvailable):
             await self._sync_helper(alexa, to_update, to_remove)

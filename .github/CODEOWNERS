@@ -11,6 +11,8 @@ setup.cfg @nixe64
 
 # Integrations
 /smart_home_tng/components/alarm_control_panel/ @nixe64
+/smart_home_tng/components/alexa/ @nixe64
+/smart_home_tng/components/alexa_media/ @nixe64
 /smart_home_tng/components/amazon_polly/ @nixe64
 /smart_home_tng/components/analytics/ @nixe64
 /smart_home_tng/components/api/ @nixe64

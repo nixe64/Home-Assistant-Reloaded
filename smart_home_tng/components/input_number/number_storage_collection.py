@@ -27,13 +27,14 @@ import typing
 import voluptuous as vol
 
 from ... import core
-from .const import Const
 from .util import _cv_input_number
 
+_input_number: typing.TypeAlias = core.InputNumber
+
 _CREATE_SCHEMA: typing.Final = vol.Schema(
-    vol.All(Const.CREATE_FIELDS, _cv_input_number)
+    vol.All(_input_number.CREATE_FIELDS, _cv_input_number)
 )
-_UPDATE_SCHEMA: typing.Final = vol.Schema(Const.UPDATE_FIELDS)
+_UPDATE_SCHEMA: typing.Final = vol.Schema(_input_number.UPDATE_FIELDS)
 
 
 # pylint: disable=unused-variable

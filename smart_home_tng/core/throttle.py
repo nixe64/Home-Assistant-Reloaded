@@ -95,7 +95,7 @@ class Throttle:
         @functools.wraps(method)
         def wrapper(
             *args: typing.Any, **kwargs: typing.Any
-        ) -> typing.Callable | asyncio.coroutines.Coroutine:
+        ) -> typing.Callable | typing.Coroutine:
             """Wrap that allows wrapped to be called only once per min_time.
 
             If we cannot acquire the lock, it is running so return None.

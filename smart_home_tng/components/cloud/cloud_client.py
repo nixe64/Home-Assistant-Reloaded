@@ -164,7 +164,7 @@ class CloudClient(nabucasa.CloudClient):
                         f"Unable to activate Alexa Report State: {err}. Retrying in 30 seconds",
                     )
                 self._owner.controller.tracker.async_call_later(30, enable_alexa)
-            except (core.NoTokenAvailable, core.RequireRelink):
+            except (core.Alexa.NoTokenAvailable, core.Alexa.RequireRelink):
                 pass
 
         async def enable_google(_):
@@ -225,7 +225,7 @@ class CloudClient(nabucasa.CloudClient):
         cloud_user = await self._prefs.get_cloud_user()
         aconfig = await self.get_alexa_config()
         alexa = self._owner.controller.components.alexa
-        if not isinstance(alexa, core.AlexaComponent):
+        if not isinstance(alexa, core.Alexa.Component):
             return None
 
         return await alexa.async_handle_message(

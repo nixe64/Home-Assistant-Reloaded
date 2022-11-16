@@ -528,7 +528,7 @@ class SetupManager:
         This method is a coroutine.
         """
         platform_path = Const.PLATFORM_FORMAT.format(
-            domain=str(domain), platform=platform
+            domain=platform, platform=str(domain)
         )
 
         def log_error(msg: str) -> None:
@@ -2927,7 +2927,7 @@ class SetupManager:
                 integration_platform, asyncio.Lock()
             ):
                 if shc_comp is not None:
-                    await shc_comp.async_reset_platform(Platform(integration_name))
+                    await shc_comp.async_reset_platform(integration_name)
                     await shc_comp.async_setup(root_config)
                 else:
                     await component.async_reset_platform(self._shc, integration_name)
@@ -3118,7 +3118,7 @@ class SetupManager:
         assert config is not None, "You need to pass in the real hass config"
 
         setup_success = True
-
+        component = str(component)
         if component not in self._shc.config.components:
             setup_success = await self.async_setup_component(component, config)
 

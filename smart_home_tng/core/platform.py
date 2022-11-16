@@ -42,6 +42,7 @@ class Platform(strenum.LowercaseStrEnum):
     CONDITION = enum.auto()
     """Get ActionConditionProtocol instance."""
 
+    ALERT = enum.auto()
     AUTOMATION = enum.auto()
     BACKUP = enum.auto()
     COUNTER = enum.auto()
@@ -49,6 +50,7 @@ class Platform(strenum.LowercaseStrEnum):
     DISCOVERY = enum.auto()
     ENERGY = enum.auto()
     GROUP = enum.auto()
+    SMART_HOME_CONTROLLER = "homeassistant"
     INTENT = enum.auto()
     INPUT_BOOLEAN = enum.auto()
     INPUT_BUTTON = enum.auto()

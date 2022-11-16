@@ -26,7 +26,6 @@ http://www.gnu.org/licenses/.
 
 from . import helpers
 from .abort_flow import AbortFlow
-from .abstract_alexa_config import AbstractAlexaConfig
 from .abstract_oauth2_implementation import AbstractOAuth2Implementation
 from .abstract_outh2_flow_handler import AbstractOAuth2FlowHandler
 from .action_condition_platform import ActionConditionPlatform
@@ -35,9 +34,7 @@ from .action_trace import ActionTrace
 from .adapter import Adapter
 from .add_entities_callback import AddEntitiesCallback
 from .alarm_control_panel import AlarmControlPanel
-from .alexa_component import AlexaComponent
-from .alexa_config_store import AlexaConfigStore
-from .alexa_errors import NoTokenAvailable, RequireRelink
+from .alexa import Alexa
 from .api_config import ApiConfig
 from .application_credentials_platform import ApplicationCredentialsPlatform
 from .area import Area
@@ -174,6 +171,8 @@ from .humidifier import Humidifier
 from .id_less_collection import IDLessCollection
 from .id_manager import IDManager
 from .image import Image
+from .input import Input
+from .input_number import InputNumber
 from .integration import Integration
 from .integration_error import IntegrationError
 from .integration_not_found import IntegrationNotFound
@@ -338,6 +337,7 @@ from .template_vars_type import TemplateVarsType
 from .thread_with_exception import ThreadWithException
 from .throttle import Throttle
 from .timeout_manager import TimeoutManager
+from .timer import Timer
 from .toggle import Toggle
 from .trace import Trace
 from .trace_base import TraceBase

@@ -134,9 +134,7 @@ class EntityComponent:
             config, self._domain
         ):
             if p_type is not None:
-                self._shc.async_create_task(
-                    self.async_setup_platform(Platform(p_type), p_config)
-                )
+                self._shc.async_create_task(self.async_setup_platform(p_type, p_config))
 
         # Generic discovery listener for loading platform dynamically
         # Refer to: homeassistant.helpers.discovery.async_load_platform()
@@ -155,7 +153,7 @@ class EntityComponent:
         platform_type = config_entry.domain
         platform = await self._shc.setup.async_prepare_setup_platform(
             self._config or {},
-            Platform(self._domain),
+            self._domain,
             platform_type,
         )
 

@@ -133,7 +133,7 @@ class _Response:
 
     @property
     def speech(self):
-        return self.speech
+        return self._speech
 
     @callback
     def async_set_speech(

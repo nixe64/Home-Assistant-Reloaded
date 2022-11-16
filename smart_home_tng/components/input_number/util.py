@@ -22,20 +22,25 @@ License along with this program.  If not, see
 http://www.gnu.org/licenses/.
 """
 
+import typing
+
 import voluptuous as vol
-from .const import Const
+
+from ... import core
+
+_input_number: typing.TypeAlias = core.InputNumber
 
 
 # pylint: disable=unused-variable
 def _cv_input_number(cfg):
     """Configure validation helper for input number (voluptuous)."""
-    minimum = cfg.get(Const.CONF_MIN)
-    maximum = cfg.get(Const.CONF_MAX)
+    minimum = cfg.get(_input_number.CONF_MIN)
+    maximum = cfg.get(_input_number.CONF_MAX)
     if minimum >= maximum:
         raise vol.Invalid(
             f"Maximum ({minimum}) is not greater than minimum ({maximum})"
         )
-    state = cfg.get(Const.CONF_INITIAL)
+    state = cfg.get(_input_number.CONF_INITIAL)
     if state is not None and (state < minimum or state > maximum):
         raise vol.Invalid(f"Initial value {state} not in range {minimum}-{maximum}")
     return cfg

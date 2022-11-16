@@ -22,10 +22,13 @@ License along with this program.  If not, see
 http://www.gnu.org/licenses/.
 """
 
+import typing
+
 import voluptuous as vol
 
 from ... import core
-from .const import Const
+
+_input_number: typing.TypeAlias = core.InputNumber
 
 
 # pylint: disable=unused-variable
@@ -38,7 +41,7 @@ class InputNumber(core.RestoreEntity):
         """Initialize an input number."""
         self._config = config
         self._editable = True
-        self._current_value: float = config.get(Const.CONF_INITIAL)
+        self._current_value: float = config.get(_input_number.CONF_INITIAL)
 
     @property
     def editable(self) -> bool:
@@ -60,12 +63,12 @@ class InputNumber(core.RestoreEntity):
     @property
     def _minimum(self) -> float:
         """Return minimum allowed value."""
-        return self._config[Const.CONF_MIN]
+        return self._config[_input_number.CONF_MIN]
 
     @property
     def _maximum(self) -> float:
         """Return maximum allowed value."""
-        return self._config[Const.CONF_MAX]
+        return self._config[_input_number.CONF_MAX]
 
     @property
     def name(self):
@@ -85,7 +88,7 @@ class InputNumber(core.RestoreEntity):
     @property
     def _step(self) -> int:
         """Return entity's increment/decrement step."""
-        return self._config[Const.CONF_STEP]
+        return self._config[_input_number.CONF_STEP]
 
     @property
     def unit_of_measurement(self):
@@ -101,11 +104,11 @@ class InputNumber(core.RestoreEntity):
     def extra_state_attributes(self):
         """Return the state attributes."""
         return {
-            Const.ATTR_INITIAL: self._config.get(Const.CONF_INITIAL),
+            _input_number.ATTR_INITIAL: self._config.get(_input_number.CONF_INITIAL),
             core.Const.ATTR_EDITABLE: self.editable,
-            Const.ATTR_MIN: self._minimum,
-            Const.ATTR_MAX: self._maximum,
-            Const.ATTR_STEP: self._step,
+            _input_number.ATTR_MIN: self._minimum,
+            _input_number.ATTR_MAX: self._maximum,
+            _input_number.ATTR_STEP: self._step,
             core.Const.ATTR_MODE: self._config[core.Const.CONF_MODE],
         }
 

@@ -29,17 +29,17 @@ import typing
 import voluptuous as vol
 
 from ... import core
-from .const import Const
 from .timer import Timer, _format_timedelta
 from .timer_storage_collectiion import TimerStorageCollection
 
 _cv: typing.TypeAlias = core.ConfigValidation
+_timer: typing.TypeAlias = core.Timer
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
 _VALID_STATES: typing.Final = {
-    Const.STATUS_IDLE,
-    Const.STATUS_ACTIVE,
-    Const.STATUS_PAUSED,
+    _timer.STATUS_IDLE,
+    _timer.STATUS_ACTIVE,
+    _timer.STATUS_PAUSED,
 }
 
 
@@ -69,10 +69,10 @@ class TimerComponent(core.SmartHomeControllerComponent, core.ReproduceStatePlatf
                             vol.Optional(core.Const.CONF_NAME): _cv.string,
                             vol.Optional(core.Const.CONF_ICON): _cv.icon,
                             vol.Optional(
-                                Const.CONF_DURATION, default=Const.DEFAULT_DURATION
+                                _timer.CONF_DURATION, default=_timer.DEFAULT_DURATION
                             ): vol.All(_cv.time_period, _format_timedelta),
                             vol.Optional(
-                                Const.CONF_RESTORE, default=Const.DEFAULT_RESTORE
+                                _timer.CONF_RESTORE, default=_timer.DEFAULT_RESTORE
                             ): _cv.boolean,
                         },
                     )
@@ -125,8 +125,8 @@ class TimerComponent(core.SmartHomeControllerComponent, core.ReproduceStatePlatf
             storage_collection,
             self.domain,
             self.domain,
-            Const.CREATE_FIELDS,
-            Const.UPDATE_FIELDS,
+            _timer.CREATE_FIELDS,
+            _timer.UPDATE_FIELDS,
         ).async_setup()
 
         core.Service.async_register_admin_service(
@@ -134,25 +134,25 @@ class TimerComponent(core.SmartHomeControllerComponent, core.ReproduceStatePlatf
             self.domain,
             core.Const.SERVICE_RELOAD,
             self._reload_service_handler,
-            schema=Const.RELOAD_SERVICE_SCHEMA,
+            schema=_timer.RELOAD_SERVICE_SCHEMA,
         )
         component.async_register_entity_service(
-            Const.SERVICE_START,
+            _timer.SERVICE_START,
             {
                 vol.Optional(
-                    Const.ATTR_DURATION, default=Const.DEFAULT_DURATION
+                    _timer.ATTR_DURATION, default=_timer.DEFAULT_DURATION
                 ): _cv.time_period
             },
             Timer.async_start,
         )
         component.async_register_entity_service(
-            Const.SERVICE_PAUSE, {}, Timer.async_pause
+            _timer.SERVICE_PAUSE, {}, Timer.async_pause
         )
         component.async_register_entity_service(
-            Const.SERVICE_CANCEL, {}, Timer.async_cancel
+            _timer.SERVICE_CANCEL, {}, Timer.async_cancel
         )
         component.async_register_entity_service(
-            Const.SERVICE_FINISH, {}, Timer.async_finish
+            _timer.SERVICE_FINISH, {}, Timer.async_finish
         )
 
         return True
@@ -199,22 +199,22 @@ class TimerComponent(core.SmartHomeControllerComponent, core.ReproduceStatePlatf
 
         # Return if we are already at the right state.
         if cur_state.state == state.state and cur_state.attributes.get(
-            Const.ATTR_DURATION
-        ) == state.attributes.get(Const.ATTR_DURATION):
+            _timer.ATTR_DURATION
+        ) == state.attributes.get(_timer.ATTR_DURATION):
             return
 
         service_data = {core.Const.ATTR_ENTITY_ID: state.entity_id}
 
-        if state.state == Const.STATUS_ACTIVE:
-            service = Const.SERVICE_START
-            if Const.ATTR_DURATION in state.attributes:
-                service_data[Const.ATTR_DURATION] = state.attributes[
-                    Const.ATTR_DURATION
+        if state.state == _timer.STATUS_ACTIVE:
+            service = _timer.SERVICE_START
+            if _timer.ATTR_DURATION in state.attributes:
+                service_data[_timer.ATTR_DURATION] = state.attributes[
+                    _timer.ATTR_DURATION
                 ]
-        elif state.state == Const.STATUS_PAUSED:
-            service = Const.SERVICE_PAUSE
-        elif state.state == Const.STATUS_IDLE:
-            service = Const.SERVICE_CANCEL
+        elif state.state == _timer.STATUS_PAUSED:
+            service = _timer.SERVICE_PAUSE
+        elif state.state == _timer.STATUS_IDLE:
+            service = _timer.SERVICE_CANCEL
 
         await self._shc.services.async_call(
             self.domain, service, service_data, context=context, blocking=True

@@ -382,7 +382,7 @@ class SmartHomeControllerComponent(abc.ABC):
         return False
 
     # pylint: disable=unused-argument
-    async def async_reset_platform(self, platform: Platform):
+    async def async_reset_platform(self, platform: Platform | str):
         """Reset the Platform Implementation."""
         return
 

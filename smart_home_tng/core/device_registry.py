@@ -33,6 +33,7 @@ import attr
 from ..backports import strenum
 from . import helpers
 from .callback import callback
+from .config_entry import ConfigEntry
 from .const import Const
 from .debouncer import Debouncer
 from .deleted_device import DeletedDevice
@@ -619,6 +620,44 @@ class DeviceRegistry:
         for dev_id, device in self._devices.items():
             if area_id == device.area_id:
                 self.async_update_device(dev_id, area_id=None)
+
+    @callback
+    def async_config_entry_disabled_by_changed(self, config_entry: ConfigEntry) -> None:
+        """Handle a config entry being disabled or enabled.
+
+        Disable devices in the registry that are associated with a config entry when
+        the config entry is disabled, enable devices in the registry that are associated
+        with a config entry when the config entry is enabled and the devices are marked
+        DeviceEntryDisabler.CONFIG_ENTRY.
+        Only disable a device if all associated config entries are disabled.
+        """
+
+        devices = self.async_entries_for_config_entry(config_entry.entry_id)
+
+        if not config_entry.disabled_by:
+            for device in devices:
+                if device.disabled_by is not DeviceRegistryEntryDisabler.CONFIG_ENTRY:
+                    continue
+                self.async_update_device(device.id, disabled_by=None)
+            return
+
+        enabled_config_entries = {
+            entry.entry_id
+            for entry in self._shc.config_entries.async_entries()
+            if not entry.disabled_by
+        }
+
+        for device in devices:
+            if device.disabled:
+                # Device already disabled, do not overwrite
+                continue
+            if len(device.config_entries) > 1 and device.config_entries.intersection(
+                enabled_config_entries
+            ):
+                continue
+            self.async_update_device(
+                device.id, disabled_by=DeviceRegistryEntryDisabler.CONFIG_ENTRY
+            )
 
     @staticmethod
     def _async_get_device_id_from_index(

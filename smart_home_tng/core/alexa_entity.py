@@ -39,22 +39,27 @@ class AlexaEntity(abc.ABC):
     def entity_id(self):
         """Return the Entity ID."""
 
+    @property
     @abc.abstractmethod
     def friendly_name(self):
         """Return the Alexa API friendly name."""
 
+    @property
     @abc.abstractmethod
     def description(self):
         """Return the Alexa API description."""
 
+    @property
     @abc.abstractmethod
     def alexa_id(self):
         """Return the Alexa API entity id."""
 
+    @property
     @abc.abstractmethod
     def display_categories(self):
         """Return a list of display categories."""
 
+    @property
     @abc.abstractmethod
     def default_display_categories(self):
         """Return a list of default display categories.
@@ -71,6 +76,7 @@ class AlexaEntity(abc.ABC):
         Raises _UnsupportedInterface.
         """
 
+    @property
     @abc.abstractmethod
     def interfaces(self) -> list[AlexaCapability]:
         """Return a list of supported interfaces.

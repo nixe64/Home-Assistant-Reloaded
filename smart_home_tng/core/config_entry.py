@@ -495,7 +495,7 @@ class ConfigEntry:
             return
 
         try:
-            integration = await shc.async_get_integration(self._domain)
+            integration = await shc.setup.async_get_integration(self._domain)
         except IntegrationNotFound:
             # The integration was likely a custom_component
             # that was uninstalled, or an integration

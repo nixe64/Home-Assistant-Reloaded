@@ -323,7 +323,8 @@ class ConfigEntries:
         if entry.disabled_by is disabled_by:
             return True
 
-        entry.disabled_by = disabled_by
+        # pylint: disable=protected-access
+        entry._disabled_by = disabled_by
         self._async_schedule_save()
 
         dev_reg = self._shc.device_registry
@@ -332,7 +333,7 @@ class ConfigEntries:
         if not entry.disabled_by:
             # The config entry will no longer be disabled, enable devices and entities
             dev_reg.async_config_entry_disabled_by_changed(entry)
-            ent_reg.sync_config_entry_disabled_by_changed(entry)
+            ent_reg.async_config_entry_disabled_by_changed(entry)
 
         # Load or unload the config entry
         reload_result = await self.async_reload(entry_id)
@@ -428,6 +429,7 @@ class ConfigEntries:
         setup of a component, because it can cause a deadlock.
         """
         # Setup Component if not set up yet
+        domain = str(domain)
         if domain not in self._shc.config.components:
             result = await self._shc.setup.async_setup_component(domain, self._config)
 

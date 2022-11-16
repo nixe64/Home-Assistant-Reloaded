@@ -29,12 +29,12 @@ import typing
 import voluptuous as vol
 
 from ... import core
-from .const import Const
 from .input_number import InputNumber
 from .number_storage_collection import NumberStorageCollection
 from .util import _cv_input_number
 
 _cv: typing.TypeAlias = core.ConfigValidation
+_input_number: typing.TypeAlias = core.InputNumber
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
 
@@ -63,10 +63,10 @@ class InputNumberComponent(
         """Exclude editable hint from being recorded in the database."""
         return {
             core.Const.ATTR_EDITABLE,
-            Const.ATTR_MAX,
-            Const.ATTR_MIN,
+            _input_number.ATTR_MAX,
+            _input_number.ATTR_MIN,
             core.Const.ATTR_MODE,
-            Const.ATTR_STEP,
+            _input_number.ATTR_STEP,
         }
 
     async def async_validate_config(self, config: core.ConfigType) -> core.ConfigType:
@@ -76,10 +76,10 @@ class InputNumberComponent(
                     vol.All(
                         {
                             vol.Optional(core.Const.CONF_NAME): _cv.string,
-                            vol.Required(Const.CONF_MIN): vol.Coerce(float),
-                            vol.Required(Const.CONF_MAX): vol.Coerce(float),
-                            vol.Optional(Const.CONF_INITIAL): vol.Coerce(float),
-                            vol.Optional(Const.CONF_STEP, default=1): vol.All(
+                            vol.Required(_input_number.CONF_MIN): vol.Coerce(float),
+                            vol.Required(_input_number.CONF_MAX): vol.Coerce(float),
+                            vol.Optional(_input_number.CONF_INITIAL): vol.Coerce(float),
+                            vol.Optional(_input_number.CONF_STEP, default=1): vol.All(
                                 vol.Coerce(float), vol.Range(min=1e-9)
                             ),
                             vol.Optional(core.Const.CONF_ICON): _cv.icon,
@@ -87,8 +87,10 @@ class InputNumberComponent(
                                 core.Const.CONF_UNIT_OF_MEASUREMENT
                             ): _cv.string,
                             vol.Optional(
-                                core.Const.CONF_MODE, default=Const.MODE_SLIDER
-                            ): vol.In([Const.MODE_BOX, Const.MODE_SLIDER]),
+                                core.Const.CONF_MODE, default=_input_number.MODE_SLIDER
+                            ): vol.In(
+                                [_input_number.MODE_BOX, _input_number.MODE_SLIDER]
+                            ),
                         },
                         _cv_input_number,
                     )
@@ -147,8 +149,8 @@ class InputNumberComponent(
             storage_collection,
             self.domain,
             self.domain,
-            Const.CREATE_FIELDS,
-            Const.UPDATE_FIELDS,
+            _input_number.CREATE_FIELDS,
+            _input_number.UPDATE_FIELDS,
         ).async_setup()
 
         core.Service.async_register_admin_service(
@@ -156,21 +158,21 @@ class InputNumberComponent(
             self.domain,
             core.Const.SERVICE_RELOAD,
             self._reload_service_handler,
-            schema=Const.RELOAD_SERVICE_SCHEMA,
+            schema=_input_number.RELOAD_SERVICE_SCHEMA,
         )
 
         component.async_register_entity_service(
-            Const.SERVICE_SET_VALUE,
-            {vol.Required(Const.ATTR_VALUE): vol.Coerce(float)},
+            _input_number.SERVICE_SET_VALUE,
+            {vol.Required(_input_number.ATTR_VALUE): vol.Coerce(float)},
             InputNumber.async_set_value,
         )
 
         component.async_register_entity_service(
-            Const.SERVICE_INCREMENT, {}, InputNumber.async_increment
+            _input_number.SERVICE_INCREMENT, {}, InputNumber.async_increment
         )
 
         component.async_register_entity_service(
-            Const.SERVICE_DECREMENT, {}, InputNumber.async_decrement
+            _input_number.SERVICE_DECREMENT, {}, InputNumber.async_decrement
         )
 
         return True
@@ -222,10 +224,10 @@ class InputNumberComponent(
         if cur_state.state == state.state:
             return
 
-        service = Const.SERVICE_SET_VALUE
+        service = _input_number.SERVICE_SET_VALUE
         service_data = {
             core.Const.ATTR_ENTITY_ID: state.entity_id,
-            Const.ATTR_VALUE: state.state,
+            _input_number.ATTR_VALUE: state.state,
         }
 
         try:

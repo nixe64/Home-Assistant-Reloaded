@@ -64,7 +64,7 @@ class AbstractAlexaConfig(abc.ABC):
         return False
 
     @property
-    def should_report_state(self):
+    def should_report_state(self) -> bool:
         """Return if states should be proactively reported."""
         return False
 
@@ -75,7 +75,7 @@ class AbstractAlexaConfig(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def locale(self):
+    def locale(self) -> str:
         """Return config locale."""
 
     @property
@@ -137,11 +137,11 @@ class AbstractAlexaConfig(abc.ABC):
         raise NotImplementedError
 
     @property
-    def authorized(self):
+    def authorized(self) -> bool:
         """Return authorization status."""
         return self._store.authorized
 
-    async def set_authorized(self, authorized):
+    async def set_authorized(self, authorized: bool):
         """Set authorization status.
 
         - Set when an incoming message is received from Alexa.

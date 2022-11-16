@@ -10,6 +10,7 @@ import typing
 # pylint: disable=unused-variable
 FLOWS: typing.Final = {
     "integration": [
+        "alexa_media",
         "bosch_shc",
         "cast",
         "fritz",

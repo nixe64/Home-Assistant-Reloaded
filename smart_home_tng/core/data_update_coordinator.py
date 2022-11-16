@@ -127,6 +127,14 @@ class DataUpdateCoordinator(typing.Generic[_T]):
     def last_exception(self) -> Exception:
         return self._last_exception
 
+    @property
+    def update_interval(self):
+        return self._update_interval
+
+    @update_interval.setter
+    def update_interval(self, value: dt.timedelta) -> None:
+        self._update_interval = value
+
     @callback
     def async_add_listener(
         self, update_callback: CallbackType, context: typing.Any = None

@@ -27,11 +27,12 @@ import typing
 import voluptuous as vol
 
 from ... import core
-from .const import Const
 from .timer import _format_timedelta
 
-_CREATE_SCHEMA: typing.Final = vol.Schema(Const.CREATE_FIELDS)
-_UPDATE_SCHEMA: typing.Final = vol.Schema(Const.UPDATE_FIELDS)
+_timer: typing.TypeAlias = core.Timer
+
+_CREATE_SCHEMA: typing.Final = vol.Schema(_timer.CREATE_FIELDS)
+_UPDATE_SCHEMA: typing.Final = vol.Schema(_timer.UPDATE_FIELDS)
 
 
 # pylint: disable=unused-variable
@@ -42,7 +43,7 @@ class TimerStorageCollection(core.StorageCollection):
         """Validate the config is valid."""
         data = _CREATE_SCHEMA(data)
         # make duration JSON serializeable
-        data[Const.CONF_DURATION] = _format_timedelta(data[Const.CONF_DURATION])
+        data[_timer.CONF_DURATION] = _format_timedelta(data[_timer.CONF_DURATION])
         return data
 
     @core.callback
@@ -54,6 +55,6 @@ class TimerStorageCollection(core.StorageCollection):
         """Return a new updated data object."""
         data = {**data, **_UPDATE_SCHEMA(update_data)}
         # make duration JSON serializeable
-        if Const.CONF_DURATION in update_data:
-            data[Const.CONF_DURATION] = _format_timedelta(data[Const.CONF_DURATION])
+        if _timer.CONF_DURATION in update_data:
+            data[_timer.CONF_DURATION] = _format_timedelta(data[_timer.CONF_DURATION])
         return data

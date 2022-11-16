@@ -25,8 +25,6 @@ http://www.gnu.org/licenses/.
 import abc
 import typing
 
-from aiohttp import web
-
 from .alexa_entity import AlexaEntity
 from .callback import callback
 from .context import Context
@@ -46,17 +44,17 @@ if typing.TYPE_CHECKING:
 class AlexaComponent(SmartHomeControllerComponent):
     """Required base class for the Alexa Component."""
 
-    @abc.abstractmethod
-    async def async_enable_proactive_mode(self, smart_home_config: AbstractAlexaConfig):
-        """Enable the proactive mode.
-
-        Proactive mode makes this component report state changes to Alexa.
-        """
-
     @callback
     @abc.abstractmethod
     def async_get_entities(self, config: AbstractAlexaConfig) -> list[AlexaEntity]:
         """Return all entities that are supported by Alexa."""
+
+    @abc.abstractmethod
+    async def async_enable_proactive_mode(self, config: AbstractAlexaConfig):
+        """Enable the proactive mode.
+
+        Proactive mode makes this component report state changes to Alexa.
+        """
 
     @abc.abstractmethod
     async def async_send_add_or_update_message(
@@ -80,7 +78,7 @@ class AlexaComponent(SmartHomeControllerComponent):
     async def async_handle_message(
         self,
         config: AbstractAlexaConfig,
-        request: web.Request,
+        request: dict,
         context: Context = None,
         enabled=True,
     ):
