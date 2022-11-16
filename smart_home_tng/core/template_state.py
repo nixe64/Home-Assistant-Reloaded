@@ -1,5 +1,5 @@
 """
-Helper methods for various modules in Smart Home - The Next Generation.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -24,10 +24,20 @@ http://www.gnu.org/licenses/.
 
 import collections.abc
 import operator
+import typing
 
 from .state import State
-from .smart_home_controller import SmartHomeController
 from .template_state_base import TemplateStateBase
+
+
+if not typing.TYPE_CHECKING:
+
+    class SmartHomeController:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from .smart_home_controller import SmartHomeController
 
 
 # pylint: disable=unused-variable
@@ -40,7 +50,7 @@ class TemplateState(TemplateStateBase):
     ) -> None:
         """Initialize template state."""
         super().__init__(shc, collect, state.entity_id)
-        self._state = state
+        self._wrapped_state = state
 
     def __repr__(self) -> str:
         """Representation of Template State."""
@@ -48,7 +58,7 @@ class TemplateState(TemplateStateBase):
 
     @staticmethod
     def state_generator(
-        shc: SmartHomeController, domain: str | None
+        shc: SmartHomeController, domain: str
     ) -> collections.abc.Generator:
         """State generator for a domain or all states."""
         for state in sorted(

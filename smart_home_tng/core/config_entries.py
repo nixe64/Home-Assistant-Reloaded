@@ -33,22 +33,34 @@ from .config_entry import ConfigEntry
 from .config_entry_disabler import ConfigEntryDisabler
 from .config_entry_source import ConfigEntrySource
 from .config_entry_state import ConfigEntryState
-from .config_type import CONFIG_TYPE
+from .config_type import ConfigType
 from .const import Const
 from .entity_registry_disabled_handler import EntityRegistryDisabledHandler
 from .event import Event
 from .operation_not_allowed import OperationNotAllowed
 from .options_flow_manager import OptionsFlowManager
 from .platform import Platform
-from .smart_home_controller import SmartHomeController
 from .smart_home_controller_error import SmartHomeControllerError
 from .store import Store
 from .unknown_entry import UnknownEntry
+from .entity_registry_disabled_handler import _RELOAD_AFTER_UPDATE_DELAY
 
 _STORAGE_KEY: typing.Final = "core.config_entries"
 _STORAGE_VERSION: typing.Final = 1
 _UNDEFINED: typing.Final = object()
 _SAVE_DELAY: typing.Final = 1
+# Deprecated since 0.73
+_PATH_CONFIG: typing.Final = ".config_entries.json"
+
+
+if not typing.TYPE_CHECKING:
+
+    class SmartHomeController:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from .smart_home_controller import SmartHomeController
 
 
 # pylint: disable=unused-variable
@@ -58,7 +70,9 @@ class ConfigEntries:
     An instance of this object is available via `shc.config_entries`.
     """
 
-    def __init__(self, shc: SmartHomeController, config: CONFIG_TYPE) -> None:
+    RELOAD_AFTER_UPDATE_DELAY: typing.Final = _RELOAD_AFTER_UPDATE_DELAY
+
+    def __init__(self, shc: SmartHomeController, config: ConfigType) -> None:
         """Initialize the entry manager."""
         self._shc = shc
         self._flow = ConfigEntriesFlowManager(shc, self, config)
@@ -66,12 +80,18 @@ class ConfigEntries:
         self._config = config
         self._entries: dict[str, ConfigEntry] = {}
         self._domain_index: dict[str, list[str]] = {}
-        self._store = Store(shc, _STORAGE_VERSION, _STORAGE_KEY)
+        self._store = Store[dict[str, list[dict[str, typing.Any]]]](
+            shc, _STORAGE_VERSION, _STORAGE_KEY
+        )
         EntityRegistryDisabledHandler(shc).async_setup()
 
     @property
     def flow(self) -> ConfigEntriesFlowManager:
         return self._flow
+
+    @property
+    def options(self) -> OptionsFlowManager:
+        return self._options
 
     @callback
     def async_domains(
@@ -88,12 +108,12 @@ class ConfigEntries:
         )
 
     @callback
-    def async_get_entry(self, entry_id: str) -> ConfigEntry | None:
+    def async_get_entry(self, entry_id: str) -> ConfigEntry:
         """Return entry with matching entry_id."""
         return self._entries.get(entry_id)
 
     @callback
-    def async_entries(self, domain: str | None = None) -> list[ConfigEntry]:
+    def async_entries(self, domain: str = None) -> list[ConfigEntry]:
         """Return all entries or entries for a specific domain."""
         if domain is None:
             return list(self._entries.values())
@@ -174,11 +194,59 @@ class ConfigEntries:
 
     async def async_initialize(self) -> None:
         """Initialize config entry config."""
+        # Migrating for config entries stored before 0.73
+        config = await self._shc.async_migrator(
+            self._shc.config.path(_PATH_CONFIG),
+            self._store,
+            old_conf_migrate_func=_old_conf_migrator,
+        )
 
-        self._shc.bus.async_listen_once(Const.EVENT_SHC_STOP, self._async_shutdown)
+        self._shc.bus.async_listen_once(Const.EVENT_SHC_CLOSE, self._async_shutdown)
 
-        self._entries = {}
-        self._domain_index = {}
+        if config is None:
+            self._entries = {}
+            self._domain_index = {}
+            return
+
+        entries = {}
+        domain_index: dict[str, list[str]] = {}
+
+        for entry in config["entries"]:
+            pref_disable_new_entities = entry.get("pref_disable_new_entities")
+
+            # Between 0.98 and 2021.6 we stored 'disable_new_entities'
+            # in a system options dictionary
+            if pref_disable_new_entities is None and "system_options" in entry:
+                pref_disable_new_entities = entry.get("system_options", {}).get(
+                    "disable_new_entities"
+                )
+
+            domain = entry["domain"]
+            entry_id = entry["entry_id"]
+
+            entries[entry_id] = ConfigEntry(
+                version=entry["version"],
+                domain=domain,
+                entry_id=entry_id,
+                data=entry["data"],
+                source=entry["source"],
+                title=entry["title"],
+                # New in 0.89
+                options=entry.get("options"),
+                # New in 0.104
+                unique_id=entry.get("unique_id"),
+                # New in 2021.3
+                disabled_by=ConfigEntryDisabler(entry["disabled_by"])
+                if entry.get("disabled_by")
+                else None,
+                # New in 2021.6
+                pref_disable_new_entities=pref_disable_new_entities,
+                pref_disable_polling=entry.get("pref_disable_polling"),
+            )
+            domain_index.setdefault(domain, []).append(entry_id)
+
+        self._domain_index = domain_index
+        self._entries = entries
 
     async def async_setup(self, entry_id: str) -> bool:
         """Set up a config entry.
@@ -196,7 +264,9 @@ class ConfigEntries:
             await entry.async_setup(self._shc)
         else:
             # Setting up the component will set up all its config entries
-            result = await self._shc.async_setup_component(entry.domain, self._config)
+            result = await self._shc.setup.async_setup_component(
+                entry.domain, self._config
+            )
 
             if not result:
                 return result
@@ -230,7 +300,7 @@ class ConfigEntries:
             return await self.async_setup(entry_id)
 
     async def async_set_disabled_by(
-        self, entry_id: str, disabled_by: ConfigEntryDisabler | None
+        self, entry_id: str, disabled_by: ConfigEntryDisabler
     ) -> bool:
         """Disable an entry.
 
@@ -253,7 +323,8 @@ class ConfigEntries:
         if entry.disabled_by is disabled_by:
             return True
 
-        entry.disabled_by = disabled_by
+        # pylint: disable=protected-access
+        entry._disabled_by = disabled_by
         self._async_schedule_save()
 
         dev_reg = self._shc.device_registry
@@ -262,7 +333,7 @@ class ConfigEntries:
         if not entry.disabled_by:
             # The config entry will no longer be disabled, enable devices and entities
             dev_reg.async_config_entry_disabled_by_changed(entry)
-            ent_reg.sync_config_entry_disabled_by_changed(entry)
+            ent_reg.async_config_entry_disabled_by_changed(entry)
 
         # Load or unload the config entry
         reload_result = await self.async_reload(entry_id)
@@ -279,7 +350,7 @@ class ConfigEntries:
         self,
         entry: ConfigEntry,
         *,
-        unique_id: str | None | object = _UNDEFINED,
+        unique_id: str | object = _UNDEFINED,
         title: str | object = _UNDEFINED,
         data: collections.abc.Mapping[str, typing.Any] | object = _UNDEFINED,
         options: collections.abc.Mapping[str, typing.Any] | object = _UNDEFINED,
@@ -297,10 +368,10 @@ class ConfigEntries:
         changed = False
 
         for attr, value in (
-            ("unique_id", unique_id),
-            ("title", title),
-            ("pref_disable_new_entities", pref_disable_new_entities),
-            ("pref_disable_polling", pref_disable_polling),
+            ("_unique_id", unique_id),
+            ("_title", title),
+            ("_pref_disable_new_entities", pref_disable_new_entities),
+            ("_pref_disable_polling", pref_disable_polling),
         ):
             if value == _UNDEFINED or getattr(entry, attr) == value:
                 continue
@@ -310,11 +381,13 @@ class ConfigEntries:
 
         if data is not _UNDEFINED and entry.data != data:
             changed = True
-            entry.data = types.MappingProxyType(data)
+            # pylint: disable=protected-access
+            entry._data = types.MappingProxyType(data)
 
         if options is not _UNDEFINED and entry.options != options:
             changed = True
-            entry.options = types.MappingProxyType(options)
+            # pylint: disable=protected-access
+            entry._options = types.MappingProxyType(options)
 
         if not changed:
             return False
@@ -329,11 +402,19 @@ class ConfigEntries:
 
     @callback
     def async_setup_platforms(
-        self, entry: ConfigEntry, platforms: collections.abc.Iterable[Platform | str]
+        self, entry: ConfigEntry, platforms: typing.Iterable[Platform | str]
     ) -> None:
         """Forward the setup of an entry to platforms."""
         for platform in platforms:
             self._shc.async_create_task(self.async_forward_entry_setup(entry, platform))
+
+    async def async_forward_entry_setups(
+        self, entry: ConfigEntry, platforms: typing.Iterable[Platform | str]
+    ) -> None:
+        """Forward the setup of an entry to platforms."""
+        await asyncio.gather(
+            *(self.async_forward_entry_setup(entry, platform) for platform in platforms)
+        )
 
     async def async_forward_entry_setup(
         self, entry: ConfigEntry, domain: Platform | str
@@ -348,13 +429,14 @@ class ConfigEntries:
         setup of a component, because it can cause a deadlock.
         """
         # Setup Component if not set up yet
+        domain = str(domain)
         if domain not in self._shc.config.components:
-            result = await self._shc.async_setup_component(domain, self._config)
+            result = await self._shc.setup.async_setup_component(domain, self._config)
 
             if not result:
                 return False
 
-        integration = await self._shc.async_get_integration(domain)
+        integration = await self._shc.setup.async_get_integration(domain)
 
         await entry.async_setup(self._shc, integration=integration)
         return True
@@ -380,7 +462,7 @@ class ConfigEntries:
         if domain not in self._shc.config.components:
             return True
 
-        integration = await self._shc.async_get_integration(domain)
+        integration = await self._shc.setup.async_get_integration(domain)
 
         return await entry.async_unload(self._shc, integration=integration)
 
@@ -400,3 +482,10 @@ class ConfigEntries:
     ) -> dict[str, typing.Any]:
         """Migrate the pre-0.73 config format to the latest version."""
         return {"entries": old_config}
+
+
+async def _old_conf_migrator(
+    old_config: dict[str, typing.Any]
+) -> dict[str, typing.Any]:
+    """Migrate the pre-0.73 config format to the latest version."""
+    return {"entries": old_config}

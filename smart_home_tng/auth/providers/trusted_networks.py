@@ -34,7 +34,7 @@ from ..invalid_auth_error import InvalidAuthError
 from ..invalid_user_error import InvalidUserError
 from ..refresh_token import RefreshToken
 from ..user_meta import UserMeta
-from .auth_provider import AUTH_PROVIDER_SCHEMA, AUTH_PROVIDERS, AuthProvider
+from .auth_provider import AuthProvider, _AUTH_PROVIDERS
 from .login_flow import LoginFlow
 
 IPAddress = typing.Union[ipaddress.IPv4Address, ipaddress.IPv6Address]
@@ -48,7 +48,7 @@ _CONF_ALLOW_BYPASS_LOGIN = "allow_bypass_login"
 _DEFAULT_TITLE = "Trusted Networks"
 
 
-@AUTH_PROVIDERS.register("trusted_networks")
+@_AUTH_PROVIDERS.register("trusted_networks")
 class TrustedNetworksAuthProvider(AuthProvider):
     """Trusted Networks auth provider.
 
@@ -87,9 +87,7 @@ class TrustedNetworksAuthProvider(AuthProvider):
         """Trusted Networks auth provider does not support MFA."""
         return False
 
-    async def async_login_flow(
-        self, context: dict[str, typing.Any] | None
-    ) -> LoginFlow:
+    async def async_login_flow(self, context: dict[str, typing.Any]) -> LoginFlow:
         """Return a flow to login."""
         assert context is not None
         ip_addr = typing.cast(IPAddress, context.get("ip_address"))
@@ -164,7 +162,7 @@ class TrustedNetworksAuthProvider(AuthProvider):
 
         Trusted network auth provider should never create new user.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @core.callback
     def async_validate_access(self, ip_addr: IPAddress) -> None:
@@ -186,7 +184,7 @@ class TrustedNetworksAuthProvider(AuthProvider):
 
     @core.callback
     def async_validate_refresh_token(
-        self, _refresh_token: RefreshToken, remote_ip: str | None = None
+        self, _refresh_token: RefreshToken, remote_ip: str = None
     ) -> None:
         """Verify a refresh token is still valid."""
         if remote_ip is None:
@@ -203,7 +201,7 @@ class TrustedNetworksLoginFlow(LoginFlow):
         self,
         auth_provider: TrustedNetworksAuthProvider,
         ip_addr: IPAddress,
-        available_users: dict[str, str | None],
+        available_users: dict[str, str],
         allow_bypass_login: bool,
     ) -> None:
         """Initialize the login flow."""
@@ -213,7 +211,7 @@ class TrustedNetworksLoginFlow(LoginFlow):
         self._allow_bypass_login = allow_bypass_login
 
     async def async_step_init(
-        self, user_input: dict[str, str] | None = None
+        self, user_input: dict[str, str] = None
     ) -> core.FlowResult:
         """Handle the step of the form."""
         try:
@@ -241,7 +239,7 @@ class TrustedNetworksLoginFlow(LoginFlow):
 
 
 # pylint: disable=unused-variable
-CONFIG_SCHEMA = AUTH_PROVIDER_SCHEMA.extend(
+CONFIG_SCHEMA = AuthProvider.AUTH_PROVIDER_SCHEMA.extend(
     {
         vol.Required(_CONF_TRUSTED_NETWORKS): vol.All(
             core.ConfigValidation.ensure_list, [ipaddress.ip_network]

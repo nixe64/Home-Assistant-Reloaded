@@ -32,7 +32,7 @@ import typing
 import voluptuous as vol
 from aiohttp import typedefs, web, web_urldispatcher
 
-from .json_encoder import JSONEncoder
+from .json_encoder import JsonEncoder
 from .callback import is_callback
 from .const import Const
 from .context import Context
@@ -43,24 +43,50 @@ _LOGGER: typing.Final = logging.getLogger(__name__)
 
 
 # pylint: disable=unused-variable
-@typing.overload
-class SmartHomeControllerView:
-    ...
-
-
 class SmartHomeControllerView:
     """Base view for all views."""
 
-    url: str | None = None
-    extra_urls: list[str] = []
-    # Views inheriting from this class can override this
-    requires_auth = True
-    cors_allowed = False
+    def __init__(
+        self,
+        url: str = None,
+        name: str = None,
+        extra_urls: list[str] = None,
+        # Views inheriting from this class can override this
+        requires_auth=True,
+        cors_allowed=False,
+    ):
+        self._url = url
+        self._name = name
+        self._extra_urls = extra_urls
+        if self._extra_urls is None:
+            self._extra_urls = []
+        self._requires_auth = requires_auth
+        self._cors_allowed = cors_allowed
+
+    @property
+    def url(self) -> str:
+        return self._url
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def extra_urls(self) -> collections.abc.Iterable[str]:
+        return self._extra_urls.copy()
+
+    @property
+    def requires_auth(self) -> bool:
+        return self._requires_auth
+
+    @property
+    def cors_allowed(self) -> bool:
+        return self._cors_allowed
 
     @staticmethod
     def context(request: web.Request) -> Context:
         """Generate a context from a request."""
-        if (user := request.get(Const.KEY_TNG_USER)) is None:
+        if (user := request.get(Const.KEY_SHC_USER)) is None:
             return Context()
 
         return Context(user_id=user.id)
@@ -69,11 +95,11 @@ class SmartHomeControllerView:
     def json(
         result: typing.Any,
         status_code: http.HTTPStatus | int = http.HTTPStatus.OK,
-        headers: typedefs.LooseHeaders | None = None,
+        headers: typedefs.LooseHeaders = None,
     ) -> web.Response:
         """Return a JSON response."""
         try:
-            msg = json.dumps(result, cls=JSONEncoder, allow_nan=False).encode("UTF-8")
+            msg = json.dumps(result, cls=JsonEncoder, allow_nan=False).encode("UTF-8")
         except (ValueError, TypeError) as err:
             _LOGGER.error(f"Unable to serialize to JSON: {err}\n{result}")
             raise web.HTTPInternalServerError from err
@@ -86,18 +112,18 @@ class SmartHomeControllerView:
         response.enable_compression()
         return response
 
+    @staticmethod
     def json_message(
-        self,
         message: str,
         status_code: http.HTTPStatus | int = http.HTTPStatus.OK,
-        message_code: str | None = None,
-        headers: typedefs.LooseHeaders | None = None,
+        message_code: str = None,
+        headers: typedefs.LooseHeaders = None,
     ) -> web.Response:
         """Return a JSON message response."""
         data = {"message": message}
         if message_code is not None:
             data["code"] = message_code
-        return self.json(data, status_code, headers=headers)
+        return SmartHomeControllerView.json(data, status_code, headers=headers)
 
     def register(self, app: web.Application, router: web.UrlDispatcher) -> None:
         """Register the view with a router."""
@@ -134,7 +160,7 @@ class SmartHomeControllerView:
 
         async def handle(request: web.Request) -> web.StreamResponse:
             """Handle incoming request."""
-            if request.app[Const.KEY_TNG].is_stopping:
+            if request.app[Const.KEY_SHC].is_stopping:
                 return web.Response(status=http.HTTPStatus.SERVICE_UNAVAILABLE)
 
             authenticated = request.get(Const.KEY_AUTHENTICATED, False)
@@ -147,8 +173,10 @@ class SmartHomeControllerView:
             )
 
             try:
-                result = handler(request, **request.match_info)
-
+                if asyncio.iscoroutinefunction(handler):
+                    result = await handler(request, **request.match_info)
+                else:
+                    result = handler(request, **request.match_info)
                 if asyncio.iscoroutine(result):
                     result = await result
             except vol.Invalid as err:

@@ -24,12 +24,13 @@ http://www.gnu.org/licenses/.
 
 import voluptuous as vol
 
-from ... import core
+from ...core.flow_handler import FlowHandler
+from ...core.flow_result import FlowResult
 from .multi_factor_auth_module import MultiFactorAuthModule
 
 
 # pylint: disable=unused-variable
-class SetupFlow(core.FlowHandler):
+class SetupFlow(FlowHandler):
     """Handler for the setup flow."""
 
     def __init__(
@@ -41,9 +42,7 @@ class SetupFlow(core.FlowHandler):
         self._setup_schema = setup_schema
         self._user_id = user_id
 
-    async def async_step_init(
-        self, user_input: dict[str, str] | None = None
-    ) -> core.FlowResult:
+    async def async_step_init(self, user_input: dict[str, str] = None) -> FlowResult:
         """Handle the first step of setup flow.
 
         Return self.async_show_form(step_id='init') if user_input is None.

@@ -25,4 +25,4 @@ http://www.gnu.org/licenses/.
 import typing
 
 # pylint: disable=unused-variable
-GPS_TYPE: typing.Final[tuple[float, float]] = tuple[float, float]
+GpsType: typing.TypeAlias = tuple[float, float]

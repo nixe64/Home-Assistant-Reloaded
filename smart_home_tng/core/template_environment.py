@@ -1,5 +1,5 @@
 """
-Helper methods for various modules in Smart Home - The Next Generation.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -24,7 +24,7 @@ http://www.gnu.org/licenses/.
 
 import base64
 import collections.abc
-import datetime
+import datetime as dt
 import functools
 import json
 import logging
@@ -41,40 +41,35 @@ import jinja2
 from jinja2 import sandbox
 
 from . import helpers
+from .all_states import AllStates
 from .const import Const
+from .domain_states import DomainStates
+from .helpers.template import (
+    _collect_state,
+    get_template_state_if_valid,
+    template_state_for_entity,
+)
 from .location_info import LocationInfo
 from .logging_undefined import LoggingUndefined
 from .render_info import RenderInfo as ri
-from .smart_home_controller import SmartHomeController
 from .state import State
 from .template_context import template_context as context
 from .template_environment_type import TemplateEnvironmentType
 from .template_error import TemplateError
+from .template_state import TemplateState
+
+if not typing.TYPE_CHECKING:
+
+    class SmartHomeController:
+        ...
+
+    class AreaRegistry:
+        ...
 
 
-@typing.overload
-class AllStates:
-    ...
-
-
-@typing.overload
-class AreaRegistry:
-    ...
-
-
-@typing.overload
-class DomainStates:
-    ...
-
-
-@typing.overload
-class TemplateStateBase(State):
-    ...
-
-
-@typing.overload
-class TemplateState(TemplateStateBase):
-    ...
+if typing.TYPE_CHECKING:
+    from .area_registry import AreaRegistry
+    from .smart_home_controller import SmartHomeController
 
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
@@ -82,15 +77,6 @@ _SENTINEL: typing.Final = object()
 _DATE_STR_FORMAT: typing.Final = "%Y-%m-%d %H:%M:%S"
 _GROUP_DOMAIN_PREFIX: typing.Final = "group."
 _ZONE_DOMAIN_PREFIX: typing.Final = "zone."
-
-
-# pylint: disable=unused-variable
-@typing.overload
-class TemplateEnvironment(sandbox.ImmutableSandboxedEnvironment):
-    ...
-
-
-_cache: dict[TemplateEnvironmentType, TemplateEnvironment] = {}
 
 
 class TemplateEnvironment(sandbox.ImmutableSandboxedEnvironment):
@@ -169,7 +155,7 @@ class TemplateEnvironment(sandbox.ImmutableSandboxedEnvironment):
         self.globals["as_timestamp"] = TemplateEnvironment.forgiving_as_timestamp
         self.globals["today_at"] = TemplateEnvironment.today_at
         self.globals["relative_time"] = TemplateEnvironment.relative_time
-        self.globals["timedelta"] = datetime.timedelta
+        self.globals["timedelta"] = dt.timedelta
         self.globals["strptime"] = TemplateEnvironment.strptime
         self.globals["urlencode"] = TemplateEnvironment.urlencode
         self.globals["average"] = TemplateEnvironment.average
@@ -293,9 +279,7 @@ class TemplateEnvironment(sandbox.ImmutableSandboxedEnvironment):
         return self._shc != shc
 
     @staticmethod
-    def get_env(
-        wanted_env: TemplateEnvironmentType, shc: SmartHomeController | None = None
-    ):
+    def get_env(wanted_env: TemplateEnvironmentType, shc: SmartHomeController = None):
         """Get the wanted Environment from the Cache, or create it."""
         if shc is None:
             wanted_env = TemplateEnvironmentType.NO_SHC
@@ -513,7 +497,7 @@ class TemplateEnvironment(sandbox.ImmutableSandboxedEnvironment):
             return helpers.parse_datetime(value)
 
     @staticmethod
-    def as_timedelta(value: str) -> datetime.timedelta | None:
+    def as_timedelta(value: str) -> dt.timedelta:
         """Parse a ISO8601 duration like 'PT10M' to a timedelta."""
         return helpers.parse_duration(value)
 
@@ -528,7 +512,7 @@ class TemplateEnvironment(sandbox.ImmutableSandboxedEnvironment):
             return default
 
     @staticmethod
-    def today_at(time_str: str = "") -> datetime:
+    def today_at(time_str: str = "") -> dt.datetime:
         """Record fetching now where the time has been replaced with value."""
         today = helpers.start_of_local_day()
         if not time_str:
@@ -538,7 +522,7 @@ class TemplateEnvironment(sandbox.ImmutableSandboxedEnvironment):
             raise ValueError(
                 f"could not convert {type(time_str).__name__} to datetime: '{time_str}'"
             )
-        return datetime.datetime.combine(today, time_today, today.tzinfo)
+        return dt.datetime.combine(today, time_today, today.tzinfo)
 
     @staticmethod
     def timestamp_custom(
@@ -694,7 +678,7 @@ class TemplateEnvironment(sandbox.ImmutableSandboxedEnvironment):
         return first_value | second_value
 
     @staticmethod
-    def struct_pack(value: typing.Any | None, format_string: str) -> bytes | None:
+    def struct_pack(value: typing.Any, format_string: str) -> bytes:
         """Pack an object into a bytes object."""
         try:
             return struct.pack(format_string, value)
@@ -707,9 +691,7 @@ class TemplateEnvironment(sandbox.ImmutableSandboxedEnvironment):
             return None
 
     @staticmethod
-    def struct_unpack(
-        value: bytes, format_string: str, offset: int = 0
-    ) -> typing.Any | None:
+    def struct_unpack(value: bytes, format_string: str, offset: int = 0) -> typing.Any:
         """Unpack an object from bytes an return the first native object."""
         try:
             return struct.unpack_from(format_string, value, offset)[0]
@@ -780,7 +762,7 @@ class TemplateEnvironment(sandbox.ImmutableSandboxedEnvironment):
 
         If the input are not a datetime object the input will be returned unmodified.
         """
-        if not isinstance(value, datetime.datetime):
+        if not isinstance(value, dt.datetime):
             return value
         if not value.tzinfo:
             value = helpers.as_local(value)
@@ -824,7 +806,7 @@ class TemplateEnvironment(sandbox.ImmutableSandboxedEnvironment):
     def strptime(string, fmt, default=_SENTINEL):
         """Parse a time string to datetime."""
         try:
-            return datetime.strptime(string, fmt)
+            return dt.datetime.strptime(string, fmt)
         except (ValueError, AttributeError, TypeError):
             if default is _SENTINEL:
                 TemplateEnvironment.raise_no_default("strptime", string)
@@ -866,9 +848,7 @@ class TemplateEnvironment(sandbox.ImmutableSandboxedEnvironment):
         return [entry.entity_id for entry in entries]
 
     @staticmethod
-    def device_id(
-        shc: SmartHomeController, entity_id_or_device_name: str
-    ) -> str | None:
+    def device_id(shc: SmartHomeController, entity_id_or_device_name: str) -> str:
         """Get a device ID from an entity ID or device name."""
         entity_reg = shc.entity_registry
         entity = entity_reg.async_get(entity_id_or_device_name)
@@ -921,7 +901,7 @@ class TemplateEnvironment(sandbox.ImmutableSandboxedEnvironment):
         )
 
     @staticmethod
-    def area_id(shc: SmartHomeController, lookup_value: str) -> str | None:
+    def area_id(shc: SmartHomeController, lookup_value: str) -> str:
         """Get the area ID from an area name, device id, or entity id."""
         area_reg = shc.area_registry
         if area := area_reg.async_get_area_by_name(str(lookup_value)):
@@ -954,7 +934,7 @@ class TemplateEnvironment(sandbox.ImmutableSandboxedEnvironment):
         return area.name
 
     @staticmethod
-    def area_name(shc: SmartHomeController, lookup_value: str) -> str | None:
+    def area_name(shc: SmartHomeController, lookup_value: str) -> str:
         """Get the area name from an area id, device id, or entity id."""
         area_reg = shc.area_registry
         if area := area_reg.async_get_area(lookup_value):
@@ -986,7 +966,7 @@ class TemplateEnvironment(sandbox.ImmutableSandboxedEnvironment):
         shc: SmartHomeController, area_id_or_name: str
     ) -> collections.abc.Iterable[str]:
         """Return entities for a given area ID or name."""
-        _area_id: str | None
+        _area_id: str
         # if area_name returns a value, we know the input was an ID, otherwise we
         # assume it's a name, and if it's neither, we return early
         if TemplateEnvironment.area_name(shc, area_id_or_name) is None:
@@ -1018,7 +998,7 @@ class TemplateEnvironment(sandbox.ImmutableSandboxedEnvironment):
         shc: SmartHomeController, area_id_or_name: str
     ) -> collections.abc.Iterable[str]:
         """Return device IDs for a given area ID or name."""
-        _area_id: str | None
+        _area_id: str
         # if area_name returns a value, we know the input was an ID, otherwise we
         # assume it's a name, and if it's neither, we return early
         if TemplateEnvironment.area_name(shc, area_id_or_name) is not None:
@@ -1063,46 +1043,23 @@ class TemplateEnvironment(sandbox.ImmutableSandboxedEnvironment):
         ]
 
     @staticmethod
-    def get_state_if_valid(
-        shc: SmartHomeController, entity_id: str
-    ) -> TemplateState | None:
-        state = shc.states.get(entity_id)
-        if state is None and not helpers.valid_entity_id(entity_id):
-            raise TemplateError(f"Invalid entity ID '{entity_id}'")
-        return TemplateEnvironment._get_template_state_from_state(shc, entity_id, state)
+    def get_state_if_valid(shc: SmartHomeController, entity_id: str) -> TemplateState:
+        return get_template_state_if_valid(shc, entity_id)
 
     @staticmethod
-    def get_state(shc: SmartHomeController, entity_id: str) -> TemplateState | None:
-        return TemplateEnvironment._get_template_state_from_state(
-            shc, entity_id, shc.states.get(entity_id)
-        )
-
-    @staticmethod
-    def _get_template_state_from_state(
-        shc: SmartHomeController, entity_id: str, state: State | None
-    ) -> TemplateState | None:
-        if state is None:
-            # Only need to collect if none, if not none collect first actual
-            # access to the state properties in the state wrapper.
-            TemplateEnvironment._collect_state(entity_id)
-            return None
-        return TemplateState(shc, state)
+    def get_state(shc: SmartHomeController, entity_id: str) -> TemplateState:
+        return template_state_for_entity(shc, entity_id)
 
     @staticmethod
     def _resolve_state(
         shc: SmartHomeController, entity_id_or_state: typing.Any
-    ) -> State | TemplateState | None:
+    ) -> State | TemplateState:
         """Return state or entity_id if given."""
         if isinstance(entity_id_or_state, State):
             return entity_id_or_state
         if isinstance(entity_id_or_state, str):
             return TemplateEnvironment.get_state(shc, entity_id_or_state)
         return None
-
-    @staticmethod
-    def _collect_state(entity_id: str) -> None:
-        if (entity_collect := ri.current) is not None:
-            entity_collect.add_entity(entity_id)
 
     @staticmethod
     def closest(shc: SmartHomeController, *args):
@@ -1252,7 +1209,7 @@ class TemplateEnvironment(sandbox.ImmutableSandboxedEnvironment):
         return None
 
     @staticmethod
-    def now() -> datetime:
+    def now() -> dt.datetime:
         """Record fetching now."""
         if (render_info := ri.current) is not None:
             render_info.has_time = True
@@ -1260,7 +1217,7 @@ class TemplateEnvironment(sandbox.ImmutableSandboxedEnvironment):
         return helpers.now()
 
     @staticmethod
-    def utcnow() -> datetime:
+    def utcnow() -> dt.datetime:
         """Record fetching utcnow."""
         if (render_info := ri.current) is not None:
             render_info.has_time = True
@@ -1300,7 +1257,10 @@ class TemplateEnvironment(sandbox.ImmutableSandboxedEnvironment):
                 if zone_entities := entity.attributes.get(Const.ATTR_PERSONS):
                     search += zone_entities
             else:
-                TemplateEnvironment._collect_state(entity_id)
+                _collect_state(entity_id)
                 found[entity_id] = entity
 
         return sorted(found.values(), key=lambda a: a.entity_id)
+
+
+_cache: dict[TemplateEnvironmentType, TemplateEnvironment] = {}

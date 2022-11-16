@@ -22,10 +22,10 @@ License along with this program.  If not, see
 http://www.gnu.org/licenses/.
 """
 
-# pylint: disable=unused-variable, unused-import
+# pylint: disable=unused-variable
 
 from . import mfa_modules, permissions, providers
-from .auth_manager import AuthManager, auth_manager_from_config
+from .auth_manager import AuthManager
 from .auth_manager_flow_manager import AuthManagerFlowManager
 from .auth_store import AuthStore
 from .const import Const
@@ -34,8 +34,9 @@ from .group import Group
 from .invalid_auth_error import InvalidAuthError
 from .invalid_provider import InvalidProvider
 from .invalid_user_error import InvalidUserError
-from .mfa_modules.multi_factor_auth_module import MULTI_FACTOR_AUTH_MODULE_SCHEMA
-from .providers.auth_provider import AUTH_PROVIDER_SCHEMA
+from .mfa_modules import MultiFactorAuthModule
+from .providers import AuthProvider
+from .providers.homeassistant import InvalidUser
 from .refresh_token import RefreshToken
 from .token_type import TokenType
 from .user import User

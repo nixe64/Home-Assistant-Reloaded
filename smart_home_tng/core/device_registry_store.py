@@ -29,7 +29,7 @@ from .device_registry_entry_type import DeviceRegistryEntryType
 
 
 # pylint: disable=unused-variable
-class DeviceRegistryStore(Store):
+class DeviceRegistryStore(Store[dict[str, list[dict[str, typing.Any]]]]):
     """Store entity registry data."""
 
     async def _async_migrate_func(
@@ -74,5 +74,5 @@ class DeviceRegistryStore(Store):
                     device["hw_version"] = device.get("hw_version")
 
         if old_major_version > 1:
-            raise NotImplementedError
+            raise NotImplementedError()
         return old_data

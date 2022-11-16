@@ -32,32 +32,45 @@ import voluptuous as vol
 from .callback import callback
 from .const import Const
 from .context import Context
-from .smart_home_controller_job_type import SmartHomeControllerJobType
-from .service import Service
 from .service_call import ServiceCall
+from .service_description import ServiceDescription
 from .service_not_found import ServiceNotFound
-from .smart_home_controller import SmartHomeController
+from .smart_home_controller_job_type import SmartHomeControllerJobType
 from .unauthorized import Unauthorized
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
+# How long we wait for the result of a service call
+_SERVICE_CALL_LIMIT: typing.Final = 10  # seconds
+
+
+if not typing.TYPE_CHECKING:
+
+    class SmartHomeController:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from .smart_home_controller import SmartHomeController
 
 
 # pylint: disable=unused-variable
 class ServiceRegistry:
     """Offer the services over the eventbus."""
 
+    SERVICE_CALL_LIMIT: typing.Final = _SERVICE_CALL_LIMIT
+
     def __init__(self, shc: SmartHomeController) -> None:
         """Initialize a service registry."""
-        self._services: dict[str, dict[str, Service]] = {}
+        self._services: dict[str, dict[str, ServiceDescription]] = {}
         self._shc = shc
 
     @property
-    def services(self) -> dict[str, dict[str, Service]]:
+    def services(self) -> dict[str, dict[str, ServiceDescription]]:
         """Return dictionary with per domain a list of available services."""
         return self._shc.run_callback_threadsafe(self.async_services).result()
 
     @callback
-    def async_services(self) -> dict[str, dict[str, Service]]:
+    def async_services(self) -> dict[str, dict[str, ServiceDescription]]:
         """Return dictionary with per domain a list of available services.
 
         This method must be run in the event loop.
@@ -75,10 +88,8 @@ class ServiceRegistry:
         self,
         domain: str,
         service: str,
-        service_func: typing.Callable[
-            [ServiceCall], collections.abc.Awaitable[None] | None
-        ],
-        schema: vol.Schema | None = None,
+        service_func: typing.Callable[[ServiceCall], collections.abc.Awaitable[None]],
+        schema: vol.Schema = None,
     ) -> None:
         """
         Register a service.
@@ -94,10 +105,8 @@ class ServiceRegistry:
         self,
         domain: str,
         service: str,
-        service_func: typing.Callable[
-            [ServiceCall], collections.abc.Awaitable[None] | None
-        ],
-        schema: vol.Schema | None = None,
+        service_func: typing.Callable[[ServiceCall], collections.abc.Awaitable[None]],
+        schema: vol.Schema = None,
     ) -> None:
         """
         Register a service.
@@ -108,14 +117,14 @@ class ServiceRegistry:
         """
         domain = domain.lower()
         service = service.lower()
-        service_obj = Service(service_func, schema)
+        service_obj = ServiceDescription(service_func, schema)
 
         if domain in self._services:
             self._services[domain][service] = service_obj
         else:
             self._services[domain] = {service: service_obj}
 
-        self._shc.async_fire_event(
+        self._shc.bus.async_fire(
             Const.EVENT_SERVICE_REGISTERED,
             {Const.ATTR_DOMAIN: domain, Const.ATTR_SERVICE: service},
         )
@@ -142,7 +151,7 @@ class ServiceRegistry:
         if not self._services[domain]:
             self._services.pop(domain)
 
-        self._shc.bus.async_fire_event(
+        self._shc.bus.async_fire(
             Const.EVENT_SERVICE_REMOVED,
             {Const.ATTR_DOMAIN: domain, Const.ATTR_SERVICE: service},
         )
@@ -151,12 +160,12 @@ class ServiceRegistry:
         self,
         domain: str,
         service: str,
-        service_data: dict[str, typing.Any] | None = None,
+        service_data: dict[str, typing.Any] = None,
         blocking: bool = False,
-        context: Context | None = None,
-        limit: float | None = Const.SERVICE_CALL_LIMIT,
-        target: dict[str, Const.Any] | None = None,
-    ) -> bool | None:
+        context: Context = None,
+        limit: float = _SERVICE_CALL_LIMIT,
+        target: dict[str, typing.Any] = None,
+    ) -> bool:
         """
         Call a service.
 
@@ -172,12 +181,12 @@ class ServiceRegistry:
         self,
         domain: str,
         service: str,
-        service_data: dict[str, Const.Any] | None = None,
+        service_data: dict[str, typing.Any] = None,
         blocking: bool = False,
-        context: Context | None = None,
-        limit: float | None = Const.SERVICE_CALL_LIMIT,
-        target: dict[str, typing.Any] | None = None,
-    ) -> bool | None:
+        context: Context = None,
+        limit: float = _SERVICE_CALL_LIMIT,
+        target: dict[str, typing.Any] = None,
+    ) -> bool:
         """
         Call a service.
 
@@ -220,7 +229,7 @@ class ServiceRegistry:
 
         service_call = ServiceCall(domain, service, processed_data, context)
 
-        self._shc.async_fire_event(
+        self._shc.bus.async_fire(
             Const.EVENT_CALL_SERVICE,
             {
                 Const.ATTR_DOMAIN: domain.lower(),
@@ -243,7 +252,7 @@ class ServiceRegistry:
             # it to be cancelled, within reason, before leaving.
             _LOGGER.debug(f"Service call was cancelled: {service_call}")
             task.cancel()
-            await asyncio.wait({task}, timeout=Const.SERVICE_CALL_LIMIT)
+            await asyncio.wait({task}, timeout=_SERVICE_CALL_LIMIT)
             raise
 
         if task.cancelled():
@@ -284,7 +293,7 @@ class ServiceRegistry:
         self._shc.async_create_task(catch_exceptions())
 
     async def _execute_service(
-        self, handler: Service, service_call: ServiceCall
+        self, handler: ServiceDescription, service_call: ServiceCall
     ) -> None:
         """Execute a service."""
         if handler.job.job_type == SmartHomeControllerJobType.COROUTINE_FUNCTION:

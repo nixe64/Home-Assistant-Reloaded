@@ -59,10 +59,10 @@ class EntityRegistryItems(collections.UserDict[str, "EntityRegistryEntry"]):
         self._index.__delitem__((entry.domain, entry.platform, entry.unique_id))
         super().__delitem__(key)
 
-    def get_entity_id(self, key: tuple[str, str, str]) -> str | None:
+    def get_entity_id(self, key: tuple[str, str, str]) -> str:
         """Get entity_id from (domain, platform, unique_id)."""
         return self._index.get(key)
 
-    def get_entry(self, key: str) -> EntityRegistryEntry | None:
+    def get_entry(self, key: str) -> EntityRegistryEntry:
         """Get entry from id."""
         return self._entry_ids.get(key)

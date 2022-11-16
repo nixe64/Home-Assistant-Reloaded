@@ -26,7 +26,6 @@ import collections.abc
 import logging
 import os
 import pathlib
-import re
 import typing
 
 import yarl
@@ -36,10 +35,8 @@ from . import helpers
 from .api_config import ApiConfig
 from .callback import callback
 from .config_source import ConfigSource
-from .config_type import CONFIG_TYPE
 from .const import Const
 from .location_info import LocationInfo
-from .smart_home_controller import SmartHomeController
 from .smart_home_controller_error import SmartHomeControllerError
 from .store import Store
 from .unit_system import UnitSystem
@@ -48,6 +45,16 @@ _CORE_STORAGE_KEY = "core.config"
 _CORE_STORAGE_VERSION = 1
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
+
+
+if not typing.TYPE_CHECKING:
+
+    class SmartHomeController:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from .smart_home_controller import SmartHomeController
 
 
 # pylint: disable=unused-variable
@@ -62,9 +69,9 @@ class Config:
         self._elevation: int = 0
         self._location_name: str = "Home"
         self._time_zone: str = "UTC"
-        self._units: UnitSystem = UnitSystem.METRIC
-        self._internal_url: str | None = None
-        self._external_url: str | None = None
+        self._units: UnitSystem = UnitSystem.METRIC()
+        self._internal_url: str = None
+        self._external_url: str = None
         self._currency: str = "EUR"
 
         self._config_source: ConfigSource = ConfigSource.DEFAULT
@@ -76,10 +83,10 @@ class Config:
         self._components: set[str] = set()
 
         # API (HTTP) server configuration
-        self._api: ApiConfig | None = None
+        self._api: ApiConfig = None
 
         # Directory that holds the configuration
-        self._config_dir: str | None = None
+        self._config_dir: str = None
 
         # List of allowed external dirs to access
         self._allowlist_external_dirs: set[str] = set()
@@ -96,17 +103,61 @@ class Config:
         # Use legacy template behavior
         self._legacy_templates: bool = False
 
+        # Error Log Path
+        self._error_log_path: str = None
+
+    @property
+    def api(self) -> ApiConfig:
+        return self._api
+
+    @api.setter
+    def api(self, api: ApiConfig) -> None:
+        if self._api is None:
+            self._api = api
+
+    @property
+    def error_log_path(self) -> str:
+        return self._error_log_path
+
+    @error_log_path.setter
+    def error_log_path(self, value: str) -> None:
+        if self._error_log_path is None:
+            self._error_log_path = value
+
     @property
     def latitude(self) -> float:
         return self._latitude
+
+    @latitude.setter
+    def latitude(self, latitude: float) -> None:
+        if -90.0 <= latitude <= 90.0:
+            self._latitude = latitude
 
     @property
     def longitude(self) -> float:
         return self._longitude
 
+    @longitude.setter
+    def longitude(self, longitude: float) -> None:
+        if -180.0 <= longitude <= 180.0:
+            self._longitude = longitude
+
     @property
     def elevation(self) -> int:
         return self._elevation
+
+    @elevation.setter
+    def elevation(self, elevation: int) -> None:
+        self._elevation = elevation
+
+    @property
+    def location_name(self) -> str:
+        return self._location_name
+
+    @location_name.setter
+    def location_name(self, location_name: str) -> None:
+        if location_name != "":
+            self._location_name = location_name
 
     @property
     def time_zone(self) -> str:
@@ -116,55 +167,124 @@ class Config:
     def units(self) -> UnitSystem:
         return self._units
 
-    @property
-    def internal_url(self) -> str | None:
-        return self._internal_url
+    @units.setter
+    def units(self, units: UnitSystem) -> None:
+        self._units = units
 
     @property
-    def external_url(self) -> str | None:
+    def internal_url(self) -> str:
+        return self._internal_url
+
+    @internal_url.setter
+    def internal_url(self, internal_url: str) -> None:
+        if internal_url != "":
+            self._internal_url = internal_url
+
+    @property
+    def external_url(self) -> str:
         return self._external_url
+
+    @external_url.setter
+    def external_url(self, external_url: str) -> None:
+        if external_url != "":
+            self._external_url = external_url
 
     @property
     def currency(self) -> str:
         return self._currency
 
+    @currency.setter
+    def currency(self, currency: str) -> None:
+        if currency != "":
+            self._currency = currency
+
     @property
     def config_source(self) -> ConfigSource:
         return self._config_source
+
+    @config_source.setter
+    def config_source(self, source: ConfigSource) -> None:
+        if self._config_source is ConfigSource.DEFAULT:
+            self._config_source = source
 
     @property
     def skip_pip(self) -> bool:
         return self._skip_pip
 
+    @skip_pip.setter
+    def skip_pip(self, skip_pip: bool) -> None:
+        self._skip_pip = skip_pip
+
     @property
-    def components(self) -> collections.abc.Iterable[str]:
-        return self._components
+    def components(self) -> set:
+        return frozenset(self._components)
+
+    def component_loaded(self, component: str) -> None:
+        self._components.add(component)
 
     @property
     def allowlist_external_dirs(self) -> collections.abc.Iterable[str]:
         return self._allowlist_external_dirs
 
+    @allowlist_external_dirs.setter
+    def allowlist_external_dirs(
+        self, allow_list_external_dirs: collections.abc.Iterable[str]
+    ) -> None:
+        if allow_list_external_dirs is not None:
+            self._allowlist_external_dirs = set()
+            for allowed in allow_list_external_dirs:
+                if allowed not in self._allowlist_external_dirs:
+                    self._allowlist_external_dirs.add(allowed)
+
     @property
     def allowlist_external_urls(self) -> collections.abc.Iterable[str]:
         return self._allowlist_external_urls
+
+    @allowlist_external_urls.setter
+    def allowlist_external_urls(self, allowlist: collections.abc.Iterable[str]) -> None:
+        if allowlist is not None:
+            self._allowlist_external_urls = set()
+            for allowed in self._allowlist_external_urls:
+                if allowed not in self._allowlist_external_urls:
+                    self._allowlist_external_urls.add(allowed)
 
     @property
     def media_dirs(self) -> collections.abc.Iterable[str, str]:
         return self._media_dirs
 
+    @media_dirs.setter
+    def media_dirs(self, media_dirs: collections.abc.Iterable[str, str]) -> None:
+        if media_dirs is not None:
+            self._media_dirs = {}
+            for key, value in media_dirs.items():
+                self._media_dirs[key] = value
+
     @property
     def safe_mode(self) -> bool:
         return self._safe_mode
+
+    @safe_mode.setter
+    def safe_mode(self, safe_mode: bool) -> None:
+        self._safe_mode = safe_mode
 
     @property
     def legacy_templates(self) -> bool:
         return self._legacy_templates
 
+    @legacy_templates.setter
+    def legacy_templates(self, legacy_templates: bool) -> None:
+        self._legacy_templates = legacy_templates
+
     @property
-    def config_dir(self) -> str | None:
+    def config_dir(self) -> str:
         return self._config_dir
 
-    def distance(self, lat: float, lon: float) -> float | None:
+    @config_dir.setter
+    def config_dir(self, config_dir: str) -> None:
+        if config_dir != "":
+            self._config_dir = config_dir
+
+    def distance(self, lat: float, lon: float) -> float:
         """Calculate distance from Home Assistant.
 
         Async friendly.
@@ -256,15 +376,15 @@ class Config:
         self,
         *,
         source: ConfigSource,
-        latitude: float | None = None,
-        longitude: float | None = None,
-        elevation: int | None = None,
-        unit_system: str | None = None,
-        location_name: str | None = None,
-        time_zone: str | None = None,
-        external_url: str | dict[typing.Any, typing.Any] | None = None,
-        internal_url: str | dict[typing.Any, typing.Any] | None = None,
-        currency: str | None = None,
+        latitude: float = None,
+        longitude: float = None,
+        elevation: int = None,
+        unit_system: str = None,
+        location_name: str = None,
+        time_zone: str = None,
+        external_url: str | dict[typing.Any, typing.Any] = None,
+        internal_url: str | dict[typing.Any, typing.Any] = None,
+        currency: str = None,
     ) -> None:
         """Update the configuration from a dictionary."""
         self._config_source = source
@@ -276,9 +396,9 @@ class Config:
             self._elevation = elevation
         if unit_system is not None:
             if unit_system == Const.CONF_UNIT_SYSTEM_IMPERIAL:
-                self._units = UnitSystem.IMPERIAL
+                self._units = UnitSystem.IMPERIAL()
             else:
-                self._units = UnitSystem.METRIC
+                self._units = UnitSystem.METRIC()
         if location_name is not None:
             self._location_name = location_name
         if time_zone is not None:
@@ -294,11 +414,11 @@ class Config:
         """Update the configuration from a dictionary."""
         self._update(source=ConfigSource.STORAGE, **kwargs)
         await self.async_store()
-        self._shc.async_fire(Const.EVENT_CORE_CONFIG_UPDATE, kwargs)
+        self._shc.bus.async_fire(Const.EVENT_CORE_CONFIG_UPDATE, kwargs)
 
     async def async_load(self) -> None:
         """Load [TheNextGeneration] core config."""
-        store = Store(
+        store = Store[dict[str, typing.Any]](
             self._shc,
             _CORE_STORAGE_VERSION,
             _CORE_STORAGE_KEY,
@@ -306,7 +426,7 @@ class Config:
             atomic_writes=True,
         )
 
-        if not (data := await store.async_load()) or not isinstance(data, dict):
+        if not (data := await store.async_load()):
             return
 
         # In 2021.9 we fixed validation to disallow a path (because that's never correct)
@@ -354,7 +474,7 @@ class Config:
             "currency": self._currency,
         }
 
-        store = Store(
+        store = Store[dict[str, typing.Any]](
             self._shc,
             _CORE_STORAGE_VERSION,
             _CORE_STORAGE_KEY,
@@ -362,40 +482,3 @@ class Config:
             atomic_writes=True,
         )
         await store.async_save(data)
-
-    @staticmethod
-    def config_per_platform(
-        conf: CONFIG_TYPE, domain: str
-    ) -> collections.abc.Iterable[tuple[str | None, CONFIG_TYPE]]:
-        """Break a component config into different platforms.
-
-        For example, will find 'switch', 'switch 2', 'switch 3', .. etc
-        Async friendly.
-        """
-        for config_key in Config.extract_domain_configs(conf, domain):
-            if not (platform_config := conf[config_key]):
-                continue
-
-            if not isinstance(platform_config, list):
-                platform_config = [platform_config]
-
-            item: CONFIG_TYPE
-            platform: str | None
-            for item in platform_config:
-                try:
-                    platform = item.get(Const.CONF_PLATFORM)
-                except AttributeError:
-                    platform = None
-
-                yield platform, item
-
-    @staticmethod
-    def extract_domain_configs(
-        conf: CONFIG_TYPE, domain: str
-    ) -> collections.abc.Sequence[str]:
-        """Extract keys from config for given domain name.
-
-        Async friendly.
-        """
-        pattern = re.compile(rf"^{domain}(| .+)$")
-        return [key for key in conf.keys() if pattern.match(key)]

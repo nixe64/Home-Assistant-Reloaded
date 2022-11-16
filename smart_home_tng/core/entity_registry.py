@@ -42,9 +42,21 @@ from .entity_registry_items import EntityRegistryItems
 from .entity_registry_store import EntityRegistryStore
 from .event import Event
 from .max_length_exceeded import MaxLengthExceeded
-from .smart_home_controller import SmartHomeController
+from .smart_home_controller_error import SmartHomeControllerError
 from .yaml_loader import YamlLoader
 
+
+if not typing.TYPE_CHECKING:
+
+    class SmartHomeController:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from .smart_home_controller import SmartHomeController
+
+
+_T = typing.TypeVar("_T")
 _STORAGE_VERSION_MAJOR: typing.Final = 1
 _STORAGE_VERSION_MINOR: typing.Final = 6
 _STORAGE_KEY: typing.Final = "core.entity_registry"
@@ -58,12 +70,23 @@ _UNDEFINED: typing.Final = object()
 class EntityRegistry:
     """Class to hold a registry of entities."""
 
-    EVENT_REGISTRY_UPDATED: typing.Final = "entity_registry_updated"
+    # Attributes relevant to describing entity
+    # to external services.
+    ENTITY_DESCRIBING_ATTRIBUTES: typing.Final = {
+        "capabilities",
+        "device_class",
+        "entity_id",
+        "name",
+        "original_name",
+        "supported_features",
+        "unit_of_measurement",
+    }
 
     def __init__(self, shc: SmartHomeController) -> None:
         """Initialize the registry."""
         self._entities = None
         self._shc = shc
+        self._loaded = False
         self._store = EntityRegistryStore(
             shc,
             _STORAGE_VERSION_MAJOR,
@@ -76,19 +99,19 @@ class EntityRegistry:
         )
 
     @property
-    def entities(self) -> EntityRegistryItems | None:
+    def entities(self) -> EntityRegistryItems:
         return self._entities
 
     @callback
     def async_get_device_class_lookup(
-        self, domain_device_classes: set[tuple[str, str | None]]
-    ) -> dict[str, dict[tuple[str, str | None], str]]:
+        self, domain_device_classes: set[tuple[str, str]]
+    ) -> dict[str, dict[tuple[str, str], str]]:
         """Return a lookup of entity ids for devices which have matching entities.
 
         Entities must match a set of (domain, device_class) tuples.
         The result is indexed by device_id, then by the matching (domain, device_class)
         """
-        lookup: dict[str, dict[tuple[str, str | None], str]] = {}
+        lookup: dict[str, dict[tuple[str, str], str]] = {}
         for entity in self._entities.values():
             if not entity.device_id:
                 continue
@@ -102,20 +125,70 @@ class EntityRegistry:
                 lookup[entity.device_id][domain_device_class] = entity.entity_id
         return lookup
 
+    def get_device_class(self, entity_id: str) -> str:
+        """Get device class of an entity.
+
+        First try the statemachine, then entity registry.
+        """
+        if state := self._shc.states.get(entity_id):
+            return state.attributes.get(Const.ATTR_DEVICE_CLASS)
+
+        if not (entry := self.async_get(entity_id)):
+            raise SmartHomeControllerError(f"Unknown entity {entity_id}")
+
+        return entry.device_class or entry.original_device_class
+
+    def get_supported_features(self, entity_id: str) -> int:
+        """Get supported features for an entity.
+
+        First try the statemachine, then entity registry.
+        """
+        if state := self._shc.states.get(entity_id):
+            return state.attributes.get(Const.ATTR_SUPPORTED_FEATURES, 0)
+
+        if not (entry := self.async_get(entity_id)):
+            raise SmartHomeControllerError(f"Unknown entity {entity_id}")
+
+        return entry.supported_features or 0
+
+    def get_capability(self, entity_id: str, capability: str) -> typing.Any:
+        """Get a capability attribute of an entity.
+
+        First try the statemachine, then entity registry.
+        """
+        if state := self._shc.states.get(entity_id):
+            return state.attributes.get(capability)
+
+        if not (entry := self.async_get(entity_id)):
+            raise SmartHomeControllerError(f"Unknown entity {entity_id}")
+
+        return entry.capabilities.get(capability) if entry.capabilities else None
+
+    def get_unit_of_measurement(self, entity_id: str) -> str:
+        """Get unit of measurement class of an entity.
+
+        First try the statemachine, then entity registry.
+        """
+        if state := self._shc.states.get(entity_id):
+            return state.attributes.get(Const.ATTR_UNIT_OF_MEASUREMENT)
+
+        if not (entry := self.async_get(entity_id)):
+            raise SmartHomeControllerError(f"Unknown entity {entity_id}")
+
+        return entry.unit_of_measurement
+
     @callback
     def async_is_registered(self, entity_id: str) -> bool:
         """Check if an entity_id is currently registered."""
         return entity_id in self._entities
 
     @callback
-    def async_get(self, entity_id: str) -> EntityRegistryEntry | None:
+    def async_get(self, entity_id: str) -> EntityRegistryEntry:
         """Get EntityEntry for an entity_id."""
         return self._entities.get(entity_id)
 
     @callback
-    def async_get_entity_id(
-        self, domain: str, platform: str, unique_id: str
-    ) -> str | None:
+    def async_get_entity_id(self, domain: str, platform: str, unique_id: str) -> str:
         """Check if an entity_id is currently registered."""
         return self._entities.get_entity_id((domain, platform, unique_id))
 
@@ -124,7 +197,7 @@ class EntityRegistry:
         self,
         domain: str,
         suggested_object_id: str,
-        known_object_ids: collections.abc.Iterable[str] | None = None,
+        known_object_ids: collections.abc.Iterable[str] = None,
     ) -> str:
         """Generate an entity ID that does not conflict.
 
@@ -162,27 +235,32 @@ class EntityRegistry:
         unique_id: str,
         *,
         # To influence entity ID generation
-        known_object_ids: collections.abc.Iterable[str] | None = None,
-        suggested_object_id: str | None = None,
+        known_object_ids: collections.abc.Iterable[str] = None,
+        suggested_object_id: str = None,
         # To disable or hide an entity if it gets created
-        disabled_by: EntityRegistryEntryDisabler | None = None,
-        hidden_by: EntityRegistryEntryHider | None = None,
+        disabled_by: EntityRegistryEntryDisabler = None,
+        hidden_by: EntityRegistryEntryHider = None,
         # Data that we want entry to have
-        area_id: str | None = None,
-        capabilities: collections.abc.Mapping[str, typing.Any] | None = None,
-        config_entry: ConfigEntry | None = None,
-        device_id: str | None = None,
-        entity_category: EntityCategory | None = None,
-        original_device_class: str | None = None,
-        original_icon: str | None = None,
-        original_name: str | None = None,
-        supported_features: int | None = None,
-        unit_of_measurement: str | None = None,
+        area_id: str | object = _UNDEFINED,
+        capabilities: collections.abc.Mapping[str, typing.Any] | object = _UNDEFINED,
+        config_entry: ConfigEntry | object = _UNDEFINED,
+        device_id: str | object = _UNDEFINED,
+        entity_category: EntityCategory | object = _UNDEFINED,
+        has_entity_name: bool | object = _UNDEFINED,
+        original_device_class: str | object = _UNDEFINED,
+        original_icon: str | object = _UNDEFINED,
+        original_name: str | object = _UNDEFINED,
+        supported_features: int | object = _UNDEFINED,
+        unit_of_measurement: str | object = _UNDEFINED,
     ) -> EntityRegistryEntry:
         """Get entity. Create if it doesn't exist."""
-        config_entry_id = None
-        if config_entry:
+        config_entry_id: str | object = _UNDEFINED
+        if not config_entry:
+            config_entry_id = None
+        elif config_entry is not _UNDEFINED:
             config_entry_id = config_entry.entry_id
+
+        supported_features = supported_features or 0
 
         entity_id = self.async_get_entity_id(domain, platform, unique_id)
 
@@ -194,6 +272,7 @@ class EntityRegistry:
                 config_entry_id=config_entry_id,
                 device_id=device_id,
                 entity_category=entity_category,
+                has_entity_name=has_entity_name,
                 original_device_class=original_device_class,
                 original_icon=original_icon,
                 original_name=original_name,
@@ -218,36 +297,46 @@ class EntityRegistry:
         if (
             disabled_by is None
             and config_entry
+            and config_entry is not _UNDEFINED
             and config_entry.pref_disable_new_entities
         ):
             disabled_by = EntityRegistryEntryDisabler.INTEGRATION
 
-        if entity_category and not isinstance(entity_category, EntityCategory):
+        if (
+            entity_category
+            and entity_category is not _UNDEFINED
+            and not isinstance(entity_category, EntityCategory)
+        ):
             raise ValueError("entity_category must be a valid EntityCategory instance")
 
+        def none_if_undefined(value: _T | object) -> _T:
+            """Return None if value is UNDEFINED, otherwise return value."""
+            return None if value is _UNDEFINED else value
+
         entry = EntityRegistryEntry(
-            area_id=area_id,
-            capabilities=capabilities,
-            config_entry_id=config_entry_id,
-            device_id=device_id,
+            area_id=none_if_undefined(area_id),
+            capabilities=none_if_undefined(capabilities),
+            config_entry_id=none_if_undefined(config_entry_id),
+            device_id=none_if_undefined(device_id),
             disabled_by=disabled_by,
-            entity_category=entity_category,
+            entity_category=none_if_undefined(entity_category),
+            has_entity_name=none_if_undefined(has_entity_name) or False,
             entity_id=entity_id,
             hidden_by=hidden_by,
-            original_device_class=original_device_class,
-            original_icon=original_icon,
-            original_name=original_name,
+            original_device_class=none_if_undefined(original_device_class),
+            original_icon=none_if_undefined(original_icon),
+            original_name=none_if_undefined(original_name),
             platform=platform,
-            supported_features=supported_features or 0,
+            supported_features=none_if_undefined(supported_features) or 0,
             unique_id=unique_id,
-            unit_of_measurement=unit_of_measurement,
+            unit_of_measurement=none_if_undefined(unit_of_measurement),
         )
         self._entities[entity_id] = entry
         _LOGGER.info(f"Registered new {domain}.{platform} entity: {entity_id}")
         self.async_schedule_save()
 
         self._shc.bus.async_fire(
-            self.EVENT_REGISTRY_UPDATED,
+            Const.EVENT_ENTITY_REGISTRY_UPDATED,
             {"action": "create", "entity_id": entity_id},
         )
 
@@ -258,7 +347,7 @@ class EntityRegistry:
         """Remove an entity from registry."""
         self._entities.pop(entity_id)
         self._shc.bus.async_fire(
-            self.EVENT_REGISTRY_UPDATED,
+            Const.EVENT_ENTITY_REGISTRY_UPDATED,
             {"action": "remove", "entity_id": entity_id},
         )
         self.async_schedule_save()
@@ -333,26 +422,25 @@ class EntityRegistry:
         self,
         entity_id: str,
         *,
-        area_id: str | None | object = _UNDEFINED,
-        capabilities: collections.abc.Mapping[str, typing.Any]
-        | None
-        | object = _UNDEFINED,
-        config_entry_id: str | None | object = _UNDEFINED,
-        device_class: str | None | object = _UNDEFINED,
-        device_id: str | None | object = _UNDEFINED,
-        disabled_by: EntityRegistryEntryDisabler | None | object = _UNDEFINED,
-        entity_category: EntityCategory | None | object = _UNDEFINED,
-        hidden_by: EntityRegistryEntryHider | None | object = _UNDEFINED,
-        icon: str | None | object = _UNDEFINED,
-        name: str | None | object = _UNDEFINED,
+        area_id: str | object = _UNDEFINED,
+        capabilities: collections.abc.Mapping[str, typing.Any] | object = _UNDEFINED,
+        config_entry_id: str | object = _UNDEFINED,
+        device_class: str | object = _UNDEFINED,
+        device_id: str | object = _UNDEFINED,
+        disabled_by: EntityRegistryEntryDisabler | object = _UNDEFINED,
+        entity_category: EntityCategory | object = _UNDEFINED,
+        has_entity_name: bool | object = _UNDEFINED,
+        hidden_by: EntityRegistryEntryHider | object = _UNDEFINED,
+        icon: str | object = _UNDEFINED,
+        name: str | object = _UNDEFINED,
         new_entity_id: str | object = _UNDEFINED,
         new_unique_id: str | object = _UNDEFINED,
-        original_device_class: str | None | object = _UNDEFINED,
-        original_icon: str | None | object = _UNDEFINED,
-        original_name: str | None | object = _UNDEFINED,
+        original_device_class: str | object = _UNDEFINED,
+        original_icon: str | object = _UNDEFINED,
+        original_name: str | object = _UNDEFINED,
         supported_features: int | object = _UNDEFINED,
-        unit_of_measurement: str | None | object = _UNDEFINED,
-        platform: str | None | object = _UNDEFINED,
+        unit_of_measurement: str | object = _UNDEFINED,
+        platform: str | object = _UNDEFINED,
         options: collections.abc.Mapping[str, collections.abc.Mapping[str, typing.Any]]
         | object = _UNDEFINED,
     ) -> EntityRegistryEntry:
@@ -364,10 +452,18 @@ class EntityRegistry:
         # Dict with old key/value pairs
         old_values: dict[str, typing.Any] = {}
 
-        if disabled_by and not isinstance(disabled_by, EntityRegistryEntryDisabler):
+        if (
+            disabled_by
+            and disabled_by is not _UNDEFINED
+            and not isinstance(disabled_by, EntityRegistryEntryDisabler)
+        ):
             raise ValueError("disabled_by must be a RegistryEntryDisabler value")
 
-        if entity_category and not isinstance(entity_category, EntityCategory):
+        if (
+            entity_category
+            and entity_category is not _UNDEFINED
+            and not isinstance(entity_category, EntityCategory)
+        ):
             raise ValueError("entity_category must be a valid EntityCategory instance")
 
         for attr_name, value in (
@@ -378,6 +474,7 @@ class EntityRegistry:
             ("device_id", device_id),
             ("disabled_by", disabled_by),
             ("entity_category", entity_category),
+            ("has_entity_name", has_entity_name),
             ("hidden_by", hidden_by),
             ("icon", icon),
             ("name", name),
@@ -438,7 +535,7 @@ class EntityRegistry:
         if old.entity_id != entity_id:
             data["old_entity_id"] = old.entity_id
 
-        self._shc.bus.async_fire(self.EVENT_REGISTRY_UPDATED, data)
+        self._shc.bus.async_fire(Const.EVENT_ENTITY_REGISTRY_UPDATED, data)
 
         return new
 
@@ -447,25 +544,24 @@ class EntityRegistry:
         self,
         entity_id: str,
         *,
-        area_id: str | None | object = _UNDEFINED,
-        capabilities: collections.abc.Mapping[str, typing.Any]
-        | None
-        | object = _UNDEFINED,
-        config_entry_id: str | None | object = _UNDEFINED,
-        device_class: str | None | object = _UNDEFINED,
-        device_id: str | None | object = _UNDEFINED,
-        disabled_by: EntityRegistryEntryDisabler | None | object = _UNDEFINED,
-        entity_category: EntityCategory | None | object = _UNDEFINED,
-        hidden_by: EntityRegistryEntryHider | None | object = _UNDEFINED,
-        icon: str | None | object = _UNDEFINED,
-        name: str | None | object = _UNDEFINED,
+        area_id: str | object = _UNDEFINED,
+        capabilities: collections.abc.Mapping[str, typing.Any] | object = _UNDEFINED,
+        config_entry_id: str | object = _UNDEFINED,
+        device_class: str | object = _UNDEFINED,
+        device_id: str | object = _UNDEFINED,
+        disabled_by: EntityRegistryEntryDisabler | object = _UNDEFINED,
+        entity_category: EntityCategory | object = _UNDEFINED,
+        has_entity_name: bool | object = _UNDEFINED,
+        hidden_by: EntityRegistryEntryHider | object = _UNDEFINED,
+        icon: str | object = _UNDEFINED,
+        name: str | object = _UNDEFINED,
         new_entity_id: str | object = _UNDEFINED,
         new_unique_id: str | object = _UNDEFINED,
-        original_device_class: str | None | object = _UNDEFINED,
-        original_icon: str | None | object = _UNDEFINED,
-        original_name: str | None | object = _UNDEFINED,
+        original_device_class: str | object = _UNDEFINED,
+        original_icon: str | object = _UNDEFINED,
+        original_name: str | object = _UNDEFINED,
         supported_features: int | object = _UNDEFINED,
-        unit_of_measurement: str | None | object = _UNDEFINED,
+        unit_of_measurement: str | object = _UNDEFINED,
     ) -> EntityRegistryEntry:
         """Update properties of an entity."""
         return self._async_update_entity(
@@ -477,6 +573,7 @@ class EntityRegistry:
             device_id=device_id,
             disabled_by=disabled_by,
             entity_category=entity_category,
+            has_entity_name=has_entity_name,
             hidden_by=hidden_by,
             icon=icon,
             name=name,
@@ -497,7 +594,7 @@ class EntityRegistry:
         *,
         new_config_entry_id: str | object = _UNDEFINED,
         new_unique_id: str | object = _UNDEFINED,
-        new_device_id: str | None | object = _UNDEFINED,
+        new_device_id: str | object = _UNDEFINED,
     ) -> EntityRegistryEntry:
         """
         Update entity platform.
@@ -538,6 +635,10 @@ class EntityRegistry:
 
     async def async_load(self) -> None:
         """Load the entity registry."""
+        if self._loaded:
+            return None
+
+        self._loaded = True
         self.async_setup_entity_restore()
 
         data = await self._shc.async_migrator(
@@ -576,6 +677,7 @@ class EntityRegistry:
                     hidden_by=entity["hidden_by"],
                     icon=entity["icon"],
                     id=entity["id"],
+                    has_entity_name=entity["has_entity_name"],
                     name=entity["name"],
                     options=entity["options"],
                     original_device_class=entity["original_device_class"],
@@ -612,6 +714,7 @@ class EntityRegistry:
                 "hidden_by": entry.hidden_by,
                 "icon": entry.icon,
                 "id": entry.id,
+                "has_entity_name": entry.has_entity_name,
                 "name": entry.name,
                 "options": entry.options,
                 "original_device_class": entry.original_device_class,
@@ -678,7 +781,7 @@ class EntityRegistry:
             )
 
         self._shc.bus.async_listen(
-            self.EVENT_REGISTRY_UPDATED,
+            Const.EVENT_ENTITY_REGISTRY_UPDATED,
             cleanup_restored_states,
             event_filter=cleanup_restored_states_filter,
         )
@@ -697,9 +800,7 @@ class EntityRegistry:
 
                 entry.write_unavailable_state(self._shc)
 
-        self._shc.bus.async_listen(
-            Const.EVENT_HOMEASSISTANT_START, _write_unavailable_states
-        )
+        self._shc.bus.async_listen(Const.EVENT_SHC_START, _write_unavailable_states)
 
     @staticmethod
     async def _async_migrate_yaml_to_json(
@@ -770,7 +871,7 @@ class EntityRegistry:
         return entry.entity_id
 
     @callback
-    def async_resolve_entity_id(self, entity_id_or_uuid: str) -> str | None:
+    def async_resolve_entity_id(self, entity_id_or_uuid: str) -> str:
         """Validate and resolve an entity id or UUID to an entity id.
 
         Returns None if the entity or UUID is invalid, or if the UUID is not
@@ -796,9 +897,7 @@ class EntityRegistry:
     async def async_migrate_entries(
         self,
         config_entry_id: str,
-        entry_callback: typing.Callable[
-            [EntityRegistryEntry], dict[str, typing.Any] | None
-        ],
+        entry_callback: typing.Callable[[EntityRegistryEntry], dict[str, typing.Any]],
     ) -> None:
         """Migrator of unique IDs."""
         for entry in self._entities.values():

@@ -28,24 +28,22 @@ import voluptuous as vol
 
 from .config_validation import ConfigValidation as cv
 from .device_selector_config import DeviceSelectorConfig
-from .selector import SELECTORS, Selector
+from .selector import Selector
 from .single_device_selector_config import SINGLE_DEVICE_SELECTOR_CONFIG_SCHEMA
+
+_CONFIG_SCHEMA: typing.Final = SINGLE_DEVICE_SELECTOR_CONFIG_SCHEMA.extend(
+    {vol.Optional("multiple", default=False): cv.boolean}
+)
 
 
 # pylint: disable=unused-variable
-@SELECTORS.register("device")
 class DeviceSelector(Selector):
     """Selector of a single or list of devices."""
 
-    selector_type = "device"
-
-    _CONFIG_SCHEMA: typing.Final = SINGLE_DEVICE_SELECTOR_CONFIG_SCHEMA.extend(
-        {vol.Optional("multiple", default=False): cv.boolean}
-    )
-
-    def __init__(self, config: DeviceSelectorConfig | None = None) -> None:
+    def __init__(self, config: DeviceSelectorConfig = None) -> None:
         """Instantiate a selector."""
-        super().__init__("device", config)
+        selector_type = "device"
+        super().__init__(selector_type, config)
 
     def __call__(self, data: typing.Any) -> str | list[str]:
         """Validate the passed selection."""
@@ -55,3 +53,6 @@ class DeviceSelector(Selector):
         if not isinstance(data, list):
             raise vol.Invalid("Value should be a list")
         return [vol.Schema(str)(val) for val in data]
+
+    def config_schema(self, config: typing.Any) -> typing.Any:
+        return _CONFIG_SCHEMA(config)

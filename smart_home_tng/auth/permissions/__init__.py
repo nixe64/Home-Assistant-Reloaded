@@ -22,7 +22,7 @@ License along with this program.  If not, see
 http://www.gnu.org/licenses/.
 """
 
-# pylint: disable=unused-variable, unused-import
+# pylint: disable=unused-variable
 
 from . import helpers
 from .abstract_permissions import AbstractPermissions

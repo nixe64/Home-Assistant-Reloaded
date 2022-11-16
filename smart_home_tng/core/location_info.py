@@ -1,7 +1,5 @@
 """
-Location helpers for Smart Home - The Next Generation.
-
-detect_location_info and elevation are mocked by default during tests.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -33,8 +31,18 @@ import typing
 import aiohttp
 
 from .const import Const
-from .smart_home_controller import SmartHomeController
 from .state import State
+
+
+if not typing.TYPE_CHECKING:
+
+    class SmartHomeController:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from .smart_home_controller import SmartHomeController
+
 
 _WHOAMI_URL: typing.Final = "https://services.home-assistant.io/whoami/v1"
 _WHOAMI_URL_DEV: typing.Final = (
@@ -58,11 +66,6 @@ _LOGGER: typing.Final = logging.getLogger(__name__)
 
 
 # pylint: disable=unused-variable
-@typing.overload
-class LocationInfo:
-    ...
-
-
 class LocationInfo(typing.NamedTuple):
     """Tuple with location information."""
 
@@ -81,7 +84,7 @@ class LocationInfo(typing.NamedTuple):
     @staticmethod
     async def async_detect_location_info(
         session: aiohttp.ClientSession,
-    ) -> LocationInfo | None:
+    ):
         """Detect location information."""
         if (data := await LocationInfo._get_whoami(session)) is None:
             return None
@@ -91,9 +94,7 @@ class LocationInfo(typing.NamedTuple):
         return LocationInfo(**data)
 
     @staticmethod
-    def distance(
-        lat1: float | None, lon1: float | None, lat2: float, lon2: float
-    ) -> float | None:
+    def distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
         """Calculate the distance in meters between two points.
 
         Async friendly.
@@ -111,7 +112,7 @@ class LocationInfo(typing.NamedTuple):
     @staticmethod
     def vincenty(
         point1: tuple[float, float], point2: tuple[float, float], miles: bool = False
-    ) -> float | None:
+    ) -> float:
         """
         Vincenty formula (inverse method) to calculate the distance.
 
@@ -196,7 +197,7 @@ class LocationInfo(typing.NamedTuple):
     @staticmethod
     async def _get_whoami(
         session: aiohttp.ClientSession,
-    ) -> dict[str, typing.Any] | None:
+    ) -> dict[str, typing.Any]:
         """Query whoami.home-assistant.io for location data."""
         try:
             resp = await session.get(
@@ -241,7 +242,7 @@ class LocationInfo(typing.NamedTuple):
     @staticmethod
     def closest(
         latitude: float, longitude: float, states: collections.abc.Iterable[State]
-    ) -> State | None:
+    ) -> State:
         """Return closest state to point.
 
         Async friendly.
@@ -264,8 +265,8 @@ class LocationInfo(typing.NamedTuple):
 
     @staticmethod
     def find_coordinates(
-        shc: SmartHomeController, name: str, recursion_history: list | None = None
-    ) -> str | None:
+        shc: SmartHomeController, name: str, recursion_history: list = None
+    ) -> str:
         """Try to resolve the a location from a supplied name or entity_id.
 
         Will recursively resolve an entity if pointed to by the state of the
@@ -324,7 +325,7 @@ class LocationInfo(typing.NamedTuple):
         return entity_state.state
 
     @staticmethod
-    def resolve_zone(shc: SmartHomeController, zone_name: str) -> str | None:
+    def resolve_zone(shc: SmartHomeController, zone_name: str) -> str:
         """
         Get a lat/long from a zones friendly_name or None
         if no zone is found by that friendly_name.
@@ -341,3 +342,27 @@ class LocationInfo(typing.NamedTuple):
         """Get the lat/long string from an entities attributes."""
         attr = entity_state.attributes
         return f"{attr.get(Const.ATTR_LATITUDE)},{attr.get(Const.ATTR_LONGITUDE)}"
+
+    @staticmethod
+    def in_zone(
+        zone: State, latitude: float, longitude: float, radius: float = 0
+    ) -> bool:
+        """Test if given latitude, longitude is in given zone.
+
+        Async friendly.
+        """
+        if zone.state == Const.STATE_UNAVAILABLE:
+            return False
+
+        zone_dist = LocationInfo.distance(
+            latitude,
+            longitude,
+            zone.attributes[Const.ATTR_LATITUDE],
+            zone.attributes[Const.ATTR_LONGITUDE],
+        )
+
+        if zone_dist is None or zone.attributes[Const.ATTR_RADIUS] is None:
+            return False
+        return zone_dist - radius < typing.cast(
+            float, zone.attributes[Const.ATTR_RADIUS]
+        )

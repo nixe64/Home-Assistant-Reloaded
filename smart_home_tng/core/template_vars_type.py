@@ -26,6 +26,6 @@ import collections.abc
 import typing
 
 # pylint: disable=unused-variable
-TEMPLATE_VARS_TYPE: typing.Final = typing.Optional[
+TemplateVarsType: typing.TypeAlias = typing.Optional[
     collections.abc.Mapping[str, typing.Any]
 ]

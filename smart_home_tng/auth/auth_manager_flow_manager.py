@@ -25,23 +25,33 @@ http://www.gnu.org/licenses/.
 import collections.abc
 import typing
 
-from .. import core
+from ..core.flow_handler import FlowHandler
+from ..core.flow_manager import FlowManager
+from ..core.flow_result import FlowResult
+from ..core.flow_result_type import FlowResultType
 from . import providers
 from .credentials import Credentials
 
 
-@typing.overload
-class AuthManager:
-    ...
+if not typing.TYPE_CHECKING:
+
+    class AuthManager:
+        pass
+
+    class SmartHomeController:
+        pass
+
+
+if typing.TYPE_CHECKING:
+    from ..core.smart_home_controller import SmartHomeController
+    from .auth_manager import AuthManager
 
 
 # pylint: disable=unused-variable
-class AuthManagerFlowManager(core.FlowManager):
+class AuthManagerFlowManager(FlowManager):
     """Manage authentication flows."""
 
-    def __init__(
-        self, shc: core.SmartHomeController, auth_manager: AuthManager
-    ) -> None:
+    def __init__(self, shc: SmartHomeController, auth_manager: AuthManager) -> None:
         """Init auth manager flows."""
         super().__init__(shc)
         self._auth_manager = auth_manager
@@ -54,9 +64,9 @@ class AuthManagerFlowManager(core.FlowManager):
         self,
         handler_key: typing.Any,
         *,
-        context: dict[str, typing.Any] | None = None,
-        data: dict[str, typing.Any] | None = None,
-    ) -> core.FlowHandler:
+        context: dict[str, typing.Any] = None,
+        data: dict[str, typing.Any] = None,
+    ) -> FlowHandler:
         """Create a login flow."""
         auth_provider = self._auth_manager.get_auth_provider(*handler_key)
         if not auth_provider:
@@ -64,12 +74,12 @@ class AuthManagerFlowManager(core.FlowManager):
         return await auth_provider.async_login_flow(context)
 
     async def async_finish_flow(
-        self, flow: core.FlowHandler, result: core.FlowResult
-    ) -> core.FlowResult:
+        self, flow: FlowHandler, result: FlowResult
+    ) -> FlowResult:
         """Return a user as result of login flow."""
         flow = typing.cast(providers.LoginFlow, flow)
 
-        if result["type"] != core.FlowResultType.CREATE_ENTRY:
+        if result["type"] != FlowResultType.CREATE_ENTRY:
             return result
 
         # we got final result
@@ -105,7 +115,5 @@ class AuthManagerFlowManager(core.FlowManager):
         result["result"] = credentials
         return result
 
-    async def async_post_init(
-        self, flow: core.FlowHandler, result: core.FlowResult
-    ) -> None:
+    async def async_post_init(self, flow: FlowHandler, result: FlowResult) -> None:
         return

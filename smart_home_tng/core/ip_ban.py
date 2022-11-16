@@ -35,7 +35,7 @@ class IpBan:
     def __init__(
         self,
         ip_ban: str | ipaddress.IPv4Address | ipaddress.IPv6Address,
-        banned_at: datetime.datetime | None = None,
+        banned_at: datetime.datetime = None,
     ) -> None:
         """Initialize IP Ban object."""
         self.ip_address = ipaddress.ip_address(ip_ban)

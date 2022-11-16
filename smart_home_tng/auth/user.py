@@ -33,9 +33,14 @@ from .credentials import Credentials
 from .group import Group
 
 
-@typing.overload
-class RefreshToken:
-    ...
+if not typing.TYPE_CHECKING:
+
+    class RefreshToken:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from .refresh_token import RefreshToken
 
 
 # pylint: disable=unused-variable
@@ -43,7 +48,7 @@ class RefreshToken:
 class User:
     """A user."""
 
-    name: str | None = attr.ib()
+    name: str = attr.ib()
     perm_lookup: perm.PermissionLookup = attr.ib(eq=False, order=False)
     id: str = attr.ib(factory=lambda: uuid.uuid4().hex)
     is_owner: bool = attr.ib(default=False)
@@ -61,7 +66,7 @@ class User:
         factory=dict, eq=False, order=False
     )
 
-    _permissions: perm.PolicyPermissions | None = attr.ib(
+    _permissions: perm.PolicyPermissions = attr.ib(
         init=False,
         eq=False,
         order=False,

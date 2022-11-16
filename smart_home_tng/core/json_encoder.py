@@ -1,5 +1,5 @@
 """
-Helpers to help with encoding Smart Home - TNG objects in JSON.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -28,8 +28,8 @@ import typing
 
 
 # pylint: disable=unused-variable
-class JSONEncoder(json.JSONEncoder):
-    """JSONEncoder that supports Smart Home - The Next Generation objects."""
+class JsonEncoder(json.JSONEncoder):
+    """JSON Encoder that supports Smart Home - The Next Generation objects."""
 
     def default(self, o: typing.Any) -> typing.Any:
         """Convert Smart Home - The Next Generation objects.

@@ -25,4 +25,4 @@ http://www.gnu.org/licenses/.
 import typing
 
 # pylint: disable=unused-variable
-STATE_TYPE: typing.Final = typing.Union[None, str, int, float]
+StateType: typing.TypeAlias = typing.Union[None, str, int, float]

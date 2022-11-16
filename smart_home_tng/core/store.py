@@ -33,20 +33,35 @@ import typing
 
 from . import helpers
 from .callback import callback
-from .callback_type import CALLBACK_TYPE
+from .callback_type import CallbackType
 from .const import Const
 from .core_state import CoreState
 from .event import Event
 from .serialization_error import SerializationError
-from .smart_home_controller import SmartHomeController
 
-_STORAGE_SEMAPHORE: typing.Final = "storage_semaphore"
+_T = typing.TypeVar(
+    "_T",
+    bound=typing.Union[typing.Mapping[str, typing.Any], typing.Sequence[typing.Any]],
+)
+
+_STORAGE_SEMAPHORE: typing.Final = "store.semaphore"
+_STORAGE_DIR: typing.Final = ".storage"
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
 
 
+if not typing.TYPE_CHECKING:
+
+    class SmartHomeController:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from .smart_home_controller import SmartHomeController
+
+
 # pylint: disable=unused-variable
-class Store:
+class Store(typing.Generic[_T]):
     """Class to help storing data."""
 
     def __init__(
@@ -57,7 +72,7 @@ class Store:
         private: bool = False,
         *,
         atomic_writes: bool = False,
-        encoder: type[json.JSONEncoder] | None = None,
+        encoder: type[json.JSONEncoder] = None,
         minor_version: int = 1,
     ) -> None:
         """Initialize storage class."""
@@ -66,20 +81,20 @@ class Store:
         self._minor_version = minor_version
         self._key = key
         self._private = private
-        self._data: dict[str, typing.Any] | None = None
-        self._unsub_delay_listener: CALLBACK_TYPE | None = None
-        self._unsub_final_write_listener: CALLBACK_TYPE | None = None
+        self._data: dict[str, typing.Any] = None
+        self._unsub_delay_listener: CallbackType = None
+        self._unsub_final_write_listener: CallbackType = None
         self._write_lock = asyncio.Lock()
-        self._load_task: asyncio.Future | None = None
+        self._load_task: asyncio.Future[_T] = None
         self._encoder = encoder
         self._atomic_writes = atomic_writes
 
     @property
     def path(self):
         """Return the config path."""
-        return self._shc.config_path(self._shc.STORAGE_DIR, self._key)
+        return self._shc.config.path(_STORAGE_DIR, self._key)
 
-    async def async_load(self) -> dict | list | None:
+    async def async_load(self) -> _T:
         """Load data.
 
         If the expected version and minor version do not match the given versions, the
@@ -93,19 +108,20 @@ class Store:
 
         return await self._load_task
 
-    async def _async_load(self):
+    async def _async_load(self) -> _T:
         """Load the data and ensure the task is removed."""
-        semaphore = self._shc.get_semaphore(
-            _STORAGE_SEMAPHORE, self._shc.MAX_LOAD_CONCURRENTLY
-        )
+        if _STORAGE_SEMAPHORE not in self._shc.data:
+            self._shc.data[_STORAGE_SEMAPHORE] = asyncio.Semaphore(
+                Const.MAX_LOAD_CONCURRENTLY
+            )
 
         try:
-            async with semaphore:
+            async with self._shc.data[_STORAGE_SEMAPHORE]:
                 return await self._async_load_data()
         finally:
             self._load_task = None
 
-    async def _async_load_data(self):
+    async def _async_load_data(self) -> _T:
         """Load the data."""
         # Check if we have a pending write
         if self._data is not None:
@@ -132,7 +148,7 @@ class Store:
             data["version"] == self._version
             and data["minor_version"] == self._minor_version
         ):
-            stored = data["data"]
+            stored: _T = data["data"]
         else:
             _LOGGER.info(
                 "Migrating %s storage from "
@@ -144,7 +160,7 @@ class Store:
                 stored = await self._async_migrate_func(data["version"], data["data"])
             else:
                 try:
-                    stored = await self._async_migrate_func(
+                    stored: _T = await self._async_migrate_func(
                         data["version"], data["minor_version"], data["data"]
                     )
                 except NotImplementedError:
@@ -154,7 +170,7 @@ class Store:
 
         return stored
 
-    async def async_save(self, data: dict | list) -> None:
+    async def async_save(self, data: _T) -> None:
         """Save data."""
         self._data = {
             "version": self._version,
@@ -172,7 +188,7 @@ class Store:
     @callback
     def async_delay_save(
         self,
-        data_func: typing.Callable[[], dict | list],
+        data_func: typing.Callable[[], _T],
         delay: float = 0,
     ) -> None:
         """Save data with an optional delay."""
@@ -190,7 +206,7 @@ class Store:
         if self._shc.state == CoreState.STOPPING:
             return
 
-        self._unsub_delay_listener = self._shc.async_call_later(
+        self._unsub_delay_listener = self._shc.tracker.async_call_later(
             delay, self._async_callback_delayed_write
         )
 
@@ -198,8 +214,8 @@ class Store:
     def _async_ensure_final_write_listener(self) -> None:
         """Ensure that we write if we quit before delay has passed."""
         if self._unsub_final_write_listener is None:
-            self._unsub_final_write_listener = self._shc.async_listen_once(
-                Const.EVENT_ASSISTANT_FINAL_WRITE, self._async_callback_final_write
+            self._unsub_final_write_listener = self._shc.bus.async_listen_once(
+                Const.EVENT_SHC_FINAL_WRITE, self._async_callback_final_write
             )
 
     @callback
@@ -270,7 +286,7 @@ class Store:
         self, _old_major_version, _old_minor_version, _old_data
     ):
         """Migrate to the new version."""
-        raise NotImplementedError
+        raise NotImplementedError()
 
     async def async_remove(self) -> None:
         """Remove all data."""

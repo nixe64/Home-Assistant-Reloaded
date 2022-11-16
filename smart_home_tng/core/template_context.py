@@ -1,5 +1,5 @@
 """
-Helper methods for various modules in Smart Home - The Next Generation.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -25,6 +25,6 @@ http://www.gnu.org/licenses/.
 import contextvars
 
 # pylint: disable=unused-variable
-template_context: contextvars.ContextVar[
-    tuple[str, str] | None
-] = contextvars.ContextVar("template_context", default=None)
+template_context: contextvars.ContextVar[tuple[str, str]] = contextvars.ContextVar(
+    "template_context", default=None
+)

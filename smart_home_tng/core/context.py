@@ -24,12 +24,17 @@ http://www.gnu.org/licenses/.
 
 import typing
 
-from . import helpers
+from .helpers.ulid import ulid
 
 
-@typing.overload
-class Event:
-    ...
+if not typing.TYPE_CHECKING:
+
+    class Event:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from .event import Event
 
 
 # pylint: disable=unused-variable
@@ -40,15 +45,19 @@ class Context:
 
     def __init__(
         self,
-        user_id: str | None = None,
-        parent_id: str | None = None,
-        context_id: str | None = None,
+        user_id: str = None,
+        parent_id: str = None,
+        context_id: str = None,
     ) -> None:
         """Init the context."""
-        self.context_id = context_id or helpers.ulid()
+        self.context_id = context_id or ulid()
         self.user_id = user_id
         self.parent_id = parent_id
-        self.origin_event: Event | None = None
+        self.origin_event: Event = None
+
+    @property
+    def id(self):
+        return self.context_id
 
     def __eq__(self, other: typing.Any) -> bool:
         """Compare contexts."""
@@ -56,7 +65,7 @@ class Context:
             self.__class__ == other.__class__ and self.context_id == other.context_id
         )
 
-    def as_dict(self) -> dict[str, str | None]:
+    def as_dict(self) -> dict[str, str]:
         """Return a dictionary representation of the context."""
         return {
             "id": self.context_id,

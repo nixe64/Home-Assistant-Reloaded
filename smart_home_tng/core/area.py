@@ -36,8 +36,8 @@ class Area:
 
     name: str = attr.ib()
     normalized_name: str = attr.ib()
-    picture: str | None = attr.ib(default=None)
-    id: str | None = attr.ib(default=None)
+    picture: str = attr.ib(default=None)
+    id: str = attr.ib(default=None)
 
     def generate_id(self, existing_ids: collections.abc.Container[str]) -> None:
         """Initialize ID."""

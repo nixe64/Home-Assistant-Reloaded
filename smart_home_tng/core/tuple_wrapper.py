@@ -1,5 +1,5 @@
 """
-Helper methods for various modules in Smart Home - The Next Generation.
+Core components of Smart Home - The Next Generation.
 
 Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
@@ -22,14 +22,7 @@ License along with this program.  If not, see
 http://www.gnu.org/licenses/.
 """
 
-import typing
-
 from .result_wrapper import ResultWrapper
-
-
-@typing.overload
-class TupleWrapper:
-    ...
 
 
 # pylint: disable=unused-variable
@@ -38,13 +31,11 @@ class TupleWrapper(tuple, ResultWrapper):
 
     # This is all magic to be allowed to subclass a tuple.
 
-    def __new__(
-        cls, value: tuple, *, _render_result: str | None = None
-    ) -> TupleWrapper:
+    def __new__(cls, value: tuple, *, _render_result: str = None):
         """Create a new tuple class."""
         return super().__new__(cls, tuple(value))
 
-    def __init__(self, value: tuple, *, render_result: str | None = None) -> None:
+    def __init__(self, value: tuple, *, render_result: str = None) -> None:
         """Initialize a new tuple class."""
         super().__init__(value)
         super().__init__(render_result)

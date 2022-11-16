@@ -34,9 +34,18 @@ from .callback import callback
 from .flow_handler import FlowHandler
 from .flow_result import FlowResult
 from .flow_result_type import FlowResultType
-from .smart_home_controller import SmartHomeController
 from .unknown_flow import UnknownFlow
 from .unknown_step import UnknownStep
+
+
+if not typing.TYPE_CHECKING:
+
+    class SmartHomeController:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from .smart_home_controller import SmartHomeController
 
 
 # pylint: disable=unused-variable
@@ -66,8 +75,8 @@ class FlowManager(abc.ABC):
         self,
         handler_key: typing.Any,
         *,
-        context: dict[str, typing.Any] | None = None,
-        data: dict[str, typing.Any] | None = None,
+        context: dict[str, typing.Any] = None,
+        data: dict[str, typing.Any] = None,
     ) -> FlowHandler:
         """Create a flow for specified handler.
 
@@ -99,7 +108,7 @@ class FlowManager(abc.ABC):
         )
 
     @callback
-    def async_get(self, flow_id: str) -> FlowResult | None:
+    def async_get(self, flow_id: str) -> FlowResult:
         """Return a flow in progress as a partial FlowResult."""
         if (flow := self._progress.get(flow_id)) is None:
             raise UnknownFlow
@@ -150,7 +159,7 @@ class FlowManager(abc.ABC):
         self,
         handler: str,
         *,
-        context: dict[str, typing.Any] | None = None,
+        context: dict[str, typing.Any] = None,
         data: typing.Any = None,
     ) -> FlowResult:
         """Start a configuration flow."""
@@ -177,7 +186,7 @@ class FlowManager(abc.ABC):
     async def _async_init(
         self,
         init_done: asyncio.Future,
-        handler: str,
+        handler: typing.Any,
         context: dict,
         data: typing.Any,
     ) -> tuple[FlowHandler, FlowResult]:
@@ -196,7 +205,7 @@ class FlowManager(abc.ABC):
                 task.cancel()
 
     async def async_configure(
-        self, flow_id: str, user_input: dict | None = None
+        self, flow_id: str, user_input: dict = None
     ) -> FlowResult:
         """Continue a configuration flow."""
         if (flow := self._progress.get(flow_id)) is None:
@@ -276,8 +285,8 @@ class FlowManager(abc.ABC):
         self,
         flow: FlowHandler,
         step_id: str,
-        user_input: dict | BaseServiceInfo | None,
-        step_done: asyncio.Future | None = None,
+        user_input: dict | BaseServiceInfo,
+        step_done: asyncio.Future = None,
     ) -> FlowResult:
         """Handle a step of a flow."""
         method = f"async_step_{step_id}"

@@ -22,9 +22,9 @@ License along with this program.  If not, see
 http://www.gnu.org/licenses/.
 """
 
-from .. import core
+from ..core.smart_home_controller_error import SmartHomeControllerError
 
 
 # pylint: disable=unused-variable
-class InvalidUserError(core.SmartHomeControllerError):
+class InvalidUserError(SmartHomeControllerError):
     """Raised when try to login as invalid user."""

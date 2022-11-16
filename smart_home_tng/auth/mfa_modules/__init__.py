@@ -22,11 +22,7 @@ License along with this program.  If not, see
 http://www.gnu.org/licenses/.
 """
 
-# pylint: disable=unused-variable, unused-import
+# pylint: disable=unused-variable
 
-from .multi_factor_auth_module import (
-    MULTI_FACTOR_AUTH_MODULE_SCHEMA,
-    MultiFactorAuthModule,
-    auth_mfa_module_from_config,
-)
+from .multi_factor_auth_module import MultiFactorAuthModule
 from .setup_flow import SetupFlow

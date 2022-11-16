@@ -22,12 +22,20 @@ License along with this program.  If not, see
 http://www.gnu.org/licenses/.
 """
 
-import types
 import typing
 
 from .integration import Integration
-from .module_wrapper import ModuleWrapper
-from .smart_home_controller import SmartHomeController
+from .setup_manager import _DATA_INTEGRATIONS
+from .smart_home_controller_component import SmartHomeControllerComponent
+
+if not typing.TYPE_CHECKING:
+
+    class SmartHomeController:
+        ...
+
+
+if typing.TYPE_CHECKING:
+    from .smart_home_controller import SmartHomeController
 
 
 # pylint: disable=unused-variable
@@ -39,20 +47,28 @@ class Components:
         self._shc = shc
         self._data: dict[str, typing.Any] = {}
 
-    def __getattr__(self, comp_name: str) -> ModuleWrapper:
+    def __getattr__(self, comp_name: str) -> SmartHomeControllerComponent:
         """Fetch a component."""
         # Test integration cache
         integration = self._data.get(comp_name)
+        if integration is None:
+            cache = self._shc.data.get(_DATA_INTEGRATIONS)
+            if cache is not None:
+                integration = cache.get(comp_name)
+            if isinstance(integration, Integration):
+                self._data[comp_name] = integration
 
+        result = None
         if isinstance(integration, Integration):
-            component: types.ModuleType | None = integration.get_component()
-        else:
+            # import implementation, if not already don
+            integration.get_component()
+            result = SmartHomeControllerComponent.get_component(comp_name)
+            if isinstance(result, SmartHomeControllerComponent):
+                self._data[comp_name] = result
+        elif isinstance(integration, SmartHomeControllerComponent):
             # Fallback to importing old-school
-            component = self._shc.load_file(comp_name, self._shc.lookup_path())
+            result = integration
 
-        if component is None:
-            raise ImportError(f"Unable to load {comp_name}")
-
-        wrapped = ModuleWrapper(component)
-        setattr(self, comp_name, wrapped)
-        return wrapped
+        if result:
+            setattr(self, comp_name, result)
+        return result
