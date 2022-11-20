@@ -87,6 +87,7 @@ from .config_entries import ConfigEntries
 from .config_entries_flow_manager import ConfigEntriesFlowManager
 from .config_entry import ConfigEntry
 from .config_entry_auth_failed import ConfigEntryAuthFailed
+from .config_entry_change import ConfigEntryChange
 from .config_entry_disabler import ConfigEntryDisabler
 from .config_entry_not_ready import ConfigEntryNotReady
 from .config_entry_source import ConfigEntrySource

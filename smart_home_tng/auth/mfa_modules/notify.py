@@ -300,12 +300,12 @@ class NotifySetupFlow(SetupFlow):
         """Let user select available notify services."""
         errors: dict[str, str] = {}
 
-        hass = self._auth_module.hass
+        controller = self._auth_module.controller
         if user_input:
             self._notify_service = user_input["notify_service"]
             self._target = user_input.get("target")
-            self._secret = await hass.async_add_executor_job(_generate_secret)
-            self._count = await hass.async_add_executor_job(_generate_random)
+            self._secret = await controller.async_add_executor_job(_generate_secret)
+            self._count = await controller.async_add_executor_job(_generate_random)
 
             return await self.async_step_setup()
 
@@ -326,9 +326,9 @@ class NotifySetupFlow(SetupFlow):
         """Verify user can receive one-time password."""
         errors: dict[str, str] = {}
 
-        hass = self._auth_module.hass
+        controller = self._auth_module.controller
         if user_input:
-            verified = await hass.async_add_executor_job(
+            verified = await controller.async_add_executor_job(
                 _verify_otp, self._secret, user_input["code"], self._count
             )
             if verified:
@@ -342,7 +342,7 @@ class NotifySetupFlow(SetupFlow):
 
         # generate code every time, no retry logic
         assert self._secret and self._count
-        code = await hass.async_add_executor_job(
+        code = await controller.async_add_executor_job(
             _generate_otp, self._secret, self._count
         )
 

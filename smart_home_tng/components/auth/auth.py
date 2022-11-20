@@ -266,9 +266,6 @@ def _websocket_sign_path(connection: core.WebSocket.Connection, msg: dict):
 def _create_auth_code_store():
     """Create an in memory store."""
     temp_results = {}
-    last_key = None
-    last_result = None
-    last_created = None
 
     @core.callback
     def store_result(client_id, result):
@@ -286,17 +283,10 @@ def _create_auth_code_store():
     @core.callback
     def retrieve_result(client_id, code):
         """Retrieve flow result."""
-        nonlocal last_created, last_key, last_result
         key = (client_id, code)
 
         if key in temp_results:
             created, result = temp_results.pop(key)
-            last_key = key
-            last_result = result
-            last_created = created
-        elif key == last_key:
-            created = last_created
-            result = last_result
         else:
             return None
 
@@ -307,9 +297,6 @@ def _create_auth_code_store():
         if core.helpers.utcnow() - created < datetime.timedelta(minutes=10):
             return result
 
-        last_key = None
-        last_result = None
-        last_created = None
         return None
 
     return store_result, retrieve_result

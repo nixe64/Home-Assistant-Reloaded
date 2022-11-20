@@ -165,6 +165,10 @@ class Recorder(threading.Thread):
         return self._owner
 
     @property
+    def controller(self):
+        return self._owner.controller
+
+    @property
     def migration_in_progress(self) -> bool:
         return self._migration_in_progress
 

@@ -1438,7 +1438,7 @@ def adjust_statistics(
         if statistic_id not in metadata:
             return True
 
-        units = instance.hass.config.units
+        units = instance.controller.config.units
         statistic_unit = metadata[statistic_id][1]["unit_of_measurement"]
         display_unit = _configured_unit(statistic_unit, units)
         convert = _DISPLAY_UNIT_TO_STATISTIC_UNIT_CONVERSIONS.get(
