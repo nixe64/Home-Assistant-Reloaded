@@ -1,8 +1,8 @@
 {
   "domain": "frontend",
-  "name": "Home Assistant Frontend",
+  "name": "Frontend for Smart Home - The Next Generation",
   "documentation": "https://www.home-assistant.io/integrations/frontend",
-  "requirements": ["home-assistant-frontend>=20220802.0"],
+  "requirements": [],
   "dependencies": [
     "api",
     "auth",
