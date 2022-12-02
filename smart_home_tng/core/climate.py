@@ -35,7 +35,7 @@ from .const import Const
 from .entity import Entity
 from .entity_description import EntityDescription
 from .service_call import ServiceCall
-from .unit_system import UnitSystem
+from .unit_conversion import TemperatureConverter
 
 _DEFAULT_MIN_TEMP: typing.Final = 7
 _DEFAULT_MAX_TEMP: typing.Final = 35
@@ -170,7 +170,7 @@ class _Entity(Entity):
         """Return the precision of the system."""
         if hasattr(self, "_attr_precision"):
             return self._attr_precision
-        if self._shc.config.units.temperature_unit == Const.TEMP_CELSIUS:
+        if self._shc.config.units.temperature_unit == Const.UnitOfTemperature.CELSIUS:
             return Const.PRECISION_TENTHS
         return Const.PRECISION_WHOLE
 
@@ -482,7 +482,7 @@ class _Entity(Entity):
     def min_temp(self) -> float:
         """Return the minimum temperature."""
         if not hasattr(self, "_attr_min_temp"):
-            return UnitSystem.convert_temperature(
+            return TemperatureConverter.convert(
                 _DEFAULT_MIN_TEMP, Const.TEMP_CELSIUS, self.temperature_unit
             )
         return self._attr_min_temp
@@ -491,7 +491,7 @@ class _Entity(Entity):
     def max_temp(self) -> float:
         """Return the maximum temperature."""
         if not hasattr(self, "_attr_max_temp"):
-            return UnitSystem.convert_temperature(
+            return TemperatureConverter.convert(
                 _DEFAULT_MAX_TEMP, Const.TEMP_CELSIUS, self.temperature_unit
             )
         return self._attr_max_temp
@@ -614,7 +614,7 @@ class Climate:
 
         for value, temp in service_call.data.items():
             if value in _CONVERTIBLE_ATTRIBUTE:
-                kwargs[value] = UnitSystem.convert_temperature(
+                kwargs[value] = TemperatureConverter.convert(
                     temp, shc.config.units.temperature_unit, entity.temperature_unit
                 )
             else:

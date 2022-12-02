@@ -47,7 +47,7 @@ from .event import Event
 from .no_entity_specified_error import NoEntitySpecifiedError
 from .smart_home_controller_error import SmartHomeControllerError
 from .state_type import StateType
-from .unit_system import UnitSystem
+from .unit_conversion import TemperatureConverter
 
 _SLOW_UPDATE_WARNING: typing.Final = 10
 _DATA_ENTITY_SOURCE: typing.Final = "entity.info"
@@ -521,7 +521,7 @@ class Entity(abc.ABC):
             units = self._shc.config.units
             if (
                 unit_of_measure == units.temperature_unit
-                or unit_of_measure not in UnitSystem.TEMPERATURE_UNITS
+                or unit_of_measure not in TemperatureConverter.VALID_UNITS
             ):
                 return state
 

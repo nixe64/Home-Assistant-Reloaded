@@ -36,6 +36,7 @@ from . import helpers
 from .callback import callback
 from .callback_type import CallbackType
 from .config_entry_auth_failed import ConfigEntryAuthFailed
+from .config_entry_change import ConfigEntryChange
 from .config_entry_disabler import ConfigEntryDisabler
 from .config_entry_not_ready import ConfigEntryNotReady
 from .config_entry_source import ConfigEntrySource
@@ -77,6 +78,8 @@ class ConfigEntry:
 
     EVENT_FLOW_DISCOVERED: typing.Final = "config_entry.discovered"
     DISCOVERY_NOTIFICATION_ID: typing.Final = "config_entry.discovery"
+    SIGNAL_CONFIG_ENTRY_CHANGED: typing.Final = "config_entry.changed"
+    RECONFIGURE_NOTIFICATION_ID: typing.Final = "config_entry.reconfigure"
 
     __slots__ = (
         "_entry_id",
@@ -261,6 +264,17 @@ class ConfigEntry:
     def state(self) -> ConfigEntryState:
         return self._state
 
+    @callback
+    def set_state(
+        self, controller: SmartHomeController, state: ConfigEntryState, reason: str
+    ) -> None:
+        """Set the state of the config entry."""
+        self._state = state
+        self._reason = reason
+        controller.dispatcher.async_send(
+            self.SIGNAL_CONFIG_ENTRY_CHANGED, ConfigEntryChange.UPDATED, self
+        )
+
     async def async_setup(
         self,
         shc: SmartHomeController,
@@ -284,8 +298,7 @@ class ConfigEntry:
                 + f"{self._domain} configuration entry: {err}"
             )
             if self._domain == integration.domain:
-                self._state = ConfigEntryState.SETUP_ERROR
-                self._reason = "Import error"
+                self.set_state(shc, ConfigEntryState.SETUP_ERROR, "Import error")
             return
 
         shc_component = SmartHomeControllerComponent.get_component(integration.domain)
@@ -313,14 +326,12 @@ class ConfigEntry:
                         + f"{integration.domain} to set up {self._domain} "
                         + f"configuration entry: {err}"
                     )
-                    self._state = ConfigEntryState.SETUP_ERROR
-                    self._reason = "Import error"
+                    self.set_state(shc, ConfigEntryState.SETUP_ERROR, "Import error")
                     return
 
             # Perform migration
             if not await self.async_migrate(shc):
-                self._state = ConfigEntryState.MIGRATION_ERROR
-                self._reason = None
+                self.set_state(shc, ConfigEntryState.MIGRATION_ERROR, None)
                 return
 
         error_reason = None
@@ -350,8 +361,7 @@ class ConfigEntry:
             self.async_start_reauth(shc)
             result = False
         except ConfigEntryNotReady as ex:
-            self._state = ConfigEntryState.SETUP_RETRY
-            self._reason = str(ex) or None
+            self.set_state(shc, ConfigEntryState.SETUP_RETRY, str(ex) or None)
             wait_time = 2 ** min(tries, 4) * 5
             tries += 1
             message = str(ex)
@@ -394,11 +404,9 @@ class ConfigEntry:
             return
 
         if result:
-            self._state = ConfigEntryState.LOADED
-            self._reason = None
+            self.set_state(shc, ConfigEntryState.LOADED, None)
         else:
-            self._state = ConfigEntryState.SETUP_ERROR
-            self._reason = error_reason
+            self.set_state(shc, ConfigEntryState.SETUP_ERROR, error_reason)
 
     async def async_shutdown(self) -> None:
         """Call when Home Assistant is stopping."""
@@ -419,11 +427,10 @@ class ConfigEntry:
         Returns if unload is possible and was successful.
         """
         if self._source == _SOURCE_IGNORE:
-            self._state = ConfigEntryState.NOT_LOADED
-            self._reason = None
+            self.set_state(shc, ConfigEntryState.NOT_LOADED, None)
             return True
 
-        if self._state == ConfigEntryState.NOT_LOADED:
+        if self.state == ConfigEntryState.NOT_LOADED:
             return True
 
         if integration is None:
@@ -434,21 +441,19 @@ class ConfigEntry:
                 # that was uninstalled, or an integration
                 # that has been renamed without removing the config
                 # entry.
-                self._state = ConfigEntryState.NOT_LOADED
-                self._reason = None
+                self.set_state(shc, ConfigEntryState.NOT_LOADED, None)
                 return True
 
         component = integration.get_component()
 
         if integration.domain == self._domain:
-            if not self._state.recoverable:
+            if not self.state.recoverable:
                 return False
 
-            if self._state is not ConfigEntryState.LOADED:
+            if self.state is not ConfigEntryState.LOADED:
                 self.async_cancel_retry_setup()
 
-                self._state = ConfigEntryState.NOT_LOADED
-                self._reason = None
+                self.set_state(shc, ConfigEntryState.NOT_LOADED, None)
                 return True
 
         shc_component = SmartHomeControllerComponent.get_component(integration.domain)
@@ -459,8 +464,9 @@ class ConfigEntry:
 
         if not supports_unload:
             if integration.domain == self._domain:
-                self._state = ConfigEntryState.FAILED_UNLOAD
-                self._reason = "Unload not supported"
+                self.set_state(
+                    shc, ConfigEntryState.FAILED_UNLOAD, "Unload not supported"
+                )
             return False
 
         try:
@@ -473,8 +479,7 @@ class ConfigEntry:
 
             # Only adjust state if we unloaded the component
             if result and integration.domain == self._domain:
-                self._state = ConfigEntryState.NOT_LOADED
-                self._reason = None
+                self.set_state(shc, ConfigEntryState.NOT_LOADED, None)
 
             self._async_process_on_unload()
 
@@ -485,8 +490,7 @@ class ConfigEntry:
                 f"Error unloading entry {self._title} for {integration.domain}"
             )
             if integration.domain == self._domain:
-                self._state = ConfigEntryState.FAILED_UNLOAD
-                self._reason = "Unknown error"
+                self.set_state(shc, ConfigEntryState.FAILED_UNLOAD, "Unknown error")
             return False
 
     async def async_remove(self, shc: SmartHomeController) -> None:

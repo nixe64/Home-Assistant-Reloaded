@@ -296,7 +296,8 @@ class Energy(core.EnergyComponent):
             end_time,
             statistic_ids,
             "hour",
-            True,
+            {"energy": core.Const.UnitOfEnergy.KILO_WATT_HOUR},
+            {"mean", "sum"},
         )
 
         def _combine_sum_statistics(

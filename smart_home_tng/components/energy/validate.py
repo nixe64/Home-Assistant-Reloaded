@@ -30,16 +30,18 @@ import functools
 import typing
 
 from ... import core
-from .const import Const
 from .energy_cost_sensor import _COST_SENSORS
 from .energy_manager import EnergyManager
+
+_statistic: typing.TypeAlias = core.Statistic
 
 _ENERGY_USAGE_DEVICE_CLASSES: typing.Final = (core.Sensor.DeviceClass.ENERGY,)
 _ENERGY_USAGE_UNITS: typing.Final = {
     core.Sensor.DeviceClass.ENERGY: (
-        core.Const.ENERGY_KILO_WATT_HOUR,
-        core.Const.ENERGY_WATT_HOUR,
-        core.Const.ENERGY_MEGA_WATT_HOUR,
+        core.Const.UnitOfEnergy.KILO_WATT_HOUR,
+        core.Const.UnitOfEnergy.WATT_HOUR,
+        core.Const.UnitOfEnergy.MEGA_WATT_HOUR,
+        core.Const.UnitOfEnergy.GIGA_JOULE,
     )
 }
 _ENERGY_PRICE_UNITS: typing.Final = tuple(
@@ -54,8 +56,8 @@ _GAS_USAGE_DEVICE_CLASSES: typing.Final = (
 _GAS_USAGE_UNITS: typing.Final = {
     core.Sensor.DeviceClass.ENERGY: _ENERGY_USAGE_UNITS[core.Sensor.DeviceClass.ENERGY],
     core.Sensor.DeviceClass.GAS: (
-        core.Const.VOLUME_CUBIC_METERS,
-        core.Const.VOLUME_CUBIC_FEET,
+        core.Const.UnitOfVolume.CUBIC_METERS,
+        core.Const.UnitOfVolume.CUBIC_FEET,
     ),
 }
 _GAS_PRICE_UNITS: typing.Final = tuple(
@@ -63,6 +65,20 @@ _GAS_PRICE_UNITS: typing.Final = tuple(
 )
 _GAS_UNIT_ERROR: typing.Final = "entity_unexpected_unit_gas"
 _GAS_PRICE_UNIT_ERROR: typing.Final = "entity_unexpected_unit_gas_price"
+_WATER_USAGE_DEVICE_CLASSES = (core.Sensor.DeviceClass.WATER,)
+_WATER_USAGE_UNITS = {
+    core.Sensor.DeviceClass.WATER: (
+        core.Const.UnitOfVolume.CUBIC_METERS,
+        core.Const.UnitOfVolume.CUBIC_FEET,
+        core.Const.UnitOfVolume.GALLONS,
+        core.Const.UnitOfVolume.LITERS,
+    ),
+}
+_WATER_PRICE_UNITS = tuple(
+    f"/{unit}" for units in _WATER_USAGE_UNITS.values() for unit in units
+)
+_WATER_UNIT_ERROR = "entity_unexpected_unit_water"
+_WATER_PRICE_UNIT_ERROR = "entity_unexpected_unit_water_price"
 
 
 @dataclasses.dataclass()
@@ -94,7 +110,7 @@ class EnergyPreferencesValidation:
 def _async_validate_usage_stat(
     shc: core.SmartHomeController,
     recorder: core.RecorderComponent,
-    metadata: dict[str, tuple[int, core.StatisticMetaData]],
+    metadata: dict[str, tuple[int, _statistic.MetaData]],
     stat_id: str,
     allowed_device_classes: collections.abc.Sequence[str],
     allowed_units: collections.abc.Mapping[str, collections.abc.Sequence[str]],
@@ -164,7 +180,11 @@ def _async_validate_usage_stat(
 
     state_class = state.attributes.get(core.Sensor.ATTR_STATE_CLASS)
 
-    allowed_state_classes = Const.SUPPORTED_STATE_CLASSES
+    allowed_state_classes = {
+        core.Sensor.StateClass.MEASUREMENT,
+        core.Sensor.StateClass.TOTAL,
+        core.Sensor.StateClass.TOTAL_INCREASING,
+    }
     if state_class not in allowed_state_classes:
         result.append(
             ValidationIssue(
@@ -219,7 +239,7 @@ def _async_validate_price_entity(
 def _async_validate_cost_stat(
     shc: core.SmartHomeController,
     recorder: core.RecorderComponent,
-    metadata: dict[str, tuple[int, core.StatisticMetaData]],
+    metadata: dict[str, tuple[int, _statistic.MetaData]],
     stat_id: str,
     result: list[ValidationIssue],
 ) -> None:
@@ -241,7 +261,11 @@ def _async_validate_cost_stat(
 
     state_class = state.attributes.get("state_class")
 
-    supported_state_classes = Const.SUPPORTED_STATE_CLASSES
+    supported_state_classes = {
+        core.Sensor.StateClass.MEASUREMENT,
+        core.Sensor.StateClass.TOTAL,
+        core.Sensor.StateClass.TOTAL_INCREASING,
+    }
     if state_class not in supported_state_classes:
         result.append(
             ValidationIssue("entity_unexpected_state_class", stat_id, state_class)
@@ -278,7 +302,7 @@ async def async_validate(
     recorder: core.RecorderComponent,
 ) -> EnergyPreferencesValidation:
     """Validate the energy configuration."""
-    statistics_metadata: dict[str, tuple[int, core.StatisticMetaData]] = {}
+    statistics_metadata: dict[str, tuple[int, _statistic.MetaData]] = {}
     validate_calls = []
     wanted_statistics_metadata = set()
 
@@ -309,15 +333,15 @@ async def async_validate(
                     )
                 )
 
-                if flow.get("stat_cost") is not None:
-                    wanted_statistics_metadata.add(flow["stat_cost"])
+                if stat_cost := flow.get("stat_cost") is not None:
+                    wanted_statistics_metadata.add(stat_cost)
                     validate_calls.append(
                         functools.partial(
                             _async_validate_cost_stat,
                             shc,
                             recorder,
                             statistics_metadata,
-                            flow["stat_cost"],
+                            stat_cost,
                             source_result,
                         )
                     )
@@ -333,14 +357,14 @@ async def async_validate(
                         )
                     )
 
-                if flow.get("entity_energy_from") is not None and (
+                if (
                     flow.get("entity_energy_price") is not None
                     or flow.get("number_energy_price") is not None
                 ):
                     validate_calls.append(
                         functools.partial(
                             _async_validate_auto_generated_cost_entity,
-                            flow["entity_energy_from"],
+                            flow["stat_energy_from"],
                             source_result,
                         )
                     )
@@ -360,15 +384,15 @@ async def async_validate(
                     )
                 )
 
-                if flow.get("stat_compensation") is not None:
-                    wanted_statistics_metadata.add(flow["stat_compensation"])
+                if stat_compensation := flow.get("stat_compensation") is not None:
+                    wanted_statistics_metadata.add(stat_compensation)
                     validate_calls.append(
                         functools.partial(
                             _async_validate_cost_stat,
                             shc,
                             recorder,
                             statistics_metadata,
-                            flow["stat_compensation"],
+                            stat_compensation,
                             source_result,
                         )
                     )
@@ -384,7 +408,7 @@ async def async_validate(
                         )
                     )
 
-                if flow.get("entity_energy_to") is not None and (
+                if (
                     flow.get("entity_energy_price") is not None
                     or flow.get("number_energy_price") is not None
                 ):
@@ -392,7 +416,7 @@ async def async_validate(
                         functools.partial(
                             _async_validate_auto_generated_cost_entity,
                             recorder,
-                            flow["entity_energy_to"],
+                            flow["stat_energy_to"],
                             source_result,
                         )
                     )
@@ -413,15 +437,15 @@ async def async_validate(
                 )
             )
 
-            if source.get("stat_cost") is not None:
-                wanted_statistics_metadata.add(source["stat_cost"])
+            if stat_cost := source.get("stat_cost") is not None:
+                wanted_statistics_metadata.add(stat_cost)
                 validate_calls.append(
                     functools.partial(
                         _async_validate_cost_stat,
                         shc,
                         recorder,
                         statistics_metadata,
-                        source["stat_cost"],
+                        stat_cost,
                         source_result,
                     )
                 )
@@ -437,7 +461,7 @@ async def async_validate(
                     )
                 )
 
-            if source.get("entity_energy_from") is not None and (
+            if (
                 source.get("entity_energy_price") is not None
                 or source.get("number_energy_price") is not None
             ):
@@ -445,11 +469,63 @@ async def async_validate(
                     functools.partial(
                         _async_validate_auto_generated_cost_entity,
                         recorder,
-                        source["entity_energy_from"],
+                        source["stat_energy_from"],
                         source_result,
                     )
                 )
 
+        elif source["type"] == "water":
+            wanted_statistics_metadata.add(source["stat_energy_from"])
+            validate_calls.append(
+                functools.partial(
+                    _async_validate_usage_stat,
+                    shc,
+                    recorder,
+                    statistics_metadata,
+                    source["stat_energy_from"],
+                    _WATER_USAGE_DEVICE_CLASSES,
+                    _WATER_USAGE_UNITS,
+                    _WATER_UNIT_ERROR,
+                    source_result,
+                )
+            )
+
+            if (stat_cost := source.get("stat_cost")) is not None:
+                wanted_statistics_metadata.add(stat_cost)
+                validate_calls.append(
+                    functools.partial(
+                        _async_validate_cost_stat,
+                        shc,
+                        recorder,
+                        statistics_metadata,
+                        stat_cost,
+                        source_result,
+                    )
+                )
+            elif source.get("entity_energy_price") is not None:
+                validate_calls.append(
+                    functools.partial(
+                        _async_validate_price_entity,
+                        shc,
+                        source["entity_energy_price"],
+                        source_result,
+                        _WATER_PRICE_UNITS,
+                        _WATER_PRICE_UNIT_ERROR,
+                    )
+                )
+
+            if (
+                source.get("entity_energy_price") is not None
+                or source.get("number_energy_price") is not None
+            ):
+                validate_calls.append(
+                    functools.partial(
+                        _async_validate_auto_generated_cost_entity,
+                        recorder,
+                        source["stat_energy_from"],
+                        source_result,
+                    )
+                )
         elif source["type"] == "solar":
             wanted_statistics_metadata.add(source["stat_energy_from"])
             validate_calls.append(

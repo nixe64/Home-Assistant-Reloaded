@@ -418,7 +418,7 @@ class _AbstractConfig(abc.ABC):
                 "Local fulfillment failed to setup, falling back to cloud fulfillment"
             )
             for setup_webhook_id in setup_webhook_ids:
-                webhook.async_unregister(self.hass, setup_webhook_id)
+                webhook.unregister_webhook(setup_webhook_id)
 
         self._local_sdk_active = setup_successful
 

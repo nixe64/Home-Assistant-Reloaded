@@ -124,10 +124,12 @@ class EnergyCostSensor(core.Sensor.Entity):
                 core.Const.ATTR_UNIT_OF_MEASUREMENT, ""
             )
 
-            if unit_of_measurement.endswith(f"/{core.Const.ENERGY_WATT_HOUR}"):
+            if unit_of_measurement.endswith(f"/{core.Const.UnitOfEnergy.WATT_HOUR}"):
                 energy_price *= 1000.0
 
-            if unit_of_measurement.endswith(f"/{core.Const.ENERGY_MEGA_WATT_HOUR}"):
+            if unit_of_measurement.endswith(
+                f"/{core.Const.UnitOfEnergy.MEGA_WATT_HOUR}"
+            ):
                 energy_price /= 1000.0
 
         else:
@@ -149,9 +151,9 @@ class EnergyCostSensor(core.Sensor.Entity):
             if energy_unit not in Const.VALID_ENERGY_UNITS_GAS:
                 energy_unit = None
 
-        if energy_unit == core.Const.ENERGY_WATT_HOUR:
+        if energy_unit == core.Const.UnitOfEnergy.WATT_HOUR:
             energy_price /= 1000
-        elif energy_unit == core.Const.ENERGY_MEGA_WATT_HOUR:
+        elif energy_unit == core.Const.UnitOfEnergy.MEGA_WATT_HOUR:
             energy_price *= 1000
 
         if energy_unit is None:

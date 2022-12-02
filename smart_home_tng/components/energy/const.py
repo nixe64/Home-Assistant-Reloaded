@@ -176,7 +176,6 @@ class Const:
             "grid",
             "flow_from",
             "stat_energy_from",
-            "entity_energy_from",
             "stat_cost",
             "Cost",
             "cost",
@@ -185,7 +184,6 @@ class Const:
             "grid",
             "flow_to",
             "stat_energy_to",
-            "entity_energy_to",
             "stat_compensation",
             "Compensation",
             "compensation",
@@ -194,23 +192,39 @@ class Const:
             "gas",
             None,
             "stat_energy_from",
-            "entity_energy_from",
+            "stat_cost",
+            "Cost",
+            "cost",
+        ),
+        SourceAdapter(
+            "water",
+            None,
+            "stat_energy_from",
             "stat_cost",
             "Cost",
             "cost",
         ),
     )
 
-    SUPPORTED_STATE_CLASSES: typing.Final = [
+    SUPPORTED_STATE_CLASSES: typing.Final = {
         core.Sensor.StateClass.MEASUREMENT,
         core.Sensor.StateClass.TOTAL,
         core.Sensor.StateClass.TOTAL_INCREASING,
-    ]
-    VALID_ENERGY_UNITS: typing.Final = [
-        core.Const.ENERGY_WATT_HOUR,
-        core.Const.ENERGY_KILO_WATT_HOUR,
-        core.Const.ENERGY_MEGA_WATT_HOUR,
-    ]
-    VALID_ENERGY_UNITS_GAS: typing.Final = [
-        core.Const.VOLUME_CUBIC_METERS
-    ] + VALID_ENERGY_UNITS
+    }
+    VALID_ENERGY_UNITS: typing.Final = {
+        core.Const.UnitOfEnergy.WATT_HOUR,
+        core.Const.UnitOfEnergy.KILO_WATT_HOUR,
+        core.Const.UnitOfEnergy.MEGA_WATT_HOUR,
+        core.Const.UnitOfEnergy.GIGA_JOULE,
+    }
+    VALID_ENERGY_UNITS_GAS: typing.Final = {
+        core.Const.UnitOfVolume.CUBIC_METERS,
+        core.Const.UnitOfVolume.CUBIC_FEET,
+        *VALID_ENERGY_UNITS,
+    }
+    VALID_VOLUME_UNITS_WATER: typing.Final = {
+        core.Const.UnitOfVolume.CUBIC_METERS,
+        core.Const.UnitOfVolume.CUBIC_FEET,
+        core.Const.UnitOfVolume.GALLONS,
+        core.Const.UnitOfVolume.LITERS,
+    }

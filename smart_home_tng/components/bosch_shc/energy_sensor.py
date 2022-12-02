@@ -45,7 +45,7 @@ class EnergySensor(BoschEntity, _sensor.Entity):
     """Representation of an SHC energy reporting sensor."""
 
     _attr_device_class = _sensor.DeviceClass.ENERGY
-    _attr_native_unit_of_measurement = core.Const.ENERGY_KILO_WATT_HOUR
+    _attr_native_unit_of_measurement = core.Const.UnitOfEnergy.KILO_WATT_HOUR
     _attr_state_class = _sensor.StateClass.TOTAL_INCREASING
 
     def __init__(

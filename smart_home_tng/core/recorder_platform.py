@@ -27,7 +27,7 @@ import inspect
 
 from .platform_implementation import PlatformImplementation
 from .recorder_component import RecorderComponent
-from .statistic_business_model import PlatformCompiledStatistics
+from .statistic_business_model import Statistic
 
 
 # pylint: disable=unused-variable
@@ -68,6 +68,7 @@ class RecorderPlatform(PlatformImplementation):
     # pylint: disable=unused-argument
     def list_statistic_ids(
         self,
+        recorder: RecorderComponent,
         statistic_ids: list[str] | tuple[str] = None,
         statistic_type: str = None,
     ) -> dict:
@@ -82,8 +83,8 @@ class RecorderPlatform(PlatformImplementation):
 
     # pylint: disable=unused-argument
     def compile_statistics(
-        self, rec_comp: RecorderComponent, start: dt.datetime, end: dt.datetime
-    ) -> PlatformCompiledStatistics:
+        self, recorder: RecorderComponent, start: dt.datetime, end: dt.datetime
+    ) -> Statistic.PlatformCompiledStatistics:
         """Compile statistics for all entities during start-end.
 
         Note: This will query the database and must not be run in the event loop
@@ -91,6 +92,6 @@ class RecorderPlatform(PlatformImplementation):
         raise NotImplementedError()
 
     # pylint: disable=unused-argument
-    def validate_statistics(self, rec_comp: RecorderComponent):
+    def validate_statistics(self, recorder: RecorderComponent):
         """Validate Statistics."""
         raise NotImplementedError()

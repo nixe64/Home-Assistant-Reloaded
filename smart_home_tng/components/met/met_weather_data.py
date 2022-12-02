@@ -83,8 +83,10 @@ class MetWeatherData:
         if not self._is_metric:
             elevation = int(
                 round(
-                    core.UnitSystem.convert_length(
-                        elevation, core.Const.LENGTH_FEET, core.Const.LENGTH_METERS
+                    core.DistanceConverter.convert(
+                        elevation,
+                        core.Const.UnitOfLength.FEET,
+                        core.Const.UnitOfLength.METERS,
                     )
                 )
             )

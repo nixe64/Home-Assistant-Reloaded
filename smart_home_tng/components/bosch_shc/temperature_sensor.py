@@ -45,7 +45,7 @@ class TemperatureSensor(BoschEntity, _sensor.Entity):
     """Representation of an SHC temperature reporting sensor."""
 
     _attr_device_class = _sensor.DeviceClass.TEMPERATURE
-    _attr_native_unit_of_measurement = core.Const.TEMP_CELSIUS
+    _attr_native_unit_of_measurement = core.Const.UnitOfTemperature.CELSIUS
     _attr_state_class = _sensor.StateClass.MEASUREMENT
 
     def __init__(

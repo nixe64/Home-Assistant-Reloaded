@@ -31,12 +31,11 @@ import voluptuous as vol
 from ... import core
 from .statistics_compiler import (
     _DEFAULT_STATISTICS,
-    _DEVICE_CLASS_UNITS,
-    _UNIT_CONVERSIONS,
     _compile_statistics,
 )
 
 _cv: typing.TypeAlias = core.ConfigValidation
+_statistic: typing.TypeAlias = core.Statistic
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
 
@@ -451,7 +450,10 @@ class SensorComponent(  # pylint: disable=too-many-ancestors
         registry.exclude_domain()
 
     def list_statistic_ids(
-        self, statistic_ids: list[str] | tuple[str] = None, statistic_type: str = None
+        self,
+        recorder: core.RecorderComponent,
+        statistic_ids: list[str] | tuple[str] = None,
+        statistic_type: str = None,
     ) -> dict:
         """Return all or filtered statistic_ids and meta data."""
         entities = self._get_sensor_states()
@@ -460,8 +462,7 @@ class SensorComponent(  # pylint: disable=too-many-ancestors
 
         for state in entities:
             state_class = state.attributes[core.Sensor.ATTR_STATE_CLASS]
-            device_class = state.attributes.get(core.Const.ATTR_DEVICE_CLASS)
-            native_unit = state.attributes.get(core.Const.ATTR_UNIT_OF_MEASUREMENT)
+            state_unit = state.attributes.get(core.Const.ATTR_UNIT_OF_MEASUREMENT)
 
             provided_statistics = _DEFAULT_STATISTICS[state_class]
             if statistic_type is not None and statistic_type not in provided_statistics:
@@ -478,24 +479,13 @@ class SensorComponent(  # pylint: disable=too-many-ancestors
             ):
                 continue
 
-            if device_class not in _UNIT_CONVERSIONS:
-                result[state.entity_id] = {
-                    "has_mean": "mean" in provided_statistics,
-                    "has_sum": "sum" in provided_statistics,
-                    "source": "recorder",
-                    "unit_of_measurement": native_unit,
-                }
-                continue
-
-            if native_unit not in _UNIT_CONVERSIONS[device_class]:
-                continue
-
-            statistics_unit = _DEVICE_CLASS_UNITS[device_class]
             result[state.entity_id] = {
                 "has_mean": "mean" in provided_statistics,
                 "has_sum": "sum" in provided_statistics,
-                "source": "recorder",
-                "unit_of_measurement": statistics_unit,
+                "name": None,
+                "source": recorder.domain,
+                "statistic_id": state.entity_id,
+                "unit_of_measurement": state_unit,
             }
 
         return result
@@ -572,16 +562,16 @@ class SensorComponent(  # pylint: disable=too-many-ancestors
             )
 
     def compile_statistics(
-        self, rec_comp: core.RecorderComponent, start: dt.datetime, end: dt.datetime
-    ) -> core.PlatformCompiledStatistics:
+        self, recorder: core.RecorderComponent, start: dt.datetime, end: dt.datetime
+    ) -> _statistic.PlatformCompiledStatistics:
         """Compile statistics for all entities during start-end.
 
         Note: This will query the database and must not be run in the event loop
         """
-        with rec_comp.session_scope() as session:
+        with recorder.session_scope() as session:
             compiled = _compile_statistics(
                 self,
-                rec_comp,
+                recorder,
                 session,
                 start,
                 end,

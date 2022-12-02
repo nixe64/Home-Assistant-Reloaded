@@ -70,7 +70,7 @@ setup.cfg @nixe64
 /smart_home_tng/components/mobile_app/ @nixe64
 /smart_home_tng/components/my/ @nixe64
 /smart_home_tng/components/network/ @nixe64
-/smart_home_tng/components/notify/ @home-assistant/core
+/smart_home_tng/components/notify/ @nixe64
 /smart_home_tng/components/onboarding/ @nixe64
 /smart_home_tng/components/persistent_notification/ @nixe64
 /smart_home_tng/components/person/ @nixe64

@@ -26,4 +26,3 @@ http://www.gnu.org/licenses/.
 
 from .auth_provider import AuthProvider
 from .login_flow import LoginFlow
-from .homeassistant import SmartHomeControllerAuthProvider

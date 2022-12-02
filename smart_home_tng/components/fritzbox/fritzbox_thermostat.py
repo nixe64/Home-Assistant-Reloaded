@@ -59,7 +59,7 @@ class FritzboxThermostat(FritzboxEntity, core.Climate.Entity):
         core.Climate.EntityFeature.TARGET_TEMPERATURE
         | core.Climate.EntityFeature.PRESET_MODE
     )
-    _attr_temperature_unit = core.Const.TEMP_CELSIUS
+    _attr_temperature_unit = core.Const.UnitOfTemperature.CELSIUS
 
     @property
     def current_temperature(self) -> float:

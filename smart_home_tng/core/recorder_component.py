@@ -38,7 +38,7 @@ from .recorder_statistics_base import RecorderStatisticsBase
 from .smart_home_controller_component import SmartHomeControllerComponent
 from .sql_session import SqlSession
 from .state import State
-from .statistic_business_model import StatisticMetaData
+from .statistic_business_model import Statistic as _statistic
 
 _T = typing.TypeVar("_T")
 
@@ -144,7 +144,7 @@ class RecorderComponent(SmartHomeControllerComponent):
         statistic_ids: list[str] | tuple[str] = None,
         statistic_type: typing.Literal["mean"] | typing.Literal["sum"] = None,
         statistic_source: str = None,
-    ) -> dict[str, tuple[int, StatisticMetaData]]:
+    ) -> dict[str, tuple[int, _statistic.MetaData]]:
         """Fetch meta data.
 
         Returns a dict of (metadata_id, StatisticMetaData) tuples indexed by statistic_id.
@@ -171,6 +171,7 @@ class RecorderComponent(SmartHomeControllerComponent):
     def get_latest_short_term_statistics(
         self,
         statistic_ids: list[str],
-        metadata: dict[str, tuple[int, StatisticMetaData]] = None,
+        types: set[typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]],
+        metadata: dict[str, tuple[int, _statistic.MetaData]] = None,
     ) -> dict[str, list[dict]]:
         """Return the latest short term statistics for a list of statistic_ids."""
