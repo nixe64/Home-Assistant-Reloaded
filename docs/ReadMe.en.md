@@ -122,7 +122,7 @@ usability for a specific purpose.**
 [bugs-badge]: https://img.shields.io/github/issues/nixe64/Home-Assistant-Blueprint/bug.svg?label=Fehlerberichte&color=informational
 [bugs-url]: https://github.com/nixe64/Home-Assistant-Blueprint/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3Abug
 
-[contribute-url]: contributing/Contribute.en.md
+[contribute-url]: contributing/Contributions.en.md
 [coc-url]: contributing/CodeOfConduct.en.md
 
 [template-btn]: images/template-btn.svg
