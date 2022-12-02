@@ -34,10 +34,14 @@ class SetupFlow(FlowHandler):
     """Handler for the setup flow."""
 
     def __init__(
-        self, auth_module: MultiFactorAuthModule, setup_schema: vol.Schema, user_id: str
+        self,
+        auth_module: MultiFactorAuthModule,
+        setup_schema: vol.Schema,
+        user_id: str,
+        handler="setup",
     ) -> None:
         """Initialize the setup flow."""
-        super().__init__("setup")
+        super().__init__(handler)
         self._auth_module = auth_module
         self._setup_schema = setup_schema
         self._user_id = user_id

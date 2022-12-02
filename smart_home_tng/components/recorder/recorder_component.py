@@ -41,11 +41,16 @@ from .queries.common import _PSEUDO_EVENT_STATE_CHANGED
 from .recorder import Recorder
 
 _cv: typing.TypeAlias = core.ConfigValidation
+_statistic: typing.TypeAlias = core.Statistic
 
 _T = typing.TypeVar("_T")
 _LOGGER: typing.Final = logging.getLogger(__name__)
 _PLATFORMS: typing.Final = dict[str, core.RecorderPlatform]()
 
+_LIST_STATISTICS: typing.Final = {
+    vol.Required("type"): "recorder/list_statistic_ids",
+    vol.Optional("statistic_type"): vol.Any("sum", "mean"),
+}
 _VALIDATE_STATISTICS: typing.Final = {
     vol.Required("type"): "recorder/validate_statistics",
 }
@@ -70,6 +75,7 @@ _ADJUST_SUM_STATISTICS: typing.Final = {
     vol.Required("statistic_id"): str,
     vol.Required("start_time"): str,
     vol.Required("adjustment"): vol.Any(float, int),
+    vol.Required("adjustment_unit_of_measurement"): vol.Any(str, None),
 }
 
 
@@ -376,7 +382,7 @@ class RecorderComponent(
         statistic_ids: list[str] | tuple[str] = None,
         statistic_type: typing.Literal["mean"] | typing.Literal["sum"] = None,
         statistic_source: str = None,
-    ) -> dict[str, tuple[int, core.StatisticMetaData]]:
+    ) -> dict[str, tuple[int, _statistic.MetaData]]:
         """Return metadata for statistic_ids."""
         return statistics.get_metadata(
             self,
@@ -392,7 +398,7 @@ class RecorderComponent(
         statistic_ids: list[str] | tuple[str] = None,
         statistic_type: typing.Literal["mean"] | typing.Literal["sum"] = None,
         statistic_source: str = None,
-    ) -> dict[str, tuple[int, core.StatisticMetaData]]:
+    ) -> dict[str, tuple[int, _statistic.MetaData]]:
         return statistics.get_metadata_with_session(
             session,
             statistic_ids=statistic_ids,
@@ -403,10 +409,11 @@ class RecorderComponent(
     def statistics_during_period(
         self,
         start_time: dt.datetime,
-        end_time: dt.datetime = None,
-        statistic_ids: list[str] = None,
-        period: typing.Literal["5minute", "day", "hour", "month"] = "hour",
-        start_time_as_datetime: bool = False,
+        end_time: dt.datetime,
+        statistic_ids: list[str],
+        period: typing.Literal["5minute", "day", "hour", "month"],
+        units: dict[str, str],
+        types: set[typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]],
     ) -> dict[str, list[dict[str, typing.Any]]]:
         """Return statistics during UTC period start_time - end_time for the statistic_ids.
 
@@ -414,7 +421,7 @@ class RecorderComponent(
         If statistic_ids is omitted, returns statistics for all statistics ids.
         """
         return statistics.statistics_during_period(
-            self, start_time, end_time, statistic_ids, period, start_time_as_datetime
+            self, start_time, end_time, statistic_ids, period, units, types
         )
 
     def list_statistic_ids(
@@ -524,22 +531,50 @@ class RecorderComponent(
     def get_latest_short_term_statistics(
         self,
         statistic_ids: list[str],
-        metadata: dict[str, tuple[int, core.StatisticMetaData]] = None,
+        types: set[typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]],
+        metadata: dict[str, tuple[int, _statistic.MetaData]] = None,
     ) -> dict[str, list[dict]]:
         """Return the latest short term statistics for a list of statistic_ids."""
         return statistics.get_latest_short_term_statistics(
-            self, statistic_ids, metadata
+            self, statistic_ids, types, metadata
         )
 
     @core.callback
     def async_websocket_setup(self, comp: core.WebSocket.Component) -> None:
         """Set up the recorder websocket API."""
+        comp.register_command(self._list_statistics, _LIST_STATISTICS)
         comp.register_command(self._validate_statistics, _VALIDATE_STATISTICS)
         comp.register_command(self._clear_statistics, _CLEAR_STATISTICS)
         comp.register_command(self._get_statistics_metadata, _STATISTICS_METADATA)
         comp.register_command(self._update_statistics_metadata, _UPDATE_METADATA)
         comp.register_command(self._info, _RECORDER_INFO)
         comp.register_command(self._adjust_sum_statistics, _ADJUST_SUM_STATISTICS)
+
+    def _ws_list_statistic_ids(
+        self,
+        connection: core.WebSocket.Connection,
+        msg_id: int,
+        statistic_type: typing.Literal["mean"] | typing.Literal["sum"] | None = None,
+    ) -> str:
+        """Fetch a list of available statistic_id and convert them to json in the executor."""
+        return core.Const.JSON_DUMP(
+            connection.result_message(
+                msg_id, self.list_statistic_ids(None, statistic_type)
+            )
+        )
+
+    async def _list_statistics(
+        self, connection: core.WebSocket.Connection, msg: dict
+    ) -> None:
+        """Fetch a list of available statistic_id."""
+        connection.send_message(
+            await self._recorder.async_add_executor_job(
+                self._ws_list_statistic_ids,
+                connection,
+                msg["id"],
+                msg.get("statistic_type"),
+            )
+        )
 
     async def _validate_statistics(
         self,
@@ -593,12 +628,16 @@ class RecorderComponent(
         connection.send_result(msg["id"])
 
     @core.callback
-    def _adjust_sum_statistics(
+    async def _adjust_sum_statistics(
         self,
         connection: core.WebSocket.Connection,
         msg: dict,
     ) -> None:
-        """Adjust sum statistics."""
+        """Adjust sum statistics.
+
+        If the statistics is stored as NORMALIZED_UNIT,
+        it's allowed to make an adjustment in VALID_UNIT
+        """
         connection.require_admin()
         start_time_str = msg["start_time"]
 
@@ -608,8 +647,36 @@ class RecorderComponent(
             connection.send_error(msg["id"], "invalid_start_time", "Invalid start time")
             return
 
+        metadatas = await self._recorder.async_add_executor_job(
+            statistics.list_statistic_ids, self._recorder, (msg["statistic_id"],)
+        )
+        if not metadatas:
+            connection.send_error(
+                msg["id"], "unknown_statistic_id", "Unknown statistic ID"
+            )
+            return
+        metadata = metadatas[0]
+
+        def valid_units(statistics_unit: str, adjustment_unit: str) -> bool:
+            if statistics_unit == adjustment_unit:
+                return True
+            converter = _statistic.STATISTIC_UNIT_TO_UNIT_CONVERTER.get(statistics_unit)
+            if converter is not None and adjustment_unit in converter.VALID_UNITS:
+                return True
+            return False
+
+        stat_unit = metadata["statistics_unit_of_measurement"]
+        adjustment_unit = msg["adjustment_unit_of_measurement"]
+        if not valid_units(stat_unit, adjustment_unit):
+            connection.send_error(
+                msg["id"],
+                "invalid_units",
+                f"Can't convert {stat_unit} to {adjustment_unit}",
+            )
+            return
+
         self._recorder.async_adjust_statistics(
-            msg["statistic_id"], start_time, msg["adjustment"]
+            msg["statistic_id"], start_time, msg["adjustment"], adjustment_unit
         )
         connection.send_result(msg["id"])
 

@@ -32,10 +32,9 @@ import typing
 class SourceAdapter:
     """Adapter to allow sources and their flows to be used as sensors."""
 
-    source_type: typing.Literal["grid", "gas"]
+    source_type: typing.Literal["grid", "gas", "water"]
     flow_type: typing.Literal["flow_from", "flow_to", None]
     stat_energy_key: typing.Literal["stat_energy_from", "stat_energy_to"]
-    entity_energy_key: typing.Literal["entity_energy_from", "entity_energy_to"]
     total_money_key: typing.Literal["stat_cost", "stat_compensation"]
     name_suffix: str
     entity_id_suffix: str

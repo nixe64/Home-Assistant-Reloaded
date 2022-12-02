@@ -702,8 +702,7 @@ class AlexaClient(core.MediaPlayer.Entity, AlexaMedia):
 
     def update(self):
         """Get the latest details on a media player synchronously."""
-        return
-        # return self.hass.add_job(async_update)
+        return self._shc.add_job(self.async_update)
 
     @_catch_login_errors
     async def async_update(self):

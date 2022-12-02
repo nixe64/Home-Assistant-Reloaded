@@ -32,48 +32,72 @@ import dataclasses
 import datetime as dt
 import typing
 
-
-class StatisticMetaData(typing.TypedDict):
-    """Statistic meta data class."""
-
-    has_mean: bool
-    has_sum: bool
-    name: str
-    source: str
-    statistic_id: str
-    unit_of_measurement: str
-
-
-class StatisticDataBase(typing.TypedDict):
-    """Mandatory fields for statistic data class."""
-
-    start: dt.datetime
+from .unit_conversion import (
+    BaseUnitConverter,
+    DistanceConverter,
+    EnergyConverter,
+    MassConverter,
+    PowerConverter,
+    PressureConverter,
+    SpeedConverter,
+    TemperatureConverter,
+    VolumeConverter,
+)
 
 
-class StatisticData(StatisticDataBase, total=False):
-    """Statistic data class."""
+class Statistic:
+    """Statistic namespace."""
 
-    mean: float
-    min: float
-    max: float
-    last_reset: dt.datetime
-    state: float
-    sum: float
+    class MetaData(typing.TypedDict):
+        """Statistic meta data class."""
 
+        has_mean: bool
+        has_sum: bool
+        name: str
+        source: str
+        statistic_id: str
+        unit_of_measurement: str
 
-class StatisticResult(typing.TypedDict):
-    """Statistic result data class.
+    class DataBase(typing.TypedDict):
+        """Mandatory fields for statistic data class."""
 
-    Allows multiple datapoints for the same statistic_id.
-    """
+        start: dt.datetime
 
-    meta: StatisticMetaData
-    stat: StatisticData
+    class Data(DataBase, total=False):
+        """Statistic data class."""
 
+        mean: float
+        min: float
+        max: float
+        last_reset: dt.datetime
+        state: float
+        sum: float
 
-@dataclasses.dataclass()
-class PlatformCompiledStatistics:
-    """Compiled Statistics from a platform."""
+    class Result(typing.TypedDict):
+        """Statistic result data class.
 
-    platform_stats: list[StatisticResult]
-    current_metadata: dict[str, tuple[int, StatisticMetaData]]
+        Allows multiple datapoints for the same statistic_id.
+        """
+
+        meta: "Statistic.MetaData"
+        stat: "Statistic.Data"
+
+    @dataclasses.dataclass()
+    class PlatformCompiledStatistics:
+        """Compiled Statistics from a platform."""
+
+        platform_stats: list["Statistic.Result"]
+        current_metadata: dict[str, tuple[int, "Statistic.MetaData"]]
+
+    STATISTIC_UNIT_TO_UNIT_CONVERTER: typing.Final[
+        dict[str, type[BaseUnitConverter]]
+    ] = {
+        **{unit: DistanceConverter for unit in DistanceConverter.VALID_UNITS},
+        **{unit: EnergyConverter for unit in EnergyConverter.VALID_UNITS},
+        **{unit: MassConverter for unit in MassConverter.VALID_UNITS},
+        **{unit: PowerConverter for unit in PowerConverter.VALID_UNITS},
+        **{unit: PressureConverter for unit in PressureConverter.VALID_UNITS},
+        **{unit: SpeedConverter for unit in SpeedConverter.VALID_UNITS},
+        **{unit: TemperatureConverter for unit in TemperatureConverter.VALID_UNITS},
+        **{unit: VolumeConverter for unit in VolumeConverter.VALID_UNITS},
+    }

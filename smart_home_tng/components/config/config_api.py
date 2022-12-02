@@ -98,22 +98,22 @@ _AUTH_UPDATE: typing.Final = {
     vol.Optional("local_only"): bool,
 }
 _INTERNAL_CREATE: typing.Final = {
-    vol.Required("type"): "config/auth_provider/smart_home_tng/create",
+    vol.Required("type"): "config/auth_provider/internal/create",
     vol.Required("user_id"): str,
     vol.Required("username"): str,
     vol.Required("password"): str,
 }
 _INTERNAL_DELETE: typing.Final = {
-    vol.Required("type"): "config/auth_provider/smart_home_tng/delete",
+    vol.Required("type"): "config/auth_provider/internal/delete",
     vol.Required("username"): str,
 }
 _CHANGE_PASSWORD: typing.Final = {
-    vol.Required("type"): "config/auth_provider/smart_home_tng/change_password",
+    vol.Required("type"): "config/auth_provider/internal/change_password",
     vol.Required("current_password"): str,
     vol.Required("new_password"): str,
 }
 _ADMIN_CHANGE_PASSWORD: typing.Final = {
-    vol.Required("type"): "config/auth_provider/smart_home_tng/admin_change_password",
+    vol.Required("type"): "config/auth_provider/inernal/admin_change_password",
     vol.Required("user_id"): str,
     vol.Required("password"): str,
 }
@@ -129,6 +129,11 @@ _CONFIG_ENTRY_DISABLE: typing.Final = {
     # No Enum support like this in voluptuous, use .value
     "disabled_by": vol.Any(core.ConfigEntryDisabler.USER.value, None),
 }
+_CONFIG_ENTRIES_SUBSCRIBE: typing.Final = {
+    vol.Required("type"): "config_entries/subscribe",
+    vol.Optional("type_filter"): vol.All(_cv.ensure_list, [str]),
+}
+
 _CONFIG_ENTRY_UPDATE: typing.Final = {
     "type": "config_entries/update",
     "entry_id": str,
@@ -271,6 +276,7 @@ class ConfigAPI(core.SmartHomeControllerComponent):
         api.register_command(self._config_entries_get, _CONFIG_ENTRIES_GET)
         api.register_command(self._config_entry_disable, _CONFIG_ENTRY_DISABLE)
         api.register_command(self._config_entry_update, _CONFIG_ENTRY_UPDATE)
+        api.register_command(self._config_entries_subscribe, _CONFIG_ENTRIES_SUBSCRIBE)
         api.register_command(self._config_entries_progress, _CONFIG_ENTRY_PROGRESS)
         api.register_command(self._ignore_config_flow, _IGNORE_CONFIG_FLOW)
         key = f"{domain}.config_entries"
@@ -648,6 +654,86 @@ class ConfigAPI(core.SmartHomeControllerComponent):
                 msg["id"], "credentials_not_found", "Credentials not found"
             )
             return
+
+    async def _config_entries_subscribe(
+        self,
+        connection: core.WebSocket.Connection,
+        msg: dict[str, typing.Any],
+    ) -> None:
+        """Subscribe to config entry updates."""
+        type_filter = msg.get("type_filter")
+
+        async def async_forward_config_entry_changes(
+            change: core.ConfigEntryChange, entry: core.ConfigEntry
+        ) -> None:
+            """Forward config entry state events to websocket."""
+            if type_filter:
+                integration = await self.controller.setup.async_get_integration(
+                    entry.domain
+                )
+                if integration.integration_type not in type_filter:
+                    return
+
+            connection.send_event_message(
+                msg["id"],
+                [
+                    {
+                        "type": change,
+                        "entry": _entry_json(entry),
+                    }
+                ],
+            )
+
+        current_entries = await self._async_matching_config_entries(type_filter, None)
+        connection.subscriptions[msg["id"]] = self.controller.dispatcher.async_connect(
+            core.ConfigEntry.SIGNAL_CONFIG_ENTRY_CHANGED,
+            async_forward_config_entry_changes,
+        )
+        connection.send_result(msg["id"])
+        connection.send_event_message(
+            msg["id"], [{"type": None, "entry": entry} for entry in current_entries]
+        )
+
+    async def _async_matching_config_entries(
+        self, type_filter: list[str] | None, domain: str | None
+    ) -> list[dict[str, typing.Any]]:
+        """Return matching config entries by type and/or domain."""
+        kwargs = {}
+        if domain:
+            kwargs["domain"] = domain
+        entries = self.controller.config_entries.async_entries(**kwargs)
+
+        if not type_filter:
+            return [_entry_json(entry) for entry in entries]
+
+        integrations = {}
+        # Fetch all the integrations so we can check their type
+        tasks = (
+            self.controller.setup.async_get_integration(domain)
+            for domain in {entry.domain for entry in entries}
+        )
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for integration_or_exc in results:
+            if isinstance(integration_or_exc, core.Integration):
+                integrations[integration_or_exc.domain] = integration_or_exc
+            elif not isinstance(integration_or_exc, core.IntegrationNotFound):
+                raise integration_or_exc
+
+        # Filter out entries that don't match the type filter
+        # when only helpers are requested, also filter out entries
+        # from unknown integrations. This prevent them from showing
+        # up in the helpers UI.
+        entries = [
+            entry
+            for entry in entries
+            if (type_filter != ["helper"] and entry.domain not in integrations)
+            or (
+                entry.domain in integrations
+                and integrations[entry.domain].integration_type in type_filter
+            )
+        ]
+
+        return [_entry_json(entry) for entry in entries]
 
     def _config_entries_progress(
         self,
@@ -1188,24 +1274,28 @@ def _device_entry_dict(entry):
 
 
 @core.callback
-def _entity_entry_dict(entry):
+def _entity_entry_dict(entry: core.EntityRegistryEntry) -> dict[str, typing.Any]:
     """Convert entry to API format."""
     return {
         "area_id": entry.area_id,
         "config_entry_id": entry.config_entry_id,
         "device_id": entry.device_id,
         "disabled_by": entry.disabled_by,
+        "has_entity_name": entry.has_entity_name,
         "entity_category": entry.entity_category,
         "entity_id": entry.entity_id,
         "hidden_by": entry.hidden_by,
         "icon": entry.icon,
+        "id": entry.id,
+        "unique_id": entry.unique_id,
         "name": entry.name,
+        "original_name": entry.original_name,
         "platform": entry.platform,
     }
 
 
 @core.callback
-def _entity_entry_ext_dict(entry):
+def _entity_entry_ext_dict(entry: core.EntityRegistryEntry) -> dict[str, typing.Any]:
     """Convert entry to API format."""
     data = _entity_entry_dict(entry)
     data["capabilities"] = entry.capabilities
@@ -1213,6 +1303,4 @@ def _entity_entry_ext_dict(entry):
     data["options"] = entry.options
     data["original_device_class"] = entry.original_device_class
     data["original_icon"] = entry.original_icon
-    data["original_name"] = entry.original_name
-    data["unique_id"] = entry.unique_id
     return data

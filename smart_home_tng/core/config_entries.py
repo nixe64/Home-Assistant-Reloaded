@@ -24,12 +24,15 @@ http://www.gnu.org/licenses/.
 
 import asyncio
 import collections.abc
+import logging
 import types
 import typing
 
+from . import helpers
 from .callback import callback
 from .config_entries_flow_manager import ConfigEntriesFlowManager
 from .config_entry import ConfigEntry
+from .config_entry_change import ConfigEntryChange
 from .config_entry_disabler import ConfigEntryDisabler
 from .config_entry_source import ConfigEntrySource
 from .config_entry_state import ConfigEntryState
@@ -121,6 +124,14 @@ class ConfigEntries:
             self._entries[entry_id] for entry_id in self._domain_index.get(domain, [])
         ]
 
+    @callback
+    def _dispatch_entry_changed(
+        self, change: ConfigEntryChange, entry: ConfigEntry
+    ) -> None:
+        self._shc.dispatcher.async_send(
+            ConfigEntry.SIGNAL_CONFIG_ENTRY_CHANGED, change, entry
+        )
+
     async def async_add(self, entry: ConfigEntry) -> None:
         """Add and setup an entry."""
         if entry.entry_id in self._entries:
@@ -129,6 +140,7 @@ class ConfigEntries:
             )
         self._entries[entry.entry_id] = entry
         self._domain_index.setdefault(entry.domain, []).append(entry.entry_id)
+        self._dispatch_entry_changed(ConfigEntryChange.ADDED, entry)
         await self.async_setup(entry.entry_id)
         self._async_schedule_save()
 
@@ -183,6 +195,7 @@ class ConfigEntries:
                 )
             )
 
+        self._dispatch_entry_changed(ConfigEntryChange.REMOVED, entry)
         return {"require_restart": not unload_success}
 
     async def _async_shutdown(self, _event: Event) -> None:
@@ -397,7 +410,7 @@ class ConfigEntries:
                 self._shc.async_create_task(listener(self._shc, entry))
 
         self._async_schedule_save()
-
+        self._dispatch_entry_changed(ConfigEntryChange.UPDATED, entry)
         return True
 
     @callback
@@ -405,6 +418,13 @@ class ConfigEntries:
         self, entry: ConfigEntry, platforms: typing.Iterable[Platform | str]
     ) -> None:
         """Forward the setup of an entry to platforms."""
+        helpers.report(
+            "called async_setup_platforms instead of awaiting async_forward_entry_setups; "
+            + "this will fail in version 2022.12",
+            # Raise this to warning once all core integrations have been migrated
+            level=logging.DEBUG,
+            error_if_core=False,
+        )
         for platform in platforms:
             self._shc.async_create_task(self.async_forward_entry_setup(entry, platform))
 

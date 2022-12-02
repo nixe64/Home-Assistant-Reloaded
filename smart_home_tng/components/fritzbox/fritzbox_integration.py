@@ -85,7 +85,7 @@ class FritzboxIntegration(
         def _update_unique_id(entry: core.EntityRegistryEntry) -> dict[str, str]:
             """Update unique ID of entity entry."""
             if (
-                entry.unit_of_measurement == core.Const.TEMP_CELSIUS
+                entry.unit_of_measurement == core.Const.UnitOfTemperature.CELSIUS
                 and "_temperature" not in entry.unique_id
             ):
                 new_unique_id = f"{entry.unique_id}_temperature"

@@ -23,7 +23,7 @@ http://www.gnu.org/licenses/.
 """
 
 import collections.abc
-import datetime
+import datetime as dt
 import http
 import logging
 import time
@@ -55,15 +55,15 @@ class HistoryPeriodView(core.SmartHomeControllerView):
         self._filters = filters
         self._use_include_order = use_include_order
 
-    async def get(self, request: web.Request, date_time: str = None) -> web.Response:
+    async def get(self, request: web.Request, datetime: str = None) -> web.Response:
         """Return history over a period of time."""
         datetime_ = None
-        if date_time and (datetime_ := core.helpers.parse_datetime(date_time)) is None:
+        if datetime and (datetime_ := core.helpers.parse_datetime(datetime)) is None:
             return self.json_message("Invalid datetime", http.HTTPStatus.BAD_REQUEST)
 
         now = core.helpers.utcnow()
 
-        one_day = datetime.timedelta(days=1)
+        one_day = dt.timedelta(days=1)
         if datetime_:
             start_time = core.helpers.as_utc(datetime_)
         else:
@@ -106,7 +106,6 @@ class HistoryPeriodView(core.SmartHomeControllerView):
             web.Response,
             await self._recorder.async_add_executor_job(
                 self._sorted_significant_states_json,
-                shc,
                 start_time,
                 end_time,
                 entity_ids,
@@ -119,9 +118,8 @@ class HistoryPeriodView(core.SmartHomeControllerView):
 
     def _sorted_significant_states_json(
         self,
-        shc: core.SmartHomeController,
-        start_time: datetime.datetime,
-        end_time: datetime.datetime,
+        start_time: dt.datetime,
+        end_time: dt.datetime,
         entity_ids: list[str],
         include_start_time_state: bool,
         significant_changes_only: bool,
@@ -134,7 +132,6 @@ class HistoryPeriodView(core.SmartHomeControllerView):
         states = None
         with self._recorder.session_scope() as session:
             states = self._recorder.history.get_significant_states_with_session(
-                shc,
                 session,
                 start_time,
                 end_time,
@@ -172,7 +169,7 @@ class HistoryPeriodView(core.SmartHomeControllerView):
 def _entities_may_have_state_changes_after(
     shc: core.SmartHomeController,
     entity_ids: collections.abc.Iterable[str],
-    start_time: datetime.datetime,
+    start_time: dt.datetime,
 ) -> bool:
     """Check the state machine to see if entities have changed since start time."""
     for entity_id in entity_ids:

@@ -39,8 +39,8 @@ if typing.TYPE_CHECKING:
 
 _const: typing.TypeAlias = Const
 _API_TEMP_UNITS: typing.Final = {
-    _const.TEMP_FAHRENHEIT: "FAHRENHEIT",
-    _const.TEMP_CELSIUS: "CELSIUS",
+    _const.UnitOfTemperature.FAHRENHEIT: "FAHRENHEIT",
+    _const.UnitOfTemperature.CELSIUS: "CELSIUS",
 }
 
 # pylint: disable=unused-variable

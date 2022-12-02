@@ -11,6 +11,7 @@
     "dhcp",
     "energy",
     "fan",
+    "group",
     "history",
     "input_boolean",
     "input_button",

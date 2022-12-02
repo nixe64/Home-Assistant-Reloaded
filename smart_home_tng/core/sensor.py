@@ -41,7 +41,15 @@ from .entity import _SensorEntityBase
 from .entity_description import EntityDescription
 from .extra_stored_data import ExtraStoredData
 from .state_type import StateType
-from .unit_system import UnitSystem
+from .unit_conversion import (
+    BaseUnitConverter,
+    DistanceConverter,
+    MassConverter,
+    PressureConverter,
+    SpeedConverter,
+    TemperatureConverter,
+    VolumeConverter,
+)
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
 
@@ -49,98 +57,277 @@ _LOGGER: typing.Final = logging.getLogger(__name__)
 class _DeviceClass(strenum.LowercaseStrEnum):
     """Device class for sensors."""
 
-    # apparent power (VA)
     APPARENT_POWER = enum.auto()
+    """Apparent power.
 
-    # Air Quality Index
+    Unit of measurement: `VA`
+    """
+
     AQI = enum.auto()
+    """Air Quality Index.
 
-    # % of battery that is left
+    Unit of measurement: `None`
+    """
+
     BATTERY = enum.auto()
+    """Percentage of battery that is left.
 
-    # ppm (parts per million) Carbon Monoxide gas concentration
+    Unit of measurement: `%`
+    """
+
     CO = enum.auto()
+    """Carbon Monoxide gas concentration.
 
-    # ppm (parts per million) Carbon Dioxide gas concentration
+    Unit of measurement: `ppm` (parts per million)
+    """
+
     CO2 = enum.auto()
+    """Carbon Dioxide gas concentration.
 
-    # current (A)
+    Unit of measurement: `ppm` (parts per million)
+    """
+
     CURRENT = enum.auto()
+    """Current.
 
-    # date (ISO8601)
+    Unit of measurement: `A`
+    """
+
     DATE = enum.auto()
+    """Date.
 
-    # fixed duration (TIME_DAYS, TIME_HOURS, TIME_MINUTES, TIME_SECONDS)
+    Unit of measurement: `None`
+
+    ISO8601 format: https://en.wikipedia.org/wiki/ISO_8601
+    """
+
+    DISTANCE = enum.auto()
+    """Generic distance.
+
+    Unit of measurement: `LENGTH_*` units
+    - SI /metric: `mm`, `cm`, `m`, `km`
+    - USCS / imperial: `in`, `ft`, `yd`, `mi`
+    """
+
     DURATION = enum.auto()
+    """Fixed duration.
 
-    # energy (Wh, kWh, MWh)
+    Unit of measurement: `d`, `h`, `min`, `s`
+    """
+
     ENERGY = enum.auto()
+    """Energy.
 
-    # frequency (Hz, kHz, MHz, GHz)
+    Unit of measurement: `Wh`, `kWh`, `MWh`, `GJ`
+    """
+
     FREQUENCY = enum.auto()
+    """Frequency.
 
-    # gas (m³ or ft³)
+    Unit of measurement: `Hz`, `kHz`, `MHz`, `GHz`
+    """
+
     GAS = enum.auto()
+    """Gas.
 
-    # % of humidity in the air
+    Unit of measurement: `m³`, `ft³`
+    """
+
     HUMIDITY = enum.auto()
+    """Relative humidity.
 
-    # current light level (lx/lm)
+    Unit of measurement: `%`
+    """
+
     ILLUMINANCE = enum.auto()
+    """Illuminance.
 
-    # Amount of money (currency)
+    Unit of measurement: `lx`, `lm`
+    """
+
+    MOISTURE = enum.auto()
+    """Moisture.
+
+    Unit of measurement: `%`
+    """
+
     MONETARY = enum.auto()
+    """Amount of money.
 
-    # Amount of NO2 (µg/m³)
+    Unit of measurement: ISO4217 currency code
+
+    See https://en.wikipedia.org/wiki/ISO_4217#Active_codes for active codes
+    """
+
     NITROGEN_DIOXIDE = enum.auto()
+    """Amount of NO2.
 
-    # Amount of NO (µg/m³)
+    Unit of measurement: `µg/m³`
+    """
+
     NITROGEN_MONOXIDE = enum.auto()
+    """Amount of NO.
 
-    # Amount of N2O  (µg/m³)
+    Unit of measurement: `µg/m³`
+    """
+
     NITROUS_OXIDE = enum.auto()
+    """Amount of N2O.
 
-    # Amount of O3 (µg/m³)
+    Unit of measurement: `µg/m³`
+    """
+
     OZONE = enum.auto()
+    """Amount of O3.
 
-    # Particulate matter <= 0.1 μm (µg/m³)
+    Unit of measurement: `µg/m³`
+    """
+
     PM1 = enum.auto()
+    """Particulate matter <= 0.1 μm.
 
-    # Particulate matter <= 10 μm (µg/m³)
+    Unit of measurement: `µg/m³`
+    """
+
     PM10 = enum.auto()
+    """Particulate matter <= 10 μm.
 
-    # Particulate matter <= 2.5 μm (µg/m³)
+    Unit of measurement: `µg/m³`
+    """
+
     PM25 = enum.auto()
+    """Particulate matter <= 2.5 μm.
 
-    # power factor (%)
+    Unit of measurement: `µg/m³`
+    """
+
     POWER_FACTOR = enum.auto()
+    """Power factor.
 
-    # power (W/kW)
+    Unit of measurement: `%`
+    """
+
     POWER = enum.auto()
+    """Power.
 
-    # pressure (hPa/mbar)
+    Unit of measurement: `W`, `kW`
+    """
+
+    PRECIPITATION = enum.auto()
+    """Precipitation.
+
+    Unit of measurement:
+    - SI / metric: `mm`
+    - USCS / imperial: `in`
+    """
+
+    PRECIPITATION_INTENSITY = enum.auto()
+    """Precipitation intensity.
+
+    Unit of measurement: UnitOfVolumetricFlux
+    - SI /metric: `mm/d`, `mm/h`
+    - USCS / imperial: `in/d`, `in/h`
+    """
+
     PRESSURE = enum.auto()
+    """Pressure.
 
-    # reactive power (var)
+    Unit of measurement:
+    - `mbar`, `cbar`, `bar`
+    - `Pa`, `hPa`, `kPa`
+    - `inHg`
+    - `psi`
+    """
+
     REACTIVE_POWER = enum.auto()
+    """Reactive power.
 
-    # signal strength (dB/dBm)
+    Unit of measurement: `var`
+    """
+
     SIGNAL_STRENGTH = enum.auto()
+    """Signal strength.
 
-    # Amount of SO2 (µg/m³)
+    Unit of measurement: `dB`, `dBm`
+    """
+
+    SPEED = enum.auto()
+    """Generic speed.
+
+    Unit of measurement: `SPEED_*` units or `UnitOfVolumetricFlux`
+    - SI /metric: `mm/d`, `mm/h`, `m/s`, `km/h`
+    - USCS / imperial: `in/d`, `in/h`, `ft/s`, `mph`
+    - Nautical: `kn`
+    """
+
     SULPHUR_DIOXIDE = enum.auto()
+    """Amount of SO2.
 
-    # temperature (C/F)
+    Unit of measurement: `µg/m³`
+    """
+
     TEMPERATURE = enum.auto()
+    """Temperature.
 
-    # timestamp (ISO8601)
+    Unit of measurement: `°C`, `°F`
+    """
+
     TIMESTAMP = enum.auto()
+    """Timestamp.
 
-    # Amount of VOC (µg/m³)
+    Unit of measurement: `None`
+
+    ISO8601 format: https://en.wikipedia.org/wiki/ISO_8601
+    """
+
     VOLATILE_ORGANIC_COMPOUNDS = enum.auto()
+    """Amount of VOC.
 
-    # voltage (V)
+    Unit of measurement: `µg/m³`
+    """
+
     VOLTAGE = enum.auto()
+    """Voltage.
+
+    Unit of measurement: `V`
+    """
+
+    VOLUME = enum.auto()
+    """Generic volume.
+
+    Unit of measurement: `VOLUME_*` units
+    - SI / metric: `mL`, `L`, `m³`
+    - USCS / imperial: `fl. oz.`, `ft³`, `gal` (warning: volumes expressed in
+    USCS/imperial units are currently assumed to be US volumes)
+    """
+
+    WATER = enum.auto()
+    """Water.
+
+    Unit of measurement:
+    - SI / metric: `m³`, `L`
+    - USCS / imperial: `ft³`, `gal` (warning: volumes expressed in
+    USCS/imperial units are currently assumed to be US volumes)
+    """
+
+    WEIGHT = enum.auto()
+    """Generic weight, represents a measurement of an object's mass.
+
+    Weight is used instead of mass to fit with every day language.
+
+    Unit of measurement: `MASS_*` units
+    - SI / metric: `µg`, `mg`, `g`, `kg`
+    - USCS / imperial: `oz`, `lb`
+    """
+
+    WIND_SPEED = enum.auto()
+    """Wind speed.
+
+    Unit of measurement: `SPEED_*` units
+    - SI /metric: `m/s`, `km/h`
+    - USCS / imperial: `ft/s`, `mph`
+    - Nautical: `kn`
+    """
 
 
 class _StateClass(strenum.LowercaseStrEnum):
@@ -223,19 +410,35 @@ class _ExtraStoredData(ExtraStoredData):
         return cls(native_value, native_unit_of_measurement)
 
 
+_PRESSURE_RATIO: typing.Final[dict[str, float]] = {
+    Const.UnitOfPressure.PA: 1,
+    Const.UnitOfPressure.HPA: 1 / 100,
+    Const.UnitOfPressure.KPA: 1 / 1000,
+    Const.UnitOfPressure.BAR: 1 / 100000,
+    Const.UnitOfPressure.CBAR: 1 / 1000,
+    Const.UnitOfPressure.MBAR: 1 / 100,
+    Const.UnitOfPressure.INHG: 1 / 3386.389,
+    Const.UnitOfPressure.PSI: 1 / 6894.757,
+    Const.UnitOfPressure.MMHG: 1 / 133.322,
+}
+_TEMPERATURE_RATIO: typing.Final = {
+    Const.UnitOfTemperature.CELSIUS: 1.0,
+    Const.UnitOfTemperature.FAHRENHEIT: 1.8,
+    Const.UnitOfTemperature.KELVIN: 1.0,
+}
 _ATTR_LAST_RESET: typing.Final = "last_reset"
 _ATTR_STATE_CLASS: typing.Final = "state_class"
 _UNIT_CONVERSIONS: dict[str, typing.Callable[[float, str, str], float]] = {
-    _DeviceClass.PRESSURE: UnitSystem.convert_pressure,
-    _DeviceClass.TEMPERATURE: UnitSystem.convert_temperature,
+    _DeviceClass.PRESSURE: PressureConverter.convert,
+    _DeviceClass.TEMPERATURE: TemperatureConverter.convert,
 }
 _UNIT_RATIOS: dict[str, dict[str, float]] = {
-    _DeviceClass.PRESSURE: UnitSystem.PRESSURE_RATIO,
-    _DeviceClass.TEMPERATURE: UnitSystem.TEMPERATURE_RATIO,
+    _DeviceClass.PRESSURE: _PRESSURE_RATIO,
+    _DeviceClass.TEMPERATURE: _TEMPERATURE_RATIO,
 }
 _VALID_UNITS: typing.Final = {
-    _DeviceClass.PRESSURE: UnitSystem.PRESSURE_UNITS,
-    _DeviceClass.TEMPERATURE: UnitSystem.TEMPERATURE_UNITS,
+    _DeviceClass.PRESSURE: PressureConverter.VALID_UNITS,
+    _DeviceClass.TEMPERATURE: TemperatureConverter.VALID_UNITS,
 }
 
 
@@ -358,7 +561,7 @@ class _Entity(_SensorEntityBase):
         if (
             self.device_class == _DeviceClass.TEMPERATURE
             and native_unit_of_measurement
-            in (Const.TEMP_CELSIUS, Const.TEMP_FAHRENHEIT)
+            in (Const.UnitOfTemperature.CELSIUS, Const.UnitOfTemperature.FAHRENHEIT)
         ):
             return self._shc.config.units.temperature_unit
 
@@ -485,3 +688,16 @@ class Sensor:
     EntityDescription: typing.TypeAlias = _EntityDescription
     ExtraStoredData: typing.TypeAlias = _ExtraStoredData
     StateClass: typing.TypeAlias = _StateClass
+
+    UNIT_CONVERTERS: typing.Final[dict[_DeviceClass | str, type[BaseUnitConverter]]] = {
+        _DeviceClass.DISTANCE: DistanceConverter,
+        _DeviceClass.GAS: VolumeConverter,
+        _DeviceClass.PRECIPITATION: DistanceConverter,
+        _DeviceClass.PRESSURE: PressureConverter,
+        _DeviceClass.SPEED: SpeedConverter,
+        _DeviceClass.TEMPERATURE: TemperatureConverter,
+        _DeviceClass.VOLUME: VolumeConverter,
+        _DeviceClass.WATER: VolumeConverter,
+        _DeviceClass.WEIGHT: MassConverter,
+        _DeviceClass.WIND_SPEED: SpeedConverter,
+    }

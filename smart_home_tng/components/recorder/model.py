@@ -46,6 +46,8 @@ import sqlalchemy.orm as sql_orm
 from ... import core
 from .const import Const
 
+_statistic: typing.TypeAlias = core.Statistic
+
 # SQLAlchemy Schema
 # pylint: disable=invalid-name
 Base: typing.TypeAlias = sql_orm.declarative_base()
@@ -468,7 +470,7 @@ class StatisticsBase:
     sum = sql.Column(_DOUBLE_TYPE)
 
     @classmethod
-    def from_stats(cls, metadata_id: int, stats: core.StatisticData):
+    def from_stats(cls, metadata_id: int, stats: _statistic.Data):
         """Create object from a statistics."""
         return cls(  # type: ignore[call-arg,misc]
             metadata_id=metadata_id,
@@ -523,7 +525,7 @@ class StatisticsMeta(Base):
     name = sql.Column(sql.String(255))
 
     @staticmethod
-    def from_meta(meta: core.StatisticMetaData):
+    def from_meta(meta: _statistic.MetaData):
         """Create object from meta data."""
         return StatisticsMeta(**meta)
 

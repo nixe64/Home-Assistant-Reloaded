@@ -67,13 +67,13 @@ _SENSOR_DESCRIPTIONS: typing.Final[dict[str, core.Sensor.EntityDescription]] = {
     ),
     "ACTUAL_TEMPERATURE": core.Sensor.EntityDescription(
         key="ACTUAL_TEMPERATURE",
-        native_unit_of_measurement=core.Const.TEMP_CELSIUS,
+        native_unit_of_measurement=core.Const.UnitOfTemperature.CELSIUS,
         device_class=core.Sensor.DeviceClass.TEMPERATURE,
         state_class=core.Sensor.StateClass.MEASUREMENT,
     ),
     "TEMPERATURE": core.Sensor.EntityDescription(
         key="TEMPERATURE",
-        native_unit_of_measurement=core.Const.TEMP_CELSIUS,
+        native_unit_of_measurement=core.Const.UnitOfTemperature.CELSIUS,
         device_class=core.Sensor.DeviceClass.TEMPERATURE,
         state_class=core.Sensor.StateClass.MEASUREMENT,
     ),
@@ -115,13 +115,13 @@ _SENSOR_DESCRIPTIONS: typing.Final[dict[str, core.Sensor.EntityDescription]] = {
     ),
     "POWER": core.Sensor.EntityDescription(
         key="POWER",
-        native_unit_of_measurement=core.Const.POWER_WATT,
+        native_unit_of_measurement=core.Const.UnitOfPower.WATT,
         device_class=core.Sensor.DeviceClass.POWER,
         state_class=core.Sensor.StateClass.MEASUREMENT,
     ),
     "IEC_POWER": core.Sensor.EntityDescription(
         key="IEC_POWER",
-        native_unit_of_measurement=core.Const.POWER_WATT,
+        native_unit_of_measurement=core.Const.UnitOfPower.WATT,
         device_class=core.Sensor.DeviceClass.POWER,
         state_class=core.Sensor.StateClass.MEASUREMENT,
     ),
@@ -139,13 +139,13 @@ _SENSOR_DESCRIPTIONS: typing.Final[dict[str, core.Sensor.EntityDescription]] = {
     ),
     "ENERGY_COUNTER": core.Sensor.EntityDescription(
         key="ENERGY_COUNTER",
-        native_unit_of_measurement=core.Const.ENERGY_WATT_HOUR,
+        native_unit_of_measurement=core.Const.UnitOfEnergy.WATT_HOUR,
         device_class=core.Sensor.DeviceClass.ENERGY,
         state_class=core.Sensor.StateClass.TOTAL_INCREASING,
     ),
     "IEC_ENERGY_COUNTER": core.Sensor.EntityDescription(
         key="IEC_ENERGY_COUNTER",
-        native_unit_of_measurement=core.Const.ENERGY_WATT_HOUR,
+        native_unit_of_measurement=core.Const.UnitOfEnergy.WATT_HOUR,
         device_class=core.Sensor.DeviceClass.ENERGY,
         state_class=core.Sensor.StateClass.TOTAL_INCREASING,
     ),
@@ -157,23 +157,23 @@ _SENSOR_DESCRIPTIONS: typing.Final[dict[str, core.Sensor.EntityDescription]] = {
     ),
     "GAS_POWER": core.Sensor.EntityDescription(
         key="GAS_POWER",
-        native_unit_of_measurement=core.Const.VOLUME_CUBIC_METERS,
+        native_unit_of_measurement=core.Const.UnitOfVolume.CUBIC_METERS,
         device_class=core.Sensor.DeviceClass.GAS,
         state_class=core.Sensor.StateClass.MEASUREMENT,
     ),
     "GAS_ENERGY_COUNTER": core.Sensor.EntityDescription(
         key="GAS_ENERGY_COUNTER",
-        native_unit_of_measurement=core.Const.VOLUME_CUBIC_METERS,
+        native_unit_of_measurement=core.Const.UnitOfVolume.CUBIC_METERS,
         device_class=core.Sensor.DeviceClass.GAS,
         state_class=core.Sensor.StateClass.TOTAL_INCREASING,
     ),
     "RAIN_COUNTER": core.Sensor.EntityDescription(
         key="RAIN_COUNTER",
-        native_unit_of_measurement=core.Const.LENGTH_MILLIMETERS,
+        native_unit_of_measurement=core.Const.UnitOfLength.MILLIMETERS,
     ),
     "WIND_SPEED": core.Sensor.EntityDescription(
         key="WIND_SPEED",
-        native_unit_of_measurement=core.Const.SPEED_KILOMETERS_PER_HOUR,
+        native_unit_of_measurement=core.Const.UnitOfSpeed.KILOMETERS_PER_HOUR,
         icon="mdi:weather-windy",
     ),
     "WIND_DIRECTION": core.Sensor.EntityDescription(
@@ -190,7 +190,7 @@ _SENSOR_DESCRIPTIONS: typing.Final[dict[str, core.Sensor.EntityDescription]] = {
     ),
     "AIR_PRESSURE": core.Sensor.EntityDescription(
         key="AIR_PRESSURE",
-        native_unit_of_measurement=core.Const.PRESSURE_HPA,
+        native_unit_of_measurement=core.Const.UnitOfPressure.HPA,
         device_class=core.Sensor.DeviceClass.PRESSURE,
         state_class=core.Sensor.StateClass.MEASUREMENT,
     ),
