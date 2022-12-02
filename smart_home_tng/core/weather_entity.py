@@ -32,6 +32,12 @@ from .const import Const
 from .entity import Entity
 from .forecast import Forecast
 from .platform import Platform
+from .unit_conversion import (
+    DistanceConverter,
+    PressureConverter,
+    SpeedConverter,
+    TemperatureConverter,
+)
 from .unit_system import UnitSystem
 from .weather_entity_description import WeatherEntityDescription
 
@@ -213,9 +219,9 @@ class WeatherEntity(Entity):
         Should not be set by integrations.
         """
         return (
-            Const.SPEED_KILOMETERS_PER_HOUR
+            Const.UnitOfSpeed.KILOMETERS_PER_HOUR
             if self._shc.config.units.is_metric
-            else Const.SPEED_MILES_PER_HOUR
+            else Const.UnitOfSpeed.MILES_PER_HOUR
         )
 
     @typing.final
@@ -315,7 +321,7 @@ class WeatherEntity(Entity):
             return self._attr_precision
         return (
             Const.PRECISION_TENTHS
-            if self._temperature_unit == Const.TEMP_CELSIUS
+            if self._temperature_unit == Const.UnitOfTemperature.CELSIUS
             else Const.PRECISION_WHOLE
         )
 
@@ -344,7 +350,7 @@ class WeatherEntity(Entity):
         if (temperature := self.native_temperature) is not None:
             try:
                 temperature_f = float(temperature)
-                value_temp = UnitSystem.convert_temperature(
+                value_temp = TemperatureConverter.convert(
                     temperature_f, temp_from_unit, temp_to_unit
                 )
                 data[Const.ATTR_WEATHER_TEMPERATURE] = round_temperature(
@@ -364,7 +370,7 @@ class WeatherEntity(Entity):
         if (pressure := self.native_pressure) is not None:
             try:
                 pressure_f = float(pressure)
-                value_pressure = UnitSystem.convert_pressure(
+                value_pressure = PressureConverter.convert(
                     pressure_f, pressure_from_unit, pressure_to_unit
                 )
                 data[Const.ATTR_WEATHER_PRESSURE] = round(
@@ -381,7 +387,7 @@ class WeatherEntity(Entity):
         if (wind_speed := self.native_wind_speed) is not None:
             try:
                 wind_speed_f = float(wind_speed)
-                value_wind_speed = UnitSystem.convert_speed(
+                value_wind_speed = SpeedConverter.convert(
                     wind_speed_f, wind_from_unit, wind_to_unit
                 )
                 data[Const.ATTR_WEATHER_WIND_SPEED] = round(
@@ -395,7 +401,7 @@ class WeatherEntity(Entity):
         if (visibility := self.native_visibility) is not None:
             try:
                 visibility_f = float(visibility)
-                value_visibility = UnitSystem.convert_length(
+                value_visibility = DistanceConverter.convert(
                     visibility_f, visibility_from_unit, visibility_to_unit
                 )
                 data[Const.ATTR_WEATHER_VISIBILITY] = round(
@@ -420,7 +426,7 @@ class WeatherEntity(Entity):
                 if temperature is not None:
                     with contextlib.suppress(TypeError, ValueError):
                         temperature_f = float(temperature)
-                        value_temp = UnitSystem.convert_temperature(
+                        value_temp = TemperatureConverter.convert(
                             temperature_f,
                             temp_from_unit,
                             temp_to_unit,
@@ -437,7 +443,7 @@ class WeatherEntity(Entity):
                 ) is not None:
                     with contextlib.suppress(TypeError, ValueError):
                         forecast_temp_low_f = float(forecast_temp_low)
-                        value_temp_low = UnitSystem.convert_temperature(
+                        value_temp_low = TemperatureConverter.convert(
                             forecast_temp_low_f,
                             temp_from_unit,
                             temp_to_unit,
@@ -456,7 +462,7 @@ class WeatherEntity(Entity):
                     with contextlib.suppress(TypeError, ValueError):
                         forecast_pressure_f = float(forecast_pressure)
                         forecast_entry[Const.ATTR_FORECAST_PRESSURE] = round(
-                            UnitSystem.convert_pressure(
+                            PressureConverter.convert(
                                 forecast_pressure_f,
                                 pressure_from_unit,
                                 pressure_to_unit,
@@ -473,7 +479,7 @@ class WeatherEntity(Entity):
                     with contextlib.suppress(TypeError, ValueError):
                         forecast_wind_speed_f = float(forecast_wind_speed)
                         forecast_entry[Const.ATTR_FORECAST_WIND_SPEED] = round(
-                            UnitSystem.convert_speed(
+                            SpeedConverter.convert(
                                 forecast_wind_speed_f,
                                 wind_from_unit,
                                 wind_to_unit,
@@ -490,7 +496,7 @@ class WeatherEntity(Entity):
                     with contextlib.suppress(TypeError, ValueError):
                         forecast_precipitation_f = float(forecast_precipitation)
                         forecast_entry[Const.ATTR_FORECAST_PRECIPITATION] = round(
-                            UnitSystem.convert_length(
+                            DistanceConverter.convert(
                                 forecast_precipitation_f,
                                 precipitation_from_unit,
                                 precipitation_to_unit,

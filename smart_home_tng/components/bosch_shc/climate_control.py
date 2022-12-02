@@ -71,7 +71,7 @@ class ClimateControl(BoschEntity, core.Climate.Entity):
     @property
     def temperature_unit(self):
         """Return the temperature unit."""
-        return core.Const.TEMP_CELSIUS
+        return core.Const.UnitOfTemperature.CELSIUS
 
     @property
     def current_temperature(self):

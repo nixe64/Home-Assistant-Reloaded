@@ -31,6 +31,9 @@ import typing
 
 from ... import core
 
+_const: typing.TypeAlias = core.Const
+_statistic: typing.TypeAlias = core.Statistic
+
 # pylint: disable=unused-variable
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
@@ -44,74 +47,21 @@ _DEFAULT_STATISTICS: typing.Final = {
 # Normalized units which will be stored in the statistics table
 _DEVICE_CLASS_UNITS: typing.Final = dict[str, str](
     {
-        core.Sensor.DeviceClass.ENERGY: core.Const.ENERGY_KILO_WATT_HOUR,
-        core.Sensor.DeviceClass.POWER: core.Const.POWER_WATT,
-        core.Sensor.DeviceClass.PRESSURE: core.Const.PRESSURE_PA,
-        core.Sensor.DeviceClass.TEMPERATURE: core.Const.TEMP_CELSIUS,
-        core.Sensor.DeviceClass.GAS: core.Const.VOLUME_CUBIC_METERS,
+        core.Sensor.DeviceClass.ENERGY: core.Const.UnitOfEnergy.KILO_WATT_HOUR,
+        core.Sensor.DeviceClass.POWER: core.Const.UnitOfPower.WATT,
+        core.Sensor.DeviceClass.PRESSURE: core.Const.UnitOfPressure.PA,
+        core.Sensor.DeviceClass.TEMPERATURE: core.Const.UnitOfTemperature.CELSIUS,
+        core.Sensor.DeviceClass.GAS: core.Const.UnitOfVolume.CUBIC_METERS,
     }
 )
 
 _DEFAULT_UNITS: typing.Final = core.UnitSystem.METRIC()
+_EQUIVALENT_UNITS = {
+    "RPM": _const.REVOLUTIONS_PER_MINUTE,
+    "ft3": _const.UnitOfVolume.CUBIC_FEET,
+    "m3": _const.UnitOfVolume.CUBIC_METERS,
+}
 
-_UNIT_CONVERSIONS: typing.Final = dict[str, dict[str, typing.Callable]](
-    {
-        # Convert energy to kWh
-        core.Sensor.DeviceClass.ENERGY: {
-            core.Const.ENERGY_KILO_WATT_HOUR: lambda x: x,
-            core.Const.ENERGY_MEGA_WATT_HOUR: lambda x: x * 1000,
-            core.Const.ENERGY_WATT_HOUR: lambda x: x / 1000,
-        },
-        # Convert power W
-        core.Sensor.DeviceClass.POWER: {
-            core.Const.POWER_WATT: lambda x: x,
-            core.Const.POWER_KILO_WATT: lambda x: x * 1000,
-        },
-        # Convert pressure to Pa
-        # Note: pressure_util.convert is bypassed to avoid redundant error checking
-        core.Sensor.DeviceClass.PRESSURE: {
-            core.Const.PRESSURE_BAR: lambda x: _DEFAULT_UNITS.pressure(
-                x, core.Const.PRESSURE_BAR
-            ),
-            core.Const.PRESSURE_HPA: lambda x: _DEFAULT_UNITS.pressure(
-                x, core.Const.PRESSURE_HPA
-            ),
-            core.Const.PRESSURE_INHG: lambda x: _DEFAULT_UNITS.pressure(
-                x, core.Const.PRESSURE_INHG
-            ),
-            core.Const.PRESSURE_KPA: lambda x: _DEFAULT_UNITS.pressure(
-                x, core.Const.PRESSURE_KPA
-            ),
-            core.Const.PRESSURE_MBAR: lambda x: _DEFAULT_UNITS.pressure(
-                x, core.Const.PRESSURE_MBAR
-            ),
-            core.Const.PRESSURE_PA: lambda x: x,
-            core.Const.PRESSURE_PSI: lambda x: _DEFAULT_UNITS.pressure(
-                x, core.Const.PRESSURE_PSI
-            ),
-        },
-        # Convert temperature to °C
-        # Note: temperature_util.convert is bypassed to avoid redundant error checking
-        core.Sensor.DeviceClass.TEMPERATURE: {
-            core.Const.TEMP_CELSIUS: lambda x: x,
-            core.Const.TEMP_FAHRENHEIT: lambda x: _DEFAULT_UNITS.temperature(
-                x, core.Const.TEMP_FAHRENHEIT
-            ),
-            core.Const.TEMP_KELVIN: lambda x: _DEFAULT_UNITS.temperature(
-                x, core.Const.TEMP_KELVIN
-            ),
-        },
-        # Convert volume to cubic meter
-        core.Sensor.DeviceClass.GAS: {
-            core.Const.VOLUME_CUBIC_METERS: lambda x: x,
-            # metric unitsystem uses liters: 1000l == 1 m³
-            core.Const.VOLUME_CUBIC_FEET: lambda x: _DEFAULT_UNITS.volume(
-                x, core.Const.VOLUME_CUBIC_FEET
-            )
-            / 1000,
-        },
-    }
-)
 
 _LINK_DEV_STATISTICS: typing.Final = (
     "https://my.home-assistant.io/redirect/developer_statistics"
@@ -127,9 +77,9 @@ def _compile_statistics(
     sensor_states: list[core.State],
     warned_unstable_unit: set[str],
     warned_unsupported_unit: set[str],
-) -> core.PlatformCompiledStatistics:
+) -> _statistic.PlatformCompiledStatistics:
     """Compile statistics for all entities during start-end."""
-    result: list[core.StatisticResult] = []
+    result: list[_statistic.Result] = []
 
     wanted_statistics = _wanted_statistics(sensor_states)
     old_metadatas = rec_comp.get_metadata_with_session(
@@ -180,7 +130,6 @@ def _compile_statistics(
         unit, fstates = _normalize_states(
             old_metadatas,
             entity_history,
-            device_class,
             entity_id,
             warned_unstable_unit,
             warned_unsupported_unit,
@@ -196,7 +145,7 @@ def _compile_statistics(
             to_query.append(entity_id)
 
     last_stats = rec_comp.get_latest_short_term_statistics(
-        to_query, metadata=old_metadatas
+        to_query, {"last_reset", "state", "sum"}, metadata=old_metadatas
     )
     for (  # pylint: disable=too-many-nested-blocks
         entity_id,
@@ -221,17 +170,17 @@ def _compile_statistics(
                 continue
 
         # Set meta data
-        meta: core.StatisticMetaData = {
+        meta: _statistic.MetaData = {
             "has_mean": "mean" in wanted_statistics[entity_id],
             "has_sum": "sum" in wanted_statistics[entity_id],
             "name": None,
-            "source": core.Const.RECORDER_COMPONENT_NAME,
+            "source": rec_comp.domain,
             "statistic_id": entity_id,
             "unit_of_measurement": unit,
         }
 
         # Make calculations
-        stat: core.StatisticData = {"start": start}
+        stat: _statistic.Data = {"start": start}
         if "max" in wanted_statistics[entity_id]:
             stat["max"] = max(*itertools.islice(zip(*fstates), 1))
         if "min" in wanted_statistics[entity_id]:
@@ -322,7 +271,7 @@ def _compile_statistics(
 
         result.append({"meta": meta, "stat": stat})
 
-    return core.PlatformCompiledStatistics(result, old_metadatas)
+    return _statistic.PlatformCompiledStatistics(result, old_metadatas)
 
 
 def _wanted_statistics(sensor_states: list[core.State]) -> dict[str, set[str]]:
@@ -335,68 +284,101 @@ def _wanted_statistics(sensor_states: list[core.State]) -> dict[str, set[str]]:
 
 
 def _normalize_states(
-    old_metadatas: dict[str, tuple[int, core.StatisticMetaData]],
+    old_metadatas: dict[str, tuple[int, _statistic.MetaData]],
     entity_history: typing.Iterable[core.State],
-    device_class: str,
     entity_id: str,
     warned_unstable_unit: set[str],
     warned_unsupported_unit: set[str],
 ) -> tuple[str, list[tuple[float, core.State]]]:
     """Normalize units."""
-    unit = None
+    old_metadata = old_metadatas[entity_id][1] if entity_id in old_metadatas else None
+    state_unit: str = None
 
-    if device_class not in _UNIT_CONVERSIONS:
-        # We're not normalizing this device class, return the state as they are
-        fstates = []
-        for state in entity_history:
-            try:
-                fstate = _parse_float(state.state)
-            except (ValueError, TypeError):  # TypeError to guard for NULL state in DB
-                continue
-            fstates.append((fstate, state))
-
-        if fstates:
-            all_units = _get_units(fstates)
-            if len(all_units) > 1:
-                if entity_id not in warned_unstable_unit:
-                    warned_unstable_unit.add(entity_id)
-                    extra = ""
-                    if old_metadata := old_metadatas.get(entity_id):
-                        extra = (
-                            " and matches the unit of already compiled statistics "
-                            + f"({old_metadata[1]['unit_of_measurement']})"
-                        )
-                    _LOGGER.warning(
-                        f"The unit of {entity_id} is changing, got multiple {all_units}, "
-                        + "generation of long term statistics will be suppressed unless "
-                        + f"the unit is stable{extra}. "
-                        + f"Go to {_LINK_DEV_STATISTICS} to fix this",
-                    )
-                return None, []
-            unit = fstates[0][1].attributes.get(core.Const.ATTR_UNIT_OF_MEASUREMENT)
-        return unit, fstates
-
-    fstates = []
-
+    fstates: list[tuple[float, core.State]] = []
     for state in entity_history:
         try:
             fstate = _parse_float(state.state)
-        except ValueError:
+        except (ValueError, TypeError):  # TypeError to guard for NULL state in DB
             continue
-        unit = state.attributes.get(core.Const.ATTR_UNIT_OF_MEASUREMENT)
-        # Exclude unsupported units from statistics
-        if unit not in _UNIT_CONVERSIONS[device_class]:
+        fstates.append((fstate, state))
+
+    if not fstates:
+        return None, fstates
+
+    state_unit = fstates[0][1].attributes.get(_const.ATTR_UNIT_OF_MEASUREMENT)
+
+    statistics_unit: str
+    if not old_metadata:
+        # We've not seen this sensor before, the first valid state determines the unit
+        # used for statistics
+        statistics_unit = state_unit
+    else:
+        # We have seen this sensor before, use the unit from metadata
+        statistics_unit = old_metadata["unit_of_measurement"]
+
+    if (
+        not statistics_unit
+        or statistics_unit not in _statistic.STATISTIC_UNIT_TO_UNIT_CONVERTER
+    ):
+        # The unit used by this sensor doesn't support unit conversion
+
+        all_units = _get_units(fstates)
+        if not _equivalent_units(all_units):
+            if entity_id not in warned_unstable_unit:
+                warned_unstable_unit.add(entity_id)
+                extra = ""
+                if old_metadata:
+                    extra = (
+                        " and matches the unit of already compiled statistics "
+                        + f"({old_metadata['unit_of_measurement']})"
+                    )
+                _LOGGER.warning(
+                    f"The unit of {entity_id} is changing, got multiple {all_units}, generation "
+                    + "of long term statistics will be suppressed unless the unit is "
+                    + f"stable{extra}. Go to {_LINK_DEV_STATISTICS} to fix this",
+                )
+            return None, []
+        state_unit = fstates[0][1].attributes.get(_const.ATTR_UNIT_OF_MEASUREMENT)
+        return state_unit, fstates
+
+    converter = _statistic.STATISTIC_UNIT_TO_UNIT_CONVERTER[statistics_unit]
+    valid_fstates: list[tuple[float, core.State]] = []
+
+    for fstate, state in fstates:
+        state_unit = state.attributes.get(_const.ATTR_UNIT_OF_MEASUREMENT)
+        # Exclude states with unsupported unit from statistics
+        if state_unit not in converter.VALID_UNITS:
             if entity_id not in warned_unsupported_unit:
                 warned_unsupported_unit.add(entity_id)
                 _LOGGER.warning(
-                    f"{entity_id} has unit {unit} which is unsupported for "
-                    + f"device_class {device_class}",
+                    f"The unit of {entity_id} ({state_unit}) can not be converted to the unit of "
+                    + f"previously compiled statistics ({statistics_unit}). Generation of long "
+                    + "term statistics will be suppressed unless the unit changes back to "
+                    + f"{statistics_unit} or a compatible unit. "
+                    + f"Go to {_LINK_DEV_STATISTICS} to fix this",
                 )
             continue
 
-        fstates.append((_UNIT_CONVERSIONS[device_class][unit](fstate), state))
+        valid_fstates.append(
+            (
+                converter.convert(
+                    fstate, from_unit=state_unit, to_unit=statistics_unit
+                ),
+                state,
+            )
+        )
 
-    return _DEVICE_CLASS_UNITS[device_class], fstates
+    return statistics_unit, valid_fstates
+
+
+def _equivalent_units(units: set[str]) -> bool:
+    """Return True if the units are equivalent."""
+    if len(units) == 1:
+        return True
+    units = {
+        _EQUIVALENT_UNITS[unit] if unit in _EQUIVALENT_UNITS else unit for unit in units
+    }
+    return len(units) == 1
 
 
 def _parse_float(state: str) -> float:

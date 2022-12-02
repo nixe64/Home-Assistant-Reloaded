@@ -42,7 +42,7 @@ import webbrowser
 import yarl
 
 from ..auth.auth_manager import AuthManager
-from ..auth.providers import SmartHomeControllerAuthProvider
+from ..auth.providers.internal import InternalAuthProvider
 from . import helpers
 from .area_registry import AreaRegistry
 from .callback import callback
@@ -291,12 +291,12 @@ class TheNextGeneration(SmartHomeController):
         return self._timeout
 
     @callback
-    def async_get_shc_auth_provider(self) -> SmartHomeControllerAuthProvider:
+    def async_get_shc_auth_provider(self) -> InternalAuthProvider:
         """Get the provider."""
         if self._auth is not None:
             for prv in self.auth.auth_providers:
-                if prv.type == Const.CORE_COMPONENT_NAME:
-                    return typing.cast(SmartHomeControllerAuthProvider, prv)
+                if prv.type == "internal":
+                    return typing.cast(InternalAuthProvider, prv)
         raise RuntimeError("Provider not found")
 
     def call_later(self, delay: float, func: typing.Any, *args) -> asyncio.TimerHandle:

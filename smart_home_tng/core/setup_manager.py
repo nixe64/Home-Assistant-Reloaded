@@ -909,11 +909,11 @@ class SetupManager:
         # Only load auth during startup.
         if self._shc.auth is None:
             if (auth_conf := config.get(Const.CONF_AUTH_PROVIDERS)) is None:
-                auth_conf = [{"type": Const.CORE_COMPONENT_NAME}]
+                auth_conf = [{"type": "internal"}]
 
             mfa_conf = config.get(
                 Const.CONF_AUTH_MFA_MODULES,
-                [{"type": "totp", "id": "totp", "name": "Authenticator app"}],
+                [{"type": "totp", "id": "totp", "name": "Authenticator-App"}],
             )
 
             self._shc.auth = await AuthManager.from_config(

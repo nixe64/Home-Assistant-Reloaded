@@ -68,9 +68,9 @@ class GroupIntegrationRegistry(core.GroupIntegrationRegistry):
         """Register on and off states for the current domain."""
         for on_state in on_states:
             if on_state not in self.on_off_mapping:
-                self.on_off_mapping[on_state] = off_state
+                self._on_off_mapping[on_state] = off_state
 
         if len(on_states) == 1 and off_state not in self.off_on_mapping:
-            self.off_on_mapping[off_state] = list(on_states)[0]
+            self._off_on_mapping[off_state] = list(on_states)[0]
 
-        self.on_states_by_domain[_current_domain.get()] = set(on_states)
+        self._on_states_by_domain[_current_domain.get()] = set(on_states)

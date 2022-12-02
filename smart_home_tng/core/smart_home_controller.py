@@ -34,7 +34,7 @@ import yarl
 from aiohttp import web
 
 from ..auth.auth_manager import AuthManager
-from ..auth.providers.homeassistant import SmartHomeControllerAuthProvider
+from ..auth.providers.internal import InternalAuthProvider
 from . import helpers
 from .area_registry import AreaRegistry
 from .callback import callback
@@ -139,7 +139,7 @@ class SmartHomeController(abc.ABC):
 
     @abc.abstractmethod
     @callback
-    def async_get_shc_auth_provider(self) -> SmartHomeControllerAuthProvider:
+    def async_get_shc_auth_provider(self) -> InternalAuthProvider:
         """Get the internal auth provider."""
 
     @property

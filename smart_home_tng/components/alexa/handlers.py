@@ -789,11 +789,11 @@ def _temperature_from_object(
     shc: core.SmartHomeController, temp_obj: dict, interval=False
 ):
     """Get temperature from Temperature object in requested unit."""
-    from_unit = _const.TEMP_CELSIUS
+    from_unit = _const.UnitOfTemperature.CELSIUS
     temp = float(temp_obj["value"])
 
     if temp_obj["scale"] == "FAHRENHEIT":
-        from_unit = _const.TEMP_FAHRENHEIT
+        from_unit = _const.UnitOfTemperature.FAHRENHEIT
     elif temp_obj["scale"] == "KELVIN" and not interval:
         # convert to Celsius if absolute temperature
         temp -= 273.15

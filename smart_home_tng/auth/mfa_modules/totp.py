@@ -68,9 +68,7 @@ def _generate_qr_code(data: str) -> str:
 def _generate_secret_and_qr_code(username: str) -> tuple[str, str, str]:
     """Generate a secret, url, and QR code."""
     ota_secret = pyotp.random_base32()
-    url = pyotp.totp.TOTP(ota_secret).provisioning_uri(
-        username, issuer_name="Home Assistant"
-    )
+    url = pyotp.totp.TOTP(ota_secret).provisioning_uri(username, issuer_name="internal")
     image = _generate_qr_code(url)
     return ota_secret, url, image
 
@@ -195,10 +193,14 @@ class TotpSetupFlow(SetupFlow):
     """Handler for the setup flow."""
 
     def __init__(
-        self, auth_module: TotpAuthModule, setup_schema: vol.Schema, user: User
+        self,
+        auth_module: TotpAuthModule,
+        setup_schema: vol.Schema,
+        user: User,
+        handler="totp",
     ) -> None:
         """Initialize the setup flow."""
-        super().__init__(auth_module, setup_schema, user.id)
+        super().__init__(auth_module, setup_schema, user.id, handler=handler)
         # to fix typing complaint
         self._auth_module: TotpAuthModule = auth_module
         self._user = user

@@ -107,9 +107,10 @@ class AuthManagerFlowManager(FlowManager):
                 modules = await self._auth_manager.async_get_enabled_mfa(user)
 
                 if modules:
-                    flow.credential = credentials
-                    flow.user = user
-                    flow.available_mfa_modules = modules
+                    # pylint: disable=protected-access
+                    flow._credential = credentials
+                    flow._user = user
+                    flow._available_mfa_modules = modules
                     return await flow.async_step_select_mfa_module()
 
         result["result"] = credentials

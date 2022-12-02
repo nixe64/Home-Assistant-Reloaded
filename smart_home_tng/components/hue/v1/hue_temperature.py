@@ -39,7 +39,7 @@ class HueTemperature(GenericHueGaugeSensor):
 
     _attr_device_class = core.Sensor.DeviceClass.TEMPERATURE
     _attr_state_class = core.Sensor.StateClass.MEASUREMENT
-    _attr_native_unit_of_measurement = core.Const.TEMP_CELSIUS
+    _attr_native_unit_of_measurement = core.Const.UnitOfTemperature.CELSIUS
 
     @property
     def native_value(self):

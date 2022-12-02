@@ -27,7 +27,7 @@ import datetime
 import typing
 
 from .protocol import Protocol
-from .statistic_business_model import StatisticMetaData
+from .statistic_business_model import Statistic as _statistic
 
 
 # pylint: disable=unused-variable
@@ -42,17 +42,18 @@ class RecorderStatisticsBase(Protocol):
         statistic_ids: list[str] | tuple[str] = None,
         statistic_type: typing.Literal["mean"] | typing.Literal["sum"] = None,
         statistic_source: str = None,
-    ) -> dict[str, tuple[int, StatisticMetaData]]:
+    ) -> dict[str, tuple[int, _statistic.MetaData]]:
         """Return metadata for statistic_ids."""
 
     @abc.abstractmethod
     def statistics_during_period(
         self,
         start_time: datetime.datetime,
-        end_time: datetime.datetime = None,
-        statistic_ids: list[str] = None,
-        period: typing.Literal["5minute", "day", "hour", "month"] = "hour",
-        start_time_as_datetime: bool = False,
+        end_time: datetime.datetime,
+        statistic_ids: list[str],
+        period: typing.Literal["5minute", "day", "hour", "month"],
+        units: dict[str, str],
+        types: set[typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]],
     ) -> dict[str, list[dict[str, typing.Any]]]:
         """Return statistics during UTC period start_time - end_time for the statistic_ids.
 

@@ -42,10 +42,10 @@ class MetWeather(core.CoordinatorEntity[MetDataUpdateCoordinator], core.WeatherE
     """Implementation of a Met.no weather condition."""
 
     _attr_has_entity_name = True
-    _attr_native_temperature_unit = core.Const.TEMP_CELSIUS
-    _attr_native_precipitation_unit = core.Const.LENGTH_MILLIMETERS
-    _attr_native_pressure_unit = core.Const.PRESSURE_HPA
-    _attr_native_wind_speed_unit = core.Const.SPEED_KILOMETERS_PER_HOUR
+    _attr_native_temperature_unit = core.Const.UnitOfTemperature.CELSIUS
+    _attr_native_precipitation_unit = core.Const.UnitOfLength.MILLIMETERS
+    _attr_native_pressure_unit = core.Const.UnitOfPressure.HPA
+    _attr_native_wind_speed_unit = core.Const.UnitOfSpeed.KILOMETERS_PER_HOUR
 
     def __init__(
         self,

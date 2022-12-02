@@ -45,7 +45,7 @@ class PowerSensor(BoschEntity, _sensor.Entity):
     """Representation of an SHC power reporting sensor."""
 
     _attr_device_class = _sensor.DeviceClass.POWER
-    _attr_native_unit_of_measurement = core.Const.POWER_WATT
+    _attr_native_unit_of_measurement = core.Const.UnitOfPower.WATT
     _attr_state_class = _sensor.StateClass.MEASUREMENT
 
     def __init__(

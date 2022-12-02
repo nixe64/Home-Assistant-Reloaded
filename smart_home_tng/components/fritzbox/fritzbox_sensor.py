@@ -45,7 +45,7 @@ _SENSOR_TYPES: typing.Final[tuple[FritzSensorEntityDescription, ...]] = (
     FritzSensorEntityDescription(
         key="temperature",
         name="Temperature",
-        native_unit_of_measurement=core.Const.TEMP_CELSIUS,
+        native_unit_of_measurement=core.Const.UnitOfTemperature.CELSIUS,
         device_class=core.Sensor.DeviceClass.TEMPERATURE,
         state_class=core.Sensor.StateClass.MEASUREMENT,
         entity_category=core.EntityCategory.DIAGNOSTIC,
@@ -76,7 +76,7 @@ _SENSOR_TYPES: typing.Final[tuple[FritzSensorEntityDescription, ...]] = (
     FritzSensorEntityDescription(
         key="power_consumption",
         name="Power Consumption",
-        native_unit_of_measurement=core.Const.POWER_WATT,
+        native_unit_of_measurement=core.Const.UnitOfPower.WATT,
         device_class=core.Sensor.DeviceClass.POWER,
         state_class=core.Sensor.StateClass.MEASUREMENT,
         suitable=lambda device: device.has_powermeter,
@@ -107,7 +107,7 @@ _SENSOR_TYPES: typing.Final[tuple[FritzSensorEntityDescription, ...]] = (
     FritzSensorEntityDescription(
         key="total_energy",
         name="Total Energy",
-        native_unit_of_measurement=core.Const.ENERGY_KILO_WATT_HOUR,
+        native_unit_of_measurement=core.Const.UnitOfEnergy.KILO_WATT_HOUR,
         device_class=core.Sensor.DeviceClass.ENERGY,
         state_class=core.Sensor.StateClass.TOTAL_INCREASING,
         suitable=lambda device: device.has_powermeter,
@@ -117,7 +117,7 @@ _SENSOR_TYPES: typing.Final[tuple[FritzSensorEntityDescription, ...]] = (
     FritzSensorEntityDescription(
         key="comfort_temperature",
         name="Comfort Temperature",
-        native_unit_of_measurement=core.Const.TEMP_CELSIUS,
+        native_unit_of_measurement=core.Const.UnitOfTemperature.CELSIUS,
         device_class=core.Sensor.DeviceClass.TEMPERATURE,
         state_class=core.Sensor.StateClass.MEASUREMENT,
         suitable=lambda device: device.has_thermostat
@@ -127,7 +127,7 @@ _SENSOR_TYPES: typing.Final[tuple[FritzSensorEntityDescription, ...]] = (
     FritzSensorEntityDescription(
         key="eco_temperature",
         name="Eco Temperature",
-        native_unit_of_measurement=core.Const.TEMP_CELSIUS,
+        native_unit_of_measurement=core.Const.UnitOfTemperature.CELSIUS,
         device_class=core.Sensor.DeviceClass.TEMPERATURE,
         state_class=core.Sensor.StateClass.MEASUREMENT,
         suitable=lambda device: device.has_thermostat
@@ -137,7 +137,7 @@ _SENSOR_TYPES: typing.Final[tuple[FritzSensorEntityDescription, ...]] = (
     FritzSensorEntityDescription(
         key="nextchange_temperature",
         name="Next Scheduled Temperature",
-        native_unit_of_measurement=core.Const.TEMP_CELSIUS,
+        native_unit_of_measurement=core.Const.UnitOfTemperature.CELSIUS,
         device_class=core.Sensor.DeviceClass.TEMPERATURE,
         state_class=core.Sensor.StateClass.MEASUREMENT,
         suitable=lambda device: device.has_thermostat

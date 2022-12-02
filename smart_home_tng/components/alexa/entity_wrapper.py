@@ -593,8 +593,8 @@ class Sensor(AlexaEntity):
         """Yield the supported interfaces."""
         attrs = self._entity.attributes
         if attrs.get(_const.ATTR_UNIT_OF_MEASUREMENT) in (
-            _const.TEMP_FAHRENHEIT,
-            _const.TEMP_CELSIUS,
+            _const.UnitOfTemperature.FAHRENHEIT,
+            _const.UnitOfTemperature.CELSIUS,
         ):
             yield AlexaTemperatureSensor(self._shc, self._entity)
             yield AlexaEndpointHealth(self._entity)

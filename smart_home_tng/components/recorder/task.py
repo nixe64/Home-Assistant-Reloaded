@@ -35,6 +35,7 @@ from dataclasses import dataclass
 from ... import core
 from . import purge, statistics, util
 
+_statistic: typing.TypeAlias = core.Statistic
 
 if not typing.TYPE_CHECKING:
 
@@ -155,8 +156,8 @@ class StatisticsTask(RecorderTask):
 class ExternalStatisticsTask(RecorderTask):
     """An object to insert into the recorder queue to run an external statistics task."""
 
-    metadata: core.StatisticMetaData
-    statistics: collections.abc.Iterable[core.StatisticData]
+    metadata: _statistic.MetaData
+    statistics: collections.abc.Iterable[_statistic.Data]
 
     def run(self, instance: Recorder) -> None:
         """Run statistics task."""
@@ -173,6 +174,7 @@ class AdjustStatisticsTask(RecorderTask):
     statistic_id: str
     start_time: datetime
     sum_adjustment: float
+    adjustment_unit: str
 
     def run(self, instance: Recorder) -> None:
         """Run statistics task."""
@@ -181,12 +183,16 @@ class AdjustStatisticsTask(RecorderTask):
             self.statistic_id,
             self.start_time,
             self.sum_adjustment,
+            self.adjustment_unit,
         ):
             return
         # Schedule a new adjust statistics task if this one didn't finish
         instance.queue_task(
             AdjustStatisticsTask(
-                self.statistic_id, self.start_time, self.sum_adjustment
+                self.statistic_id,
+                self.start_time,
+                self.sum_adjustment,
+                self.adjustment_unit,
             )
         )
 

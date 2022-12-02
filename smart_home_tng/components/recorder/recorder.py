@@ -46,6 +46,8 @@ from . import executor, migration, model, pool, queries, statistics, task, util
 from .const import Const
 from .run_history import RunHistory
 
+_statistic: typing.TypeAlias = core.Statistic
+
 _T = typing.TypeVar("_T")
 _LOGGER: typing.Final = logging.getLogger(__name__)
 
@@ -511,11 +513,17 @@ class Recorder(threading.Thread):
 
     @core.callback
     def async_adjust_statistics(
-        self, statistic_id: str, start_time: datetime.datetime, sum_adjustment: float
+        self,
+        statistic_id: str,
+        start_time: datetime.datetime,
+        sum_adjustment: float,
+        adjustment_unit: str,
     ) -> None:
         """Adjust statistics."""
         self.queue_task(
-            task.AdjustStatisticsTask(statistic_id, start_time, sum_adjustment)
+            task.AdjustStatisticsTask(
+                statistic_id, start_time, sum_adjustment, adjustment_unit
+            )
         )
 
     @core.callback
@@ -541,8 +549,8 @@ class Recorder(threading.Thread):
     @core.callback
     def async_external_statistics(
         self,
-        metadata: core.StatisticMetaData,
-        stats: collections.abc.Iterable[core.StatisticData],
+        metadata: _statistic.MetaData,
+        stats: collections.abc.Iterable[_statistic.Data],
     ) -> None:
         """Schedule external statistics."""
         self.queue_task(task.ExternalStatisticsTask(metadata, stats))

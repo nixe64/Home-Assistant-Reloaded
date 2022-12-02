@@ -34,7 +34,7 @@ from .hue_sensor_base import HueSensorBase
 class HueTemperatureSensor(HueSensorBase):
     """Representation of a Hue Temperature sensor."""
 
-    _attr_native_unit_of_measurement = core.Const.TEMP_CELSIUS
+    _attr_native_unit_of_measurement = core.Const.UnitOfTemperature.CELSIUS
     _attr_device_class = core.Sensor.DeviceClass.TEMPERATURE
 
     @property

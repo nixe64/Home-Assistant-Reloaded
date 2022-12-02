@@ -23,7 +23,6 @@ http://www.gnu.org/licenses/.
 """
 
 import logging
-import contextvars
 import typing
 import voluptuous as vol
 import voluptuous_serialize
@@ -66,7 +65,7 @@ class MfaFlowManager(core.FlowManager):
     @staticmethod
     async def async_setup(websocket_api: core.WebSocket.Component):
         """Init mfa setup flow manager."""
-        _flow_manager.set(MfaFlowManager(websocket_api.controller))
+        MfaFlowManager._flow_manager = MfaFlowManager(websocket_api.controller)
 
         websocket_api.register_command(_WS_TYPE_SETUP_MFA, _WS_SETUP_MFA, _setup_mfa)
 
@@ -77,10 +76,7 @@ class MfaFlowManager(core.FlowManager):
     ) -> None:
         return
 
-
-_flow_manager: contextvars.ContextVar[MfaFlowManager] = contextvars.ContextVar(
-    "_flow_manager", default=None
-)
+    _flow_manager: "MfaFlowManager" = None
 
 
 @core.callback
@@ -91,7 +87,8 @@ def _setup_mfa(connection: core.WebSocket.Connection, msg: dict):
 
     async def async_setup_flow(msg):
         """Return a setup flow for mfa auth module."""
-        flow_manager = _flow_manager.get()
+        # pylint: disable=protected-access
+        flow_manager = MfaFlowManager._flow_manager
 
         if (flow_id := msg.get("flow_id")) is not None:
             result = await flow_manager.async_configure(flow_id, msg.get("user_input"))

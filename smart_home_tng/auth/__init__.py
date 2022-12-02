@@ -36,7 +36,7 @@ from .invalid_provider import InvalidProvider
 from .invalid_user_error import InvalidUserError
 from .mfa_modules import MultiFactorAuthModule
 from .providers import AuthProvider
-from .providers.homeassistant import InvalidUser
+from .providers.internal import InvalidUser
 from .refresh_token import RefreshToken
 from .token_type import TokenType
 from .user import User

@@ -29,6 +29,8 @@ import re
 import typing
 
 import aiohttp.hdrs
+
+from ..backports import strenum
 from .json_encoder import JsonEncoder
 
 
@@ -556,17 +558,24 @@ class Const:
     POWER_VOLT_AMPERE: typing.Final = "VA"
 
     # Power units
-    POWER_WATT: typing.Final = "W"
-    POWER_KILO_WATT: typing.Final = "kW"
-    POWER_BTU_PER_HOUR: typing.Final = "BTU/h"
+    class UnitOfPower(strenum.StrEnum):
+        """Power units."""
+
+        WATT = "W"
+        KILO_WATT = "kW"
+        BTU_PER_HOUR = "BTU/h"
 
     # Reactive power units
     POWER_VOLT_AMPERE_REACTIVE: typing.Final = "var"
 
     # Energy units
-    ENERGY_WATT_HOUR: typing.Final = "Wh"
-    ENERGY_KILO_WATT_HOUR: typing.Final = "kWh"
-    ENERGY_MEGA_WATT_HOUR: typing.Final = "MWh"
+    class UnitOfEnergy(strenum.StrEnum):
+        """Energy units."""
+
+        GIGA_JOULE = "GJ"
+        KILO_WATT_HOUR = "kWh"
+        MEGA_WATT_HOUR = "MWh"
+        WATT_HOUR = "Wh"
 
     # Electric_current units
     ELECTRIC_CURRENT_MILLIAMPERE: typing.Final = "mA"
@@ -585,9 +594,12 @@ class Const:
     CURRENCY_CENT: typing.Final = "¢"
 
     # Temperature units
-    TEMP_CELSIUS: typing.Final = "°C"
-    TEMP_FAHRENHEIT: typing.Final = "°F"
-    TEMP_KELVIN: typing.Final = "K"
+    class UnitOfTemperature(strenum.StrEnum):
+        """Temperature units."""
+
+        CELSIUS = "°C"
+        FAHRENHEIT = "°F"
+        KELVIN = "K"
 
     # Time units
     TIME_MICROSECONDS: typing.Final = "μs"
@@ -601,15 +613,17 @@ class Const:
     TIME_YEARS: typing.Final = "y"
 
     # Length units
-    LENGTH_MILLIMETERS: typing.Final = "mm"
-    LENGTH_CENTIMETERS: typing.Final = "cm"
-    LENGTH_METERS: typing.Final = "m"
-    LENGTH_KILOMETERS: typing.Final = "km"
+    class UnitOfLength(strenum.StrEnum):
+        """Length units."""
 
-    LENGTH_INCHES: typing.Final = "in"
-    LENGTH_FEET: typing.Final = "ft"
-    LENGTH_YARD: typing.Final = "yd"
-    LENGTH_MILES: typing.Final = "mi"
+        MILLIMETERS = "mm"
+        CENTIMETERS = "cm"
+        METERS = "m"
+        KILOMETERS = "km"
+        INCHES = "in"
+        FEET = "ft"
+        YARDS = "yd"
+        MILES = "mi"
 
     # Frequency units
     FREQUENCY_HERTZ: typing.Final = "Hz"
@@ -618,28 +632,39 @@ class Const:
     FREQUENCY_GIGAHERTZ: typing.Final = "GHz"
 
     # Pressure units
-    PRESSURE_PA: typing.Final = "Pa"
-    PRESSURE_HPA: typing.Final = "hPa"
-    PRESSURE_KPA: typing.Final = "kPa"
-    PRESSURE_BAR: typing.Final = "bar"
-    PRESSURE_CBAR: typing.Final = "cbar"
-    PRESSURE_MBAR: typing.Final = "mbar"
-    PRESSURE_MMHG: typing.Final = "mmHg"
-    PRESSURE_INHG: typing.Final = "inHg"
-    PRESSURE_PSI: typing.Final = "psi"
+    class UnitOfPressure(strenum.StrEnum):
+        """Pressure units."""
+
+        PA = "Pa"
+        HPA = "hPa"
+        KPA = "kPa"
+        BAR = "bar"
+        CBAR = "cbar"
+        MBAR = "mbar"
+        MMHG = "mmHg"
+        INHG = "inHg"
+        PSI = "psi"
 
     # Sound pressure units
     SOUND_PRESSURE_DB: typing.Final = "dB"
     SOUND_PRESSURE_WEIGHTED_DBA: typing.Final = "dBa"
 
     # Volume units
-    VOLUME_LITERS: typing.Final = "L"
-    VOLUME_MILLILITERS: typing.Final = "mL"
-    VOLUME_CUBIC_METERS: typing.Final = "m³"
-    VOLUME_CUBIC_FEET: typing.Final = "ft³"
+    class UnitOfVolume(strenum.StrEnum):
+        """Volume units."""
 
-    VOLUME_GALLONS: typing.Final = "gal"
-    VOLUME_FLUID_OUNCE: typing.Final = "fl. oz."
+        CUBIC_FEET = "ft³"
+        CUBIC_METERS = "m³"
+        LITERS = "L"
+        MILLILITERS = "mL"
+        GALLONS = "gal"
+        """Assumed to be US gallons in conversion utilities.
+
+        British/Imperial gallons are not yet supported"""
+        FLUID_OUNCES = "fl. oz."
+        """Assumed to be US fluid ounces in conversion utilities.
+
+        British/Imperial fluid ounces are not yet supported"""
 
     # Volume Flow Rate units
     VOLUME_FLOW_RATE_CUBIC_METERS_PER_HOUR: typing.Final = "m³/h"
@@ -649,13 +674,15 @@ class Const:
     AREA_SQUARE_METERS: typing.Final = "m²"
 
     # Mass units
-    MASS_GRAMS: typing.Final = "g"
-    MASS_KILOGRAMS: typing.Final = "kg"
-    MASS_MILLIGRAMS: typing.Final = "mg"
-    MASS_MICROGRAMS: typing.Final = "µg"
+    class UnitOfMass(strenum.StrEnum):
+        """Mass units."""
 
-    MASS_OUNCES: typing.Final = "oz"
-    MASS_POUNDS: typing.Final = "lb"
+        GRAMS = "g"
+        KILOGRAMS = "kg"
+        MILLIGRAMS = "mg"
+        MICROGRAMS = "µg"
+        OUNCES = "oz"
+        POUNDS = "lb"
 
     # Conductivity units
     CONDUCTIVITY: typing.Final = "µS/cm"
@@ -669,9 +696,31 @@ class Const:
     # Percentage units
     PERCENTAGE: typing.Final = "%"
 
+    # Rotational speed units
+    REVOLUTIONS_PER_MINUTE: typing.Final = "rpm"
+
     # Irradiation units
     IRRADIATION_WATTS_PER_SQUARE_METER: typing.Final = "W/m²"
     IRRADIATION_BTUS_PER_HOUR_SQUARE_FOOT: typing.Final = "BTU/(h×ft²)"
+
+    class UnitOfVolumetricFlux(strenum.StrEnum):
+        """Volumetric flux, commonly used for precipitation intensity.
+
+        The derivation of these units is a volume of rain amassing in a container
+        with constant cross section in a given time
+        """
+
+        INCHES_PER_DAY = "in/d"
+        """Derived from in³/(in².d)"""
+
+        INCHES_PER_HOUR = "in/h"
+        """Derived from in³/(in².h)"""
+
+        MILLIMETERS_PER_DAY = "mm/d"
+        """Derived from mm³/(mm².d)"""
+
+        MILLIMETERS_PER_HOUR = "mm/h"
+        """Derived from mm³/(mm².h)"""
 
     # Precipitation units
     PRECIPITATION_MILLIMETERS_PER_HOUR: typing.Final = "mm/h"
@@ -687,12 +736,14 @@ class Const:
     CONCENTRATION_PARTS_PER_BILLION: typing.Final = "ppb"
 
     # Speed units
-    SPEED_MILLIMETERS_PER_DAY: typing.Final = "mm/d"
-    SPEED_INCHES_PER_DAY: typing.Final = "in/d"
-    SPEED_METERS_PER_SECOND: typing.Final = "m/s"
-    SPEED_INCHES_PER_HOUR: typing.Final = "in/h"
-    SPEED_KILOMETERS_PER_HOUR: typing.Final = "km/h"
-    SPEED_MILES_PER_HOUR: typing.Final = "mph"
+    class UnitOfSpeed(strenum.StrEnum):
+        """Speed units."""
+
+        FEET_PER_SECOND = "ft/s"
+        METERS_PER_SECOND = "m/s"
+        KILOMETERS_PER_HOUR = "km/h"
+        KNOTS = "kn"
+        MILES_PER_HOUR = "mph"
 
     # Signal_strength units
     SIGNAL_STRENGTH_DECIBELS: typing.Final = "dB"

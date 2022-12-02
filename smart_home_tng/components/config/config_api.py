@@ -98,22 +98,22 @@ _AUTH_UPDATE: typing.Final = {
     vol.Optional("local_only"): bool,
 }
 _INTERNAL_CREATE: typing.Final = {
-    vol.Required("type"): "config/auth_provider/smart_home_tng/create",
+    vol.Required("type"): "config/auth_provider/internal/create",
     vol.Required("user_id"): str,
     vol.Required("username"): str,
     vol.Required("password"): str,
 }
 _INTERNAL_DELETE: typing.Final = {
-    vol.Required("type"): "config/auth_provider/smart_home_tng/delete",
+    vol.Required("type"): "config/auth_provider/internal/delete",
     vol.Required("username"): str,
 }
 _CHANGE_PASSWORD: typing.Final = {
-    vol.Required("type"): "config/auth_provider/smart_home_tng/change_password",
+    vol.Required("type"): "config/auth_provider/internal/change_password",
     vol.Required("current_password"): str,
     vol.Required("new_password"): str,
 }
 _ADMIN_CHANGE_PASSWORD: typing.Final = {
-    vol.Required("type"): "config/auth_provider/smart_home_tng/admin_change_password",
+    vol.Required("type"): "config/auth_provider/inernal/admin_change_password",
     vol.Required("user_id"): str,
     vol.Required("password"): str,
 }
@@ -1274,24 +1274,28 @@ def _device_entry_dict(entry):
 
 
 @core.callback
-def _entity_entry_dict(entry):
+def _entity_entry_dict(entry: core.EntityRegistryEntry) -> dict[str, typing.Any]:
     """Convert entry to API format."""
     return {
         "area_id": entry.area_id,
         "config_entry_id": entry.config_entry_id,
         "device_id": entry.device_id,
         "disabled_by": entry.disabled_by,
+        "has_entity_name": entry.has_entity_name,
         "entity_category": entry.entity_category,
         "entity_id": entry.entity_id,
         "hidden_by": entry.hidden_by,
         "icon": entry.icon,
+        "id": entry.id,
+        "unique_id": entry.unique_id,
         "name": entry.name,
+        "original_name": entry.original_name,
         "platform": entry.platform,
     }
 
 
 @core.callback
-def _entity_entry_ext_dict(entry):
+def _entity_entry_ext_dict(entry: core.EntityRegistryEntry) -> dict[str, typing.Any]:
     """Convert entry to API format."""
     data = _entity_entry_dict(entry)
     data["capabilities"] = entry.capabilities
@@ -1299,6 +1303,4 @@ def _entity_entry_ext_dict(entry):
     data["options"] = entry.options
     data["original_device_class"] = entry.original_device_class
     data["original_icon"] = entry.original_icon
-    data["original_name"] = entry.original_name
-    data["unique_id"] = entry.unique_id
     return data

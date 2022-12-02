@@ -29,6 +29,7 @@ import collections.abc
 import contextlib
 import dataclasses
 import datetime as dt
+import functools as ft
 import itertools as it
 import json
 import logging
@@ -46,6 +47,7 @@ from ... import core
 from . import model, util
 from .const import Const
 
+_statistic: typing.TypeAlias = core.Statistic
 
 if not typing.TYPE_CHECKING:
 
@@ -126,46 +128,111 @@ _QUERY_STATISTIC_META_ID = [
 ]
 
 
-# Convert pressure, temperature and volume statistics from the normalized unit used for
-# statistics to the unit configured by the user
-_STATISTIC_UNIT_TO_DISPLAY_UNIT_CONVERSIONS: typing.Final = dict[
-    str, collections.abc.Callable[[float, core.UnitSystem], float]
-](
-    {
-        core.Const.PRESSURE_PA: lambda x, units: units.pressure(
-            x, core.Const.PRESSURE_PA
-        )
-        if x is not None
-        else None,
-        core.Const.TEMP_CELSIUS: lambda x, units: units.temperature(
-            x, core.Const.TEMP_CELSIUS
-        )
-        if x is not None
-        else None,
-        core.Const.VOLUME_CUBIC_METERS: lambda x, units: units.volume(
-            x, core.Const.VOLUME_CUBIC_METERS
-        )
-        if x is not None
-        else None,
-    }
-)
-
-# Convert volume statistics from the display unit configured by the user
-# to the normalized unit used for statistics
-# This is used to support adjusting statistics in the display unit
-_DISPLAY_UNIT_TO_STATISTIC_UNIT_CONVERSIONS: typing.Final = dict[
-    str, collections.abc.Callable[[float, core.UnitSystem], float]
-](
-    {
-        core.Const.VOLUME_CUBIC_FEET: lambda x, units: units.volume(
-            x, core.Const.VOLUME_CUBIC_METERS
-        )
-        if x is not None
-        else x
-    }
-)
 _LOGGER = logging.getLogger(__name__)
 _UNDEFINED: typing.Final = object()
+
+
+def _get_unit_class(unit: str) -> str:
+    """Get corresponding unit class from from the statistics unit."""
+    if converter := _statistic.STATISTIC_UNIT_TO_UNIT_CONVERTER.get(unit):
+        return converter.UNIT_CLASS
+    return None
+
+
+def _get_statistic_to_display_unit_converter(
+    statistic_unit: str,
+    state_unit: str,
+    requested_units: dict[str, str],
+) -> typing.Callable[[float], float]:
+    """Prepare a converter from the statistics unit to display unit."""
+
+    def no_conversion(val: float) -> float:
+        """Return val."""
+        return val
+
+    if statistic_unit is None:
+        return no_conversion
+
+    if (
+        converter := _statistic.STATISTIC_UNIT_TO_UNIT_CONVERTER.get(statistic_unit)
+    ) is None:
+        return no_conversion
+
+    display_unit: str
+    unit_class = converter.UNIT_CLASS
+    if requested_units and unit_class in requested_units:
+        display_unit = requested_units[unit_class]
+    else:
+        display_unit = state_unit
+
+    if display_unit not in converter.VALID_UNITS:
+        # Guard against invalid state unit in the DB
+        return no_conversion
+
+    def from_normalized_unit(
+        val: float, conv: type[core.BaseUnitConverter], from_unit: str, to_unit: str
+    ) -> float | None:
+        """Return val."""
+        if val is None:
+            return val
+        return conv.convert(val, from_unit=from_unit, to_unit=to_unit)
+
+    return ft.partial(
+        from_normalized_unit,
+        conv=converter,
+        from_unit=statistic_unit,
+        to_unit=display_unit,
+    )
+
+
+def _get_display_to_statistic_unit_converter(
+    display_unit: str,
+    statistic_unit: str,
+) -> typing.Callable[[float], float]:
+    """Prepare a converter from the display unit to the statistics unit."""
+
+    def no_conversion(val: float) -> float:
+        """Return val."""
+        return val
+
+    if statistic_unit is None:
+        return no_conversion
+
+    if (
+        converter := _statistic.STATISTIC_UNIT_TO_UNIT_CONVERTER.get(statistic_unit)
+    ) is None:
+        return no_conversion
+
+    return ft.partial(converter.convert, from_unit=display_unit, to_unit=statistic_unit)
+
+
+def _get_unit_converter(
+    from_unit: str, to_unit: str
+) -> typing.Callable[[float], float]:
+    """Prepare a converter from a unit to another unit."""
+
+    def convert_units(
+        val: float, conv: type[core.BaseUnitConverter], from_unit: str, to_unit: str
+    ) -> float:
+        """Return converted val."""
+        if val is None:
+            return val
+        return conv.convert(val, from_unit=from_unit, to_unit=to_unit)
+
+    for conv in _statistic.STATISTIC_UNIT_TO_UNIT_CONVERTER.values():
+        if from_unit in conv.VALID_UNITS and to_unit in conv.VALID_UNITS:
+            return ft.partial(
+                convert_units, conv=conv, from_unit=from_unit, to_unit=to_unit
+            )
+    raise core.SmartHomeControllerError
+
+
+def can_convert_units(from_unit: str | None, to_unit: str | None) -> bool:
+    """Return True if it's possible to convert from from_unit to to_unit."""
+    for converter in _statistic.STATISTIC_UNIT_TO_UNIT_CONVERTER.values():
+        if from_unit in converter.VALID_UNITS and to_unit in converter.VALID_UNITS:
+            return True
+    return False
 
 
 def split_statistic_id(entity_id: str) -> list[str]:
@@ -217,8 +284,8 @@ def get_start_time() -> dt.datetime:
 
 def _update_or_add_metadata(
     session: sql_orm.Session,
-    new_metadata: core.StatisticMetaData,
-    old_metadata_dict: dict[str, tuple[int, core.StatisticMetaData]],
+    new_metadata: _statistic.MetaData,
+    old_metadata_dict: dict[str, tuple[int, _statistic.MetaData]],
 ) -> int:
     """Get metadata_id for a statistic_id.
 
@@ -487,7 +554,7 @@ def compile_hourly_statistics(session: sql_orm.Session, start: dt.datetime) -> N
     end_time = start_time + dt.timedelta(hours=1)
 
     # Compute last hour's average, min, max
-    summary: dict[str, core.StatisticData] = {}
+    summary: dict[str, _statistic.Data] = {}
     stmt = _compile_hourly_statistics_summary_mean_stmt(start_time, end_time)
     stats = util.execute_stmt_lambda_element(session, stmt)
 
@@ -554,13 +621,13 @@ def compile_statistics(instance: Recorder, start: dt.datetime) -> bool:
             return True
 
     _LOGGER.debug(f"Compiling statistics for {start}-{end}")
-    platform_stats: list[core.StatisticResult] = []
-    current_metadata: dict[str, tuple[int, core.StatisticMetaData]] = {}
+    platform_stats: list[_statistic.Result] = []
+    current_metadata: dict[str, tuple[int, _statistic.MetaData]] = {}
     # Collect statistics from all platforms implementing support
     for domain, platform in instance.owner.items():
         if not platform.supports_statistics or not platform.supports_compile_statistics:
             continue
-        compiled: core.PlatformCompiledStatistics = platform.compile_statistics(
+        compiled: _statistic.PlatformCompiledStatistics = platform.compile_statistics(
             instance.owner, start, end
         )
         _LOGGER.debug(
@@ -622,7 +689,7 @@ def _insert_statistics(
     session: sql_orm.Session,
     table: type[model.Statistics | model.StatisticsShortTerm],
     metadata_id: int,
-    statistic: core.StatisticData,
+    statistic: _statistic.Data,
 ) -> None:
     """Insert statistics in the database."""
     try:
@@ -638,7 +705,7 @@ def _update_statistics(
     session: sql_orm.Session,
     table: type[model.Statistics | model.StatisticsShortTerm],
     stat_id: int,
-    statistic: core.StatisticData,
+    statistic: _statistic.Data,
 ) -> None:
     """Insert statistics in the database."""
     try:
@@ -683,7 +750,7 @@ def get_metadata_with_session(
     statistic_ids: list[str] | tuple[str] = None,
     statistic_type: typing.Literal["mean"] | typing.Literal["sum"] = None,
     statistic_source: str = None,
-) -> dict[str, tuple[int, core.StatisticMetaData]]:
+) -> dict[str, tuple[int, _statistic.MetaData]]:
     """Fetch meta data.
 
     Returns a dict of (metadata_id, StatisticMetaData) tuples indexed by statistic_id.
@@ -720,7 +787,7 @@ def get_metadata(
     statistic_ids: list[str] | tuple[str] = None,
     statistic_type: typing.Literal["mean"] | typing.Literal["sum"] = None,
     statistic_source: str = None,
-) -> dict[str, tuple[int, core.StatisticMetaData]]:
+) -> dict[str, tuple[int, _statistic.MetaData]]:
     """Return metadata for statistic_ids."""
     with util.session_scope(rc=rec_comp) as session:
         return get_metadata_with_session(
@@ -743,11 +810,11 @@ def _configured_unit(unit: str, units: core.UnitSystem) -> str:
 
 def _configured_unit(unit: str, units: core.UnitSystem) -> str:
     """Return the pressure and temperature units configured by the user."""
-    if unit == core.Const.PRESSURE_PA:
+    if unit == core.Const.UnitOfPressure.PA:
         return units.pressure_unit
-    if unit == core.Const.TEMP_CELSIUS:
+    if unit == core.Const.UnitOfTemperature.CELSIUS:
         return units.temperature_unit
-    if unit == core.Const.VOLUME_CUBIC_METERS:
+    if unit == core.Const.UnitOfVolume.CUBIC_METERS:
         return units.volume_unit
     return unit
 
@@ -786,7 +853,7 @@ def update_statistics_metadata(
 
 
 def list_statistic_ids(
-    rec_comp: RecorderComponent,
+    recorder: RecorderComponent,
     statistic_ids: list[str] | tuple[str] = None,
     statistic_type: typing.Literal["mean"] | typing.Literal["sum"] = None,
 ) -> list[dict]:
@@ -796,20 +863,13 @@ def list_statistic_ids(
     a recorder platform for statistic_ids which will be added in the next statistics
     period.
     """
-    units = rec_comp.config.units
     result = {}
 
     # Query the database
-    with util.session_scope(rc=rec_comp) as session:
+    with util.session_scope(rc=recorder) as session:
         metadata = get_metadata_with_session(
             session, statistic_type=statistic_type, statistic_ids=statistic_ids
         )
-
-        for _, meta in metadata.values():
-            if (unit := meta["unit_of_measurement"]) is not None:
-                # Display unit according to user settings
-                unit = _configured_unit(unit, units)
-            meta["unit_of_measurement"] = unit
 
         result = {
             meta["statistic_id"]: {
@@ -817,27 +877,31 @@ def list_statistic_ids(
                 "has_sum": meta["has_sum"],
                 "name": meta["name"],
                 "source": meta["source"],
+                "unit_class": _get_unit_class(meta["unit_of_measurement"]),
                 "unit_of_measurement": meta["unit_of_measurement"],
             }
             for _, meta in metadata.values()
         }
 
     # Query all integrations with a registered recorder platform
-    for platform in rec_comp.platforms:
+    for platform in recorder.platforms:
         if not platform.supports_statistics:
             continue
         platform_statistic_ids = platform.list_statistic_ids(
-            statistic_ids=statistic_ids, statistic_type=statistic_type
+            recorder, statistic_ids=statistic_ids, statistic_type=statistic_type
         )
 
-        for statistic_id, info in platform_statistic_ids.items():
-            if (unit := info["unit_of_measurement"]) is not None:
-                # Display unit according to user settings
-                unit = _configured_unit(unit, units)
-            platform_statistic_ids[statistic_id]["unit_of_measurement"] = unit
-
-        for key, value in platform_statistic_ids.items():
-            result.setdefault(key, value)
+        for key, meta in platform_statistic_ids.items():
+            if key in result:
+                continue
+            result[key] = {
+                "has_mean": meta["has_mean"],
+                "has_sum": meta["has_sum"],
+                "name": meta["name"],
+                "source": meta["source"],
+                "unit_class": _get_unit_class(meta["unit_of_measurement"]),
+                "unit_of_measurement": meta["unit_of_measurement"],
+            }
 
     # Return a list of statistic_id + metadata
     return [
@@ -847,7 +911,8 @@ def list_statistic_ids(
             "has_sum": info["has_sum"],
             "name": info.get("name"),
             "source": info["source"],
-            "unit_of_measurement": info["unit_of_measurement"],
+            "statistics_unit_of_measurement": info["unit_of_measurement"],
+            "unit_class": info["unit_class"],
         }
         for _id, info in result.items()
     ]
@@ -860,6 +925,7 @@ def _reduce_statistics(
         [dt.datetime], tuple[dt.datetime, dt.datetime]
     ],
     period: dt.timedelta,
+    types: set[typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]],
 ) -> dict[str, list[dict[str, typing.Any]]]:
     """Reduce hourly statistics to daily or monthly statistics."""
     result: dict[str, list[dict[str, typing.Any]]] = collections.defaultdict(list)
@@ -876,19 +942,24 @@ def _reduce_statistics(
             if not same_period(prev_stat["start"], statistic["start"]):
                 start, end = period_start_end(prev_stat["start"])
                 # The previous statistic was the last entry of the period
-                result[statistic_id].append(
-                    {
-                        "statistic_id": statistic_id,
-                        "start": start.isoformat(),
-                        "end": end.isoformat(),
-                        "mean": statistics.mean(mean_values) if mean_values else None,
-                        "min": min(min_values) if min_values else None,
-                        "max": max(max_values) if max_values else None,
-                        "last_reset": prev_stat.get("last_reset"),
-                        "state": prev_stat.get("state"),
-                        "sum": prev_stat["sum"],
-                    }
-                )
+                row = {
+                    "start": start,
+                    "end": end,
+                }
+                if "mean" in types:
+                    row["mean"] = statistics.mean(mean_values) if mean_values else None
+                if "min" in types:
+                    row["min"] = min(min_values) if min_values else None
+                if "max" in types:
+                    row["max"] = max(max_values) if max_values else None
+                if "last_reset" in types:
+                    row["last_reset"] = prev_stat.get("last_reset")
+                if "state" in types:
+                    row["state"] = prev_stat.get("state")
+                if "sum" in types:
+                    row["sum"] = prev_stat["sum"]
+                result[statistic_id].append(row)
+
                 max_values = []
                 mean_values = []
                 min_values = []
@@ -922,11 +993,14 @@ def day_start_end(
 
 
 def _reduce_statistics_per_day(
-    stats: dict[str, list[dict[str, typing.Any]]]
+    stats: dict[str, list[dict[str, typing.Any]]],
+    types: set[typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]],
 ) -> dict[str, list[dict[str, typing.Any]]]:
     """Reduce hourly statistics to daily statistics."""
 
-    return _reduce_statistics(stats, same_day, day_start_end, dt.timedelta(days=1))
+    return _reduce_statistics(
+        stats, same_day, day_start_end, dt.timedelta(days=1), types
+    )
 
 
 def same_month(time1: dt.datetime, time2: dt.datetime) -> bool:
@@ -951,10 +1025,13 @@ def month_start_end(
 
 def _reduce_statistics_per_month(
     stats: dict[str, list[dict[str, typing.Any]]],
+    types: set[typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]],
 ) -> dict[str, list[dict[str, typing.Any]]]:
     """Reduce hourly statistics to monthly statistics."""
 
-    return _reduce_statistics(stats, same_month, month_start_end, dt.timedelta(days=31))
+    return _reduce_statistics(
+        stats, same_month, month_start_end, dt.timedelta(days=31), types
+    )
 
 
 def _statistics_during_period_stmt(
@@ -962,24 +1039,33 @@ def _statistics_during_period_stmt(
     end_time: dt.datetime,
     metadata_ids: list[int],
     table: type[model.Statistics | model.StatisticsShortTerm],
+    types: set[typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]],
 ) -> sql.sql.StatementLambdaElement:
     """Prepare a database query for statistics during a given period.
 
     This prepares a lambda_stmt query, so we don't insert the parameters yet.
     """
-    if table == model.StatisticsShortTerm:
-        stmt = sql.lambda_stmt(lambda: sql.select(*_QUERY_STATISTICS_SHORT_TERM))
-    else:
-        stmt = sql.lambda_stmt(lambda: sql.select(*_QUERY_STATISTICS))
+    columns = [table.metadata_id, table.start]
+    if "last_reset" in types:
+        columns.append(table.last_reset)
+    if "max" in types:
+        columns.append(table.max)
+    if "mean" in types:
+        columns.append(table.mean)
+    if "min" in types:
+        columns.append(table.min)
+    if "state" in types:
+        columns.append(table.state)
+    if "sum" in types:
+        columns.append(table.sum)
 
-    stmt += lambda q: q.filter(table.start >= start_time)
-
+    stmt = sql.lambda_stmt(
+        lambda: sql.select(columns).filter(table.start >= start_time)
+    )
     if end_time is not None:
         stmt += lambda q: q.filter(table.start < end_time)
-
     if metadata_ids:
         stmt += lambda q: q.filter(table.metadata_id.in_(metadata_ids))
-
     stmt += lambda q: q.order_by(table.metadata_id, table.start)
     return stmt
 
@@ -987,10 +1073,11 @@ def _statistics_during_period_stmt(
 def statistics_during_period(
     rec_comp: RecorderComponent,
     start_time: dt.datetime,
-    end_time: dt.datetime = None,
-    statistic_ids: list[str] = None,
-    period: typing.Literal["5minute", "day", "hour", "month"] = "hour",
-    start_time_as_datetime: bool = False,
+    end_time: dt.datetime,
+    statistic_ids: list[str],
+    period: typing.Literal["5minute", "day", "hour", "month"],
+    units: dict[str, str],
+    types: set[typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]],
 ) -> dict[str, list[dict[str, typing.Any]]]:
     """Return statistics during UTC period start_time - end_time for the statistic_ids.
 
@@ -1013,7 +1100,9 @@ def statistics_during_period(
         else:
             table = model.Statistics
 
-        stmt = _statistics_during_period_stmt(start_time, end_time, metadata_ids, table)
+        stmt = _statistics_during_period_stmt(
+            start_time, end_time, metadata_ids, table, types
+        )
         stats = util.execute_stmt_lambda_element(session, stmt)
 
         if not stats:
@@ -1029,7 +1118,8 @@ def statistics_during_period(
                 True,
                 table,
                 start_time,
-                start_time_as_datetime,
+                units,
+                types,
             )
 
         result = _sorted_statistics_to_dict(
@@ -1041,31 +1131,43 @@ def statistics_during_period(
             True,
             table,
             start_time,
-            True,
+            units,
+            types,
         )
 
         if period == "day":
-            return _reduce_statistics_per_day(result)
+            return _reduce_statistics_per_day(result, types)
 
-        return _reduce_statistics_per_month(result)
+        return _reduce_statistics_per_month(result, types)
 
 
 def _get_last_statistics_stmt(
     metadata_id: int,
     number_of_stats: int,
-    table: type[model.Statistics | model.StatisticsShortTerm],
 ) -> sql.sql.StatementLambdaElement:
     """Generate a statement for number_of_stats statistics for a given statistic_id."""
-    if table == model.StatisticsShortTerm:
-        stmt = sql.lambda_stmt(lambda: sql.select(*_QUERY_STATISTICS_SHORT_TERM))
-    else:
-        stmt = sql.lambda_stmt(lambda: sql.select(*_QUERY_STATISTICS))
-    stmt += (
-        lambda q: q.filter_by(metadata_id=metadata_id)
-        .order_by(table.metadata_id, table.start.desc())
+    return sql.lambda_stmt(
+        lambda: sql.select(*_QUERY_STATISTICS)
+        .filter_by(metadata_id=metadata_id)
+        .order_by(model.Statistics.metadata_id, model.Statistics.start.desc())
         .limit(number_of_stats)
     )
-    return stmt
+
+
+def _get_last_statistics_short_term_stmt(
+    metadata_id: int,
+    number_of_stats: int,
+) -> sql.sql.StatementLambdaElement:
+    """Generate a statement for number_of_stats short term statistics for a given statistic_id."""
+    return sql.lambda_stmt(
+        lambda: sql.select(*_QUERY_STATISTICS_SHORT_TERM)
+        .filter_by(metadata_id=metadata_id)
+        .order_by(
+            model.StatisticsShortTerm.metadata_id,
+            model.StatisticsShortTerm.start.desc(),
+        )
+        .limit(number_of_stats)
+    )
 
 
 def _get_last_statistics(
@@ -1074,6 +1176,7 @@ def _get_last_statistics(
     statistic_id: str,
     convert_units: bool,
     table: type[model.Statistics | model.StatisticsShortTerm],
+    types: set[typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]],
 ) -> dict[str, list[dict]]:
     """Return the last number_of_stats statistics for a given statistic_id."""
     statistic_ids = [statistic_id]
@@ -1083,7 +1186,10 @@ def _get_last_statistics(
         if not metadata:
             return {}
         metadata_id = metadata[statistic_id][0]
-        stmt = _get_last_statistics_stmt(metadata_id, number_of_stats, table)
+        if table == model.Statistics:
+            stmt = _get_last_statistics_stmt(metadata_id, number_of_stats)
+        else:
+            stmt = _get_last_statistics_short_term_stmt(metadata_id, number_of_stats)
         stats = util.execute_stmt_lambda_element(session, stmt)
 
         if not stats:
@@ -1099,6 +1205,8 @@ def _get_last_statistics(
             convert_units,
             table,
             None,
+            None,
+            types,
         )
 
 
@@ -1107,10 +1215,11 @@ def get_last_statistics(
     number_of_stats: int,
     statistic_id: str,
     convert_units: bool,
+    types: set[typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]],
 ) -> dict[str, list[dict]]:
     """Return the last number_of_stats statistics for a statistic_id."""
     return _get_last_statistics(
-        rec_comp, number_of_stats, statistic_id, convert_units, model.Statistics
+        rec_comp, number_of_stats, statistic_id, convert_units, model.Statistics, types
     )
 
 
@@ -1119,6 +1228,7 @@ def get_last_short_term_statistics(
     number_of_stats: int,
     statistic_id: str,
     convert_units: bool,
+    types: set[typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]],
 ) -> dict[str, list[dict]]:
     """Return the last number_of_stats short term statistics for a statistic_id."""
     return _get_last_statistics(
@@ -1127,6 +1237,7 @@ def get_last_short_term_statistics(
         statistic_id,
         convert_units,
         model.StatisticsShortTerm,
+        types,
     )
 
 
@@ -1158,7 +1269,8 @@ def _latest_short_term_statistics_stmt(
 def get_latest_short_term_statistics(
     rec_comp: RecorderComponent,
     statistic_ids: list[str],
-    metadata: dict[str, tuple[int, core.StatisticMetaData]] = None,
+    types: set[typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]],
+    metadata: dict[str, tuple[int, _statistic.MetaData]] = None,
 ) -> dict[str, list[dict]]:
     """Return the latest short term statistics for a list of statistic_ids."""
     with util.session_scope(rc=rec_comp) as session:
@@ -1187,6 +1299,8 @@ def get_latest_short_term_statistics(
             False,
             model.StatisticsShortTerm,
             None,
+            None,
+            types,
         )
 
 
@@ -1227,20 +1341,20 @@ def _sorted_statistics_to_dict(
     session: sql_orm.Session,
     stats: collections.abc.Iterable[sql.engine.Row],
     statistic_ids: list[str],
-    _metadata: dict[str, tuple[int, core.StatisticMetaData]],
+    _metadata: dict[str, tuple[int, _statistic.MetaData]],
     convert_units: bool,
     table: type[model.Statistics | model.StatisticsShortTerm],
     start_time: dt.datetime,
-    start_time_as_datetime: bool = False,
+    units: dict[str, str],
+    types: set[typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]],
 ) -> dict[str, list[dict]]:
     """Convert SQL results into JSON friendly data structure."""
     result: dict = collections.defaultdict(list)
-    units = rec_comp.config.units
     metadata = dict(_metadata.values())
     need_stat_at_start_time: set[int] = set()
     stats_at_start_time = {}
 
-    def no_conversion(val: typing.Any, _: typing.Any) -> float:
+    def no_conversion(val: float) -> float:
         """Return x."""
         return val  # type: ignore[no-any-return]
 
@@ -1265,34 +1379,36 @@ def _sorted_statistics_to_dict(
 
     # Append all statistic entries, and optionally do unit conversion
     for meta_id, group in it.groupby(stats, lambda stat: stat.metadata_id):
-        unit = metadata[meta_id]["unit_of_measurement"]
+        state_unit = unit = metadata[meta_id]["unit_of_measurement"]
         statistic_id = metadata[meta_id]["statistic_id"]
-        convert: collections.abc.Callable[[typing.Any, typing.Any], float]
-        if convert_units:
-            convert = _STATISTIC_UNIT_TO_DISPLAY_UNIT_CONVERSIONS.get(
-                unit, lambda x, units: x
-            )
+        if state := rec_comp.controller.states.get(statistic_id):
+            state_unit = state.attributes.get(core.Const.ATTR_UNIT_OF_MEASUREMENT)
+        if unit is not None and convert_units:
+            convert = _get_statistic_to_display_unit_converter(unit, state_unit, units)
         else:
             convert = no_conversion
         ent_results = result[meta_id]
         for db_state in it.chain(stats_at_start_time.get(meta_id, ()), group):
             start = model.process_timestamp(db_state.start)
             end = start + table.duration
-            ent_results.append(
-                {
-                    "statistic_id": statistic_id,
-                    "start": start if start_time_as_datetime else start.isoformat(),
-                    "end": end.isoformat(),
-                    "mean": convert(db_state.mean, units),
-                    "min": convert(db_state.min, units),
-                    "max": convert(db_state.max, units),
-                    "last_reset": model.process_timestamp_to_utc_isoformat(
-                        db_state.last_reset
-                    ),
-                    "state": convert(db_state.state, units),
-                    "sum": convert(db_state.sum, units),
-                }
-            )
+            row = {
+                "start": start,
+                "end": end,
+            }
+            if "mean" in types:
+                row["mean"] = convert(db_state.mean)
+            if "min" in types:
+                row["min"] = convert(db_state.min)
+            if "max" in types:
+                row["max"] = convert(db_state.max)
+            if "last_reset" in types:
+                row["last_reset"] = model.process_timestamp(db_state.last_reset)
+            if "state" in types:
+                row["state"] = convert(db_state.state)
+            if "sum" in types:
+                row["sum"] = convert(db_state.sum)
+
+            ent_results.append(row)
 
     # Filter out the empty lists if some states had 0 results.
     return {metadata[key]["statistic_id"]: val for key, val in result.items() if val}
@@ -1328,8 +1444,8 @@ def _statistics_exists(
 @core.callback
 def async_add_external_statistics(
     rec_comp: RecorderComponent,
-    metadata: core.StatisticMetaData,
-    stats: collections.abc.Iterable[core.StatisticData],
+    metadata: _statistic.MetaData,
+    stats: collections.abc.Iterable[_statistic.Data],
 ) -> None:
     """Add hourly statistics from an external source.
 
@@ -1401,8 +1517,8 @@ def _filter_unique_constraint_integrity_error(
 
 def add_external_statistics(
     instance: Recorder,
-    metadata: core.StatisticMetaData,
-    stats: collections.abc.Iterable[core.StatisticData],
+    metadata: _statistic.MetaData,
+    stats: collections.abc.Iterable[_statistic.Data],
 ) -> bool:
     """Process an add_external_statistics job."""
 
@@ -1430,6 +1546,7 @@ def adjust_statistics(
     statistic_id: str,
     start_time: dt.datetime,
     sum_adjustment: float,
+    adjustment_unit: str,
 ) -> bool:
     """Process an add_statistics job."""
 
@@ -1438,13 +1555,11 @@ def adjust_statistics(
         if statistic_id not in metadata:
             return True
 
-        units = instance.controller.config.units
         statistic_unit = metadata[statistic_id][1]["unit_of_measurement"]
-        display_unit = _configured_unit(statistic_unit, units)
-        convert = _DISPLAY_UNIT_TO_STATISTIC_UNIT_CONVERSIONS.get(
-            display_unit, lambda x, units: x
+        convert = _get_display_to_statistic_unit_converter(
+            adjustment_unit, statistic_unit
         )
-        sum_adjustment = convert(sum_adjustment, units)
+        sum_adjustment = convert(sum_adjustment)
 
         _adjust_sum_statistics(
             session,

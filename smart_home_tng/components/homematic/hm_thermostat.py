@@ -61,7 +61,7 @@ class HMThermostat(HMDevice, core.Climate.Entity):
         core.Climate.EntityFeature.TARGET_TEMPERATURE
         | core.Climate.EntityFeature.PRESET_MODE
     )
-    _attr_temperature_unit = core.Const.TEMP_CELSIUS
+    _attr_temperature_unit = core.Const.UnitOfTemperature.CELSIUS
 
     @property
     def hvac_mode(self) -> core.Climate.HVACMode:

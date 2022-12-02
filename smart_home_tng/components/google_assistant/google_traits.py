@@ -159,7 +159,7 @@ def _register_trait(trait):
 
 def _google_temp_unit(units):
     """Return Google temperature unit."""
-    if units == _const.TEMP_FAHRENHEIT:
+    if units == _const.UnitOfTemperature.FAHRENHEIT:
         return "F"
     return "C"
 
@@ -849,8 +849,8 @@ class TemperatureControlTrait(_Trait):
         current_temp = self._state.state
         if current_temp not in (_const.STATE_UNKNOWN, _const.STATE_UNAVAILABLE):
             temp = round(
-                core.UnitSystem.convert_temperature(
-                    float(current_temp), unit, _const.TEMP_CELSIUS
+                core.TemperatureConverter.convert(
+                    float(current_temp), unit, _const.UnitOfTemperature.CELSIUS
                 ),
                 1,
             )
@@ -960,8 +960,8 @@ class TemperatureSettingTrait(_Trait):
         current_temp = attrs.get(_climate.ATTR_CURRENT_TEMPERATURE)
         if current_temp is not None:
             response["thermostatTemperatureAmbient"] = round(
-                core.UnitSystem.convert_temperature(
-                    current_temp, unit, _const.TEMP_CELSIUS
+                core.TemperatureConverter.convert(
+                    current_temp, unit, _const.UnitOfTemperature.CELSIUS
                 ),
                 1,
             )
@@ -973,22 +973,26 @@ class TemperatureSettingTrait(_Trait):
         if operation in (_climate.HVACMode.AUTO, _climate.HVACMode.HEAT_COOL):
             if supported & _climate.EntityFeature.TARGET_TEMPERATURE_RANGE:
                 response["thermostatTemperatureSetpointHigh"] = round(
-                    core.UnitSystem.convert_temperature(
-                        attrs[_climate.ATTR_TARGET_TEMP_HIGH], unit, _const.TEMP_CELSIUS
+                    core.TemperatureConverter.convert(
+                        attrs[_climate.ATTR_TARGET_TEMP_HIGH],
+                        unit,
+                        _const.UnitOfTemperature.CELSIUS,
                     ),
                     1,
                 )
                 response["thermostatTemperatureSetpointLow"] = round(
-                    core.UnitSystem.convert_temperature(
-                        attrs[_climate.ATTR_TARGET_TEMP_LOW], unit, _const.TEMP_CELSIUS
+                    core.TemperatureConverter.convert(
+                        attrs[_climate.ATTR_TARGET_TEMP_LOW],
+                        unit,
+                        _const.UnitOfTemperature.CELSIUS,
                     ),
                     1,
                 )
             else:
                 if (target_temp := attrs.get(_const.ATTR_TEMPERATURE)) is not None:
                     target_temp = round(
-                        core.UnitSystem.convert_temperature(
-                            target_temp, unit, _const.TEMP_CELSIUS
+                        core.TemperatureConverter.convert(
+                            target_temp, unit, _const.UnitOfTemperature.CELSIUS
                         ),
                         1,
                     )
@@ -997,8 +1001,8 @@ class TemperatureSettingTrait(_Trait):
         else:
             if (target_temp := attrs.get(_const.ATTR_TEMPERATURE)) is not None:
                 response["thermostatTemperatureSetpoint"] = round(
-                    core.UnitSystem.convert_temperature(
-                        target_temp, unit, _const.TEMP_CELSIUS
+                    core.TemperatureConverter.convert(
+                        target_temp, unit, _const.UnitOfTemperature.CELSIUS
                     ),
                     1,
                 )
@@ -1013,10 +1017,12 @@ class TemperatureSettingTrait(_Trait):
         max_temp = self._state.attributes[_climate.ATTR_MAX_TEMP]
 
         if command == COMMAND_THERMOSTAT_TEMPERATURE_SETPOINT:
-            temp = core.UnitSystem.convert_temperature(
-                params["thermostatTemperatureSetpoint"], _const.TEMP_CELSIUS, unit
+            temp = core.TemperatureConverter.convert(
+                params["thermostatTemperatureSetpoint"],
+                _const.UnitOfTemperature.CELSIUS,
+                unit,
             )
-            if unit == _const.TEMP_FAHRENHEIT:
+            if unit == _const.UnitOfTemperature.FAHRENHEIT:
                 temp = round(temp)
 
             if temp < min_temp or temp > max_temp:
@@ -1037,10 +1043,12 @@ class TemperatureSettingTrait(_Trait):
             )
 
         elif command == COMMAND_THERMOSTAT_TEMPERATURE_SET_RANGE:
-            temp_high = core.UnitSystem.convert_temperature(
-                params["thermostatTemperatureSetpointHigh"], _const.TEMP_CELSIUS, unit
+            temp_high = core.TemperatureConverter.convert(
+                params["thermostatTemperatureSetpointHigh"],
+                _const.UnitOfTemperature.CELSIUS,
+                unit,
             )
-            if unit == _const.TEMP_FAHRENHEIT:
+            if unit == _const.UnitOfTemperature.FAHRENHEIT:
                 temp_high = round(temp_high)
 
             if temp_high < min_temp or temp_high > max_temp:
@@ -1052,10 +1060,12 @@ class TemperatureSettingTrait(_Trait):
                     ),
                 )
 
-            temp_low = core.UnitSystem.convert_temperature(
-                params["thermostatTemperatureSetpointLow"], _const.TEMP_CELSIUS, unit
+            temp_low = core.TemperatureConverter.convert(
+                params["thermostatTemperatureSetpointLow"],
+                _const.UnitOfTemperature.CELSIUS,
+                unit,
             )
-            if unit == _const.TEMP_FAHRENHEIT:
+            if unit == _const.UnitOfTemperature.FAHRENHEIT:
                 temp_low = round(temp_low)
 
             if temp_low < min_temp or temp_low > max_temp:
