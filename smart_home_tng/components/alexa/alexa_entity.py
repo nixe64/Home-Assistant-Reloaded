@@ -72,9 +72,7 @@ class AlexaEntity(_alexa.Entity):
         description = self._entity_conf.get(_const.CONF_DESCRIPTION, self.entity_id)
         if description is None:
             description = self.entity_id
-        return f"{description} via Smart Home - The Next Generation".translate(
-            _TRANSLATION_TABLE
-        )
+        return description.translate(_TRANSLATION_TABLE)
 
     @property
     def alexa_id(self):

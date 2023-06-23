@@ -76,6 +76,7 @@ class Const:
         "number",
         "random",
         "re",
+        "sqlite3",
         "statistics",
         "string",
         "time",

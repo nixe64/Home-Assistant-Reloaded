@@ -26,10 +26,11 @@ import logging
 import typing
 
 from ... import core
-from .alexa_intent_response import AlexaIntentResponse
+from .alexa_intent import AlexaIntent
 
 _alexa: typing.TypeAlias = core.Alexa
 _intent: typing.TypeAlias = core.Intent
+_const: typing.TypeAlias = core.Const
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
 
@@ -37,7 +38,8 @@ _HANDLERS: typing.Final[
     core.Registry[
         str,
         typing.Callable[
-            [core.SmartHomeController, dict], typing.Awaitable[AlexaIntentResponse]
+            [core.SmartHomeControllerComponent, _alexa.Intent],
+            typing.Awaitable[_alexa.IntentResponse],
         ],
     ]
 ] = core.Registry()
@@ -61,31 +63,62 @@ class UnknownRequest(core.SmartHomeControllerError):
 class AlexaIntentsView(core.SmartHomeControllerView):
     """Handle Alexa requests."""
 
-    def __init__(self):
+    def __init__(self, owner: core.SmartHomeControllerComponent):
         url = _INTENTS_API_ENDPOINT
         name = "api:alexa"
         super().__init__(url, name)
+        self._owner = owner
 
     async def post(self, request):
         """Handle Alexa."""
-        controller = request.app[core.Const.KEY_SHC]
+        # controller = request.app[_const.KEY_SHC]
+        user = request[_const.KEY_SHC_USER]
         message: dict = await request.json()
+        token = (
+            message.get("context", {})
+            .get("System", {})
+            .get("person", {})
+            .get("accessToken")
+        )
+        if token is not None:
+            refresh_token = (
+                await self._owner.controller.auth.async_validate_access_token(token)
+            )
+            if refresh_token is not None:
+                user = refresh_token.user
+        else:
+            token = (
+                message.get("context", {})
+                .get("System", {})
+                .get("user", {})
+                .get("accessToken")
+            )
+            if token is not None:
+                refresh_token = (
+                    await self._owner.controller.auth.async_validate_access_token(token)
+                )
+                if refresh_token is not None:
+                    user = refresh_token.user
 
         _LOGGER.debug(f"Received Alexa request: {message}")
 
+        intent = AlexaIntent(message, user)
         try:
-            response = await _async_handle_message(controller, message)
-            return b"" if response is None else self.json(response)
+            response = await _async_handle_message(self._owner, intent)
+            if response is None:
+                return self.json(
+                    {"version": "1.0", "response": {"shouldEndSession": True}}
+                )
+            return self.json(response.as_dict())
         except UnknownRequest as err:
             _LOGGER.warning(str(err))
-            return self.json(_intent_error_response(message, str(err)))
+            return self.json(_intent_error_response(intent, str(err)))
 
         except _intent.UnknownIntent as err:
             _LOGGER.warning(str(err))
             return self.json(
                 _intent_error_response(
-                    message,
-                    "This intent is not yet configured within Home Assistant.",
+                    intent, "Diese Intention wurde noch nicht konfiguriert.", str(err)
                 )
             )
 
@@ -93,24 +126,43 @@ class AlexaIntentsView(core.SmartHomeControllerView):
             _LOGGER.error(f"Received invalid slot data from Alexa: {err}")
             return self.json(
                 _intent_error_response(
-                    message, "Invalid slot information received for this intent."
+                    intent,
+                    "Invalid slot information received for this intent.",
+                    str(err),
                 )
             )
 
         except _intent.IntentError as err:
             _LOGGER.exception(str(err))
-            return self.json(_intent_error_response(message, "Error handling intent."))
+            return self.json(
+                _intent_error_response(intent, "Error handling intent.", str(err))
+            )
 
 
-def _intent_error_response(message: dict, error: str):
+def _intent_error_response(intent: AlexaIntent, error: str, error_info: str = None):
     """Return an Alexa response that will speak the error message."""
-    alexa_intent_info = message.get("request").get("intent")
-    alexa_response = AlexaIntentResponse(alexa_intent_info)
-    alexa_response.add_speech(_alexa.SpeechType.PLAIN_TEXT, error)
+    alexa_response = intent.create_error_response(error, error_info)
     return alexa_response.as_dict()
 
 
-async def _async_handle_message(owner: core.SmartHomeController, message: dict):
+def _intent_permission_required(intent: AlexaIntent, permissions: list[str]):
+    """Return an Alexa response that will speak the error message."""
+    alexa_response = intent.create_response()
+    alexa_response.add_card(
+        _alexa.CardType.ASK_FOR_PERMISSIONS_CONSENT, None, permissions
+    )
+    alexa_response.add_speech(
+        _alexa.SpeechType.PLAIN_TEXT,
+        "Um die Anfrage abzuschließen, benötigt Jarvis Zugriff auf deinen Vornamen. "
+        + "Um fortzufahren, gehe zum Startbildschirm deiner Alexa-App und gewähre die "
+        + "Berechtigungen.",
+    )
+    return alexa_response
+
+
+async def _async_handle_message(
+    owner: core.SmartHomeControllerComponent, intent: AlexaIntent
+):
     """Handle an Alexa intent.
 
     Raises:
@@ -120,19 +172,23 @@ async def _async_handle_message(owner: core.SmartHomeController, message: dict):
      - intent.IntentError
 
     """
-    req = message.get("request")
-    req_type = req["type"]
+    if intent is None:
+        return None
 
-    if not (handler := _HANDLERS.get(req_type)):
-        raise UnknownRequest(f"Received unknown request {req_type}")
+    handler = _HANDLERS.get(intent.application)
+    if handler is None and not (handler := _HANDLERS.get(intent.type)):
+        raise UnknownRequest(f"Received unknown request {intent.type}")
 
-    return await handler(owner, message)
+    return await handler(owner, intent)
 
 
+# Flat intent processing with intent scripts (as in home-assistant)
 @_HANDLERS.register("SessionEndedRequest")
 @_HANDLERS.register("IntentRequest")
 @_HANDLERS.register("LaunchRequest")
-async def _async_handle_intent(owner: core.SmartHomeControllerComponent, message: dict):
+async def _async_handle_intent(
+    owner: core.SmartHomeControllerComponent, intent: AlexaIntent
+):
     """Handle an intent request.
 
     Raises:
@@ -141,25 +197,11 @@ async def _async_handle_intent(owner: core.SmartHomeControllerComponent, message
      - intent.IntentError
 
     """
-    req = message.get("request")
-    alexa_intent_info = req.get("intent")
-    alexa_response = AlexaIntentResponse(alexa_intent_info)
-
-    if req["type"] == "LaunchRequest":
-        intent_name = (
-            message.get("session", {}).get("application", {}).get("applicationId")
-        )
-    elif req["type"] == "SessionEndedRequest":
-        app_id = message.get("session", {}).get("application", {}).get("applicationId")
-        intent_name = f"{app_id}.{req['type']}"
-        alexa_response.variables["reason"] = req["reason"]
-        alexa_response.variables["error"] = req.get("error")
-    else:
-        intent_name = alexa_intent_info["name"]
+    alexa_response = intent.create_response()
 
     intent_response = await owner.controller.intents.async_handle_intent(
         owner.domain,
-        intent_name,
+        intent.qualified_name,
         {key: {"value": value} for key, value in alexa_response.variables.items()},
     )
 
@@ -180,4 +222,4 @@ async def _async_handle_intent(owner: core.SmartHomeControllerComponent, message
             intent_response.card["simple"]["content"],
         )
 
-    return alexa_response.as_dict()
+    return alexa_response

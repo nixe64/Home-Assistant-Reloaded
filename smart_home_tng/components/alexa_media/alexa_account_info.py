@@ -517,7 +517,7 @@ class AlexaAccountInfo:
                 _LOGGER.debug(f"Excluding {dev_name} for lacking capability")
                 continue
 
-            if "bluetoothStates" in bluetooth:
+            if bluetooth is not None and "bluetoothStates" in bluetooth:
                 for b_state in bluetooth["bluetoothStates"]:
                     if serial == b_state["deviceSerialNumber"]:
                         device["bluetooth_state"] = b_state
