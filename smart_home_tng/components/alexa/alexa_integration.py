@@ -31,7 +31,7 @@ from ... import core
 from .alexa_config import AlexaConfig
 from .alexa_entity import _generate_alexa_id
 from .alexa_flash_briefing_view import AlexaFlashBriefingView
-from .alexa_intents_view import AlexaIntentsView
+from .alexa_intents_view import _HANDLERS, AlexaIntentsView
 from .alexa_response import AlexaResponse
 from .entity_wrapper import _ENTITY_ADAPTERS
 from .smart_home_view import SmartHomeView
@@ -84,6 +84,7 @@ class AlexaIntegration(_alexa.Component, core.LogbookPlatform):
         super().__init__(path)
         self._supported_platforms = frozenset([_platform.LOGBOOK])
         self._smart_home_view: SmartHomeView = None
+        self._known_devices: dict[str, dict[str, str]] = {}
 
     @property
     def config_schema(self) -> typing.Callable[[core.ConfigType], core.ConfigType]:
@@ -126,7 +127,7 @@ class AlexaIntegration(_alexa.Component, core.LogbookPlatform):
             _CONF_FLASH_BRIEFINGS, None
         )
 
-        self.controller.register_view(AlexaIntentsView())
+        self.controller.register_view(AlexaIntentsView(self))
 
         if flash_briefings_config:
             self.controller.register_view(
@@ -390,3 +391,64 @@ class AlexaIntegration(_alexa.Component, core.LogbookPlatform):
             _const.LOGBOOK_ENTRY_MESSAGE: message,
             _const.LOGBOOK_ENTRY_ENTITY_ID: entity_id,
         }
+
+    def register_skill_handler(
+        self,
+        skill_id: str,
+        handler: typing.Callable[
+            [core.SmartHomeControllerComponent, _alexa.Intent],
+            typing.Awaitable[_alexa.IntentResponse],
+        ],
+    ) -> None:
+        """
+        Register a handler for a Custom Skill of Alexa.
+
+        skill_id has to be the Skill ID from the alexa developer console.
+        all incoming messages for this skill are routed to that handler.
+
+        ATTENTION: the handler has to use "async def ..." to work correctly.
+        """
+        if (
+            skill_id is None
+            or handler is None
+            or not skill_id.startswith("amzn1.ask.skill.")
+        ):
+            return
+
+        _HANDLERS[skill_id] = handler
+
+    def register_skill_devices(
+        self, skill_id: str, known_devices: dict[str, str]
+    ) -> None:
+        """
+        associate devices to rooms.
+        """
+        if skill_id is not None and skill_id != "" and known_devices is not None:
+            self._known_devices[skill_id] = known_devices
+
+    def get_device_room(self, skill_id: str, device_id: str) -> str:
+        """returns the associated room of a alexa device."""
+        return self._known_devices.get(skill_id, {}).get(device_id)
+
+    async def service_call(self, domain: str, service: str, *args, **kwargs):
+        service_args = {}
+        for keyword, typ, default in [
+            (
+                "context",
+                [core.Context],
+                None,
+            ),
+            ("blocking", [bool], None),
+            ("limit", [float, int], None),
+        ]:
+            if keyword in kwargs and type(kwargs[keyword]) in typ:
+                service_args[keyword] = kwargs.pop(keyword)
+            elif default:
+                service_args[keyword] = default
+
+        if len(args) != 0:
+            raise TypeError(f"service {domain}.{service} takes only keyword arguments")
+
+        await self.controller.services.async_call(
+            domain, service, kwargs, **service_args
+        )

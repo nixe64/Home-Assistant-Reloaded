@@ -217,7 +217,7 @@ async def _async_setup_switches(
             )
         )
 
-    for switch in session.device_helper.light_switches:
+    for switch in session.device_helper.light_switches_bsm:
 
         entities.append(
             BoschSwitch.Entity(

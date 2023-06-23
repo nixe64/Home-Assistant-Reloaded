@@ -542,6 +542,7 @@ class AlexaClient(core.MediaPlayer.Entity, AlexaMedia):
                         else self._media_vol_level
                     )
                 if self._session.get("isPlayingInLemur"):
+                    media_players = self._info.media_players
                     asyncio.gather(
                         *map(
                             lambda x: (media_players[x].async_update()),

@@ -53,6 +53,7 @@ class Const:
     SUPPORTED_INPUTS_EVENTS_TYPES: typing.Final = {
         "PRESS_SHORT",
         "PRESS_LONG",
+        "PRESS_LONG_RELEASED",
         "MOTION",
         "SCENARIO",
         "ALARM",

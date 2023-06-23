@@ -33,13 +33,11 @@ import time
 import traceback
 import typing
 
-import typing_extensions
-
 from ..const import Const
 
 _T = typing.TypeVar("_T")
 _R = typing.TypeVar("_R")
-_P = typing_extensions.ParamSpec("_P")
+_P = typing.ParamSpec("_P")
 _LOGGER: typing.Final = logging.getLogger(__name__)
 
 # pylint: disable=unused-variable

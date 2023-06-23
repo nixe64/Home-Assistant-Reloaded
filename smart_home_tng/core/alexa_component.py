@@ -29,6 +29,7 @@ from .alexa_entity import AlexaEntity
 from .callback import callback
 from .context import Context
 from .smart_home_controller_component import SmartHomeControllerComponent
+from .alexa_intents import Intent, IntentResponse
 
 if not typing.TYPE_CHECKING:
 
@@ -88,3 +89,36 @@ class AlexaComponent(SmartHomeControllerComponent):
         BRIDGE_UNREACHABLE error. This can be used if the API has been disabled in
         configuration.
         """
+
+    @abc.abstractmethod
+    def register_skill_handler(
+        self,
+        skill_id: str,
+        handler: typing.Callable[
+            [SmartHomeControllerComponent, Intent], typing.Awaitable[IntentResponse]
+        ],
+    ) -> None:
+        """
+        Register a handler for a Custom Skill of Alexa.
+
+        skill_id has to be the Skill ID from the alexa developer console.
+        all incoming messages for this skill are routed to that handler.
+
+        ATTENTION: the handler has to use "async def ..." to work correctly.
+        """
+
+    @abc.abstractmethod
+    def register_skill_devices(
+        self, skill_id: str, known_devices: dict[str, str]
+    ) -> None:
+        """
+        associate devices to rooms.
+        """
+
+    @abc.abstractmethod
+    def get_device_room(self, skill_id: str, device_id: str) -> str:
+        """returns the associated room of a alexa device."""
+
+    @abc.abstractmethod
+    async def service_call(self, domain: str, service: str, *args, **kwargs):
+        """Helper to call a service like pyscript. (doesn't work with @pyscript_compile)"""
