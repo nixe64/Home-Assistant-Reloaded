@@ -185,10 +185,6 @@ _DEFAULT_CONFIG: typing.Final = f"""
 # Loads default set of integrations. Do not remove.
 default_config:
 
-# Text to speech
-tts:
-- platform: google_translate
-
 automation: !include {_AUTOMATION_CONFIG_PATH}
 script: !include {_SCRIPT_CONFIG_PATH}
 scene: !include {_SCENE_CONFIG_PATH}
