@@ -64,6 +64,7 @@ from .config_validation import ConfigValidation as cv
 from .const import Const
 from .dependency_error import DependencyError
 from .dhcp_matcher import DHCPMatcher
+from .discovery_dict import DiscoveryDict
 from .discovery_info_type import DiscoveryInfoType
 from .entity_component import EntityComponent
 from .entity_platform import EntityPlatform
@@ -81,10 +82,9 @@ from .requirements_not_found import RequirementsNotFound
 from .secrets import Secrets
 from .smart_home_controller_component import SmartHomeControllerComponent
 from .smart_home_controller_error import SmartHomeControllerError
+from .smart_home_controller_job import SmartHomeControllerJob
 from .unit_system import UnitSystem
 from .yaml_loader import YamlLoader
-from .smart_home_controller_job import SmartHomeControllerJob
-from .discovery_dict import DiscoveryDict
 
 if not typing.TYPE_CHECKING:
 

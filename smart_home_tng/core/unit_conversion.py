@@ -27,7 +27,6 @@ import typing
 from .const import Const
 from .smart_home_controller_error import SmartHomeControllerError
 
-_energy: typing.TypeAlias = Const.UnitOfEnergy
 _flux: typing.TypeAlias = Const.UnitOfVolumetricFlux
 _length: typing.TypeAlias = Const.UnitOfLength
 _mass: typing.TypeAlias = Const.UnitOfMass
@@ -137,22 +136,30 @@ class DistanceConverter(BaseUnitConverter):
     }
 
 
-class EnergyConverter(BaseUnitConverter):
-    """Utility to convert energy values."""
+class ElectricCurrentConverter(BaseUnitConverter):
+    """Utility to convert electric current values."""
 
-    UNIT_CLASS = "energy"
-    NORMALIZED_UNIT = _energy.KILO_WATT_HOUR
-    _UNIT_CONVERSION: dict[str, float] = {
-        _energy.WATT_HOUR: 1 * 1000,
-        _energy.KILO_WATT_HOUR: 1,
-        _energy.MEGA_WATT_HOUR: 1 / 1000,
-        _energy.GIGA_JOULE: 3.6 / 1000,
+    UNIT_CLASS = "electric_current"
+    NORMALIZED_UNIT = Const.UnitOfElectricCurrent.AMPERE
+    _UNIT_CONVERSION: dict[str | None, float] = {
+        Const.UnitOfElectricCurrent.AMPERE: 1,
+        Const.UnitOfElectricCurrent.MILLIAMPERE: 1e3,
+    }
+    VALID_UNITS = set(Const.UnitOfElectricCurrent)
+
+
+class ElectricPotentialConverter(BaseUnitConverter):
+    """Utility to convert electric potential values."""
+
+    UNIT_CLASS = "voltage"
+    NORMALIZED_UNIT = Const.UnitOfElectricPotential.VOLT
+    _UNIT_CONVERSION: dict[str | None, float] = {
+        Const.UnitOfElectricPotential.VOLT: 1,
+        Const.UnitOfElectricPotential.MILLIVOLT: 1e3,
     }
     VALID_UNITS = {
-        _energy.WATT_HOUR,
-        _energy.KILO_WATT_HOUR,
-        _energy.MEGA_WATT_HOUR,
-        _energy.GIGA_JOULE,
+        Const.UnitOfElectricPotential.VOLT,
+        Const.UnitOfElectricPotential.MILLIVOLT,
     }
 
 
@@ -359,6 +366,7 @@ class VolumeConverter(BaseUnitConverter):
         _volume.FLUID_OUNCES: 1 / _FLUID_OUNCE_TO_CUBIC_METER,
         _volume.CUBIC_METERS: 1,
         _volume.CUBIC_FEET: 1 / _CUBIC_FOOT_TO_CUBIC_METER,
+        _volume.CENTUM_CUBIC_FEET: 1 / (100 * _CUBIC_FOOT_TO_CUBIC_METER),
     }
     VALID_UNITS = {
         _volume.LITERS,
@@ -367,4 +375,97 @@ class VolumeConverter(BaseUnitConverter):
         _volume.FLUID_OUNCES,
         _volume.CUBIC_METERS,
         _volume.CUBIC_FEET,
+        _volume.CENTUM_CUBIC_FEET,
+    }
+
+
+class DataRateConverter(BaseUnitConverter):
+    """Utility to convert data rate values."""
+
+    UNIT_CLASS = "data_rate"
+    NORMALIZED_UNIT = Const.UnitOfDataRate.BITS_PER_SECOND
+    # Units in terms of bits
+    _UNIT_CONVERSION: dict[str | None, float] = {
+        Const.UnitOfDataRate.BITS_PER_SECOND: 1,
+        Const.UnitOfDataRate.KILOBITS_PER_SECOND: 1 / 1e3,
+        Const.UnitOfDataRate.MEGABITS_PER_SECOND: 1 / 1e6,
+        Const.UnitOfDataRate.GIGABITS_PER_SECOND: 1 / 1e9,
+        Const.UnitOfDataRate.BYTES_PER_SECOND: 1 / 8,
+        Const.UnitOfDataRate.KILOBYTES_PER_SECOND: 1 / 8e3,
+        Const.UnitOfDataRate.MEGABYTES_PER_SECOND: 1 / 8e6,
+        Const.UnitOfDataRate.GIGABYTES_PER_SECOND: 1 / 8e9,
+        Const.UnitOfDataRate.KIBIBYTES_PER_SECOND: 1 / 2**13,
+        Const.UnitOfDataRate.MEBIBYTES_PER_SECOND: 1 / 2**23,
+        Const.UnitOfDataRate.GIBIBYTES_PER_SECOND: 1 / 2**33,
+    }
+    VALID_UNITS = set(Const.UnitOfDataRate)
+
+
+class EnergyConverter(BaseUnitConverter):
+    """Utility to convert energy values."""
+
+    UNIT_CLASS = "energy"
+    NORMALIZED_UNIT = Const.UnitOfEnergy.KILO_WATT_HOUR
+    _UNIT_CONVERSION: dict[str | None, float] = {
+        Const.UnitOfEnergy.WATT_HOUR: 1 * 1000,
+        Const.UnitOfEnergy.KILO_WATT_HOUR: 1,
+        Const.UnitOfEnergy.MEGA_WATT_HOUR: 1 / 1000,
+        Const.UnitOfEnergy.MEGA_JOULE: 3.6,
+        Const.UnitOfEnergy.GIGA_JOULE: 3.6 / 1000,
+    }
+    VALID_UNITS = {
+        Const.UnitOfEnergy.WATT_HOUR,
+        Const.UnitOfEnergy.KILO_WATT_HOUR,
+        Const.UnitOfEnergy.MEGA_WATT_HOUR,
+        Const.UnitOfEnergy.MEGA_JOULE,
+        Const.UnitOfEnergy.GIGA_JOULE,
+    }
+
+
+class InformationConverter(BaseUnitConverter):
+    """Utility to convert information values."""
+
+    UNIT_CLASS = "information"
+    NORMALIZED_UNIT = Const.UnitOfInformation.BITS
+    # Units in terms of bits
+    _UNIT_CONVERSION: dict[str | None, float] = {
+        Const.UnitOfInformation.BITS: 1,
+        Const.UnitOfInformation.KILOBITS: 1 / 1e3,
+        Const.UnitOfInformation.MEGABITS: 1 / 1e6,
+        Const.UnitOfInformation.GIGABITS: 1 / 1e9,
+        Const.UnitOfInformation.BYTES: 1 / 8,
+        Const.UnitOfInformation.KILOBYTES: 1 / 8e3,
+        Const.UnitOfInformation.MEGABYTES: 1 / 8e6,
+        Const.UnitOfInformation.GIGABYTES: 1 / 8e9,
+        Const.UnitOfInformation.TERABYTES: 1 / 8e12,
+        Const.UnitOfInformation.PETABYTES: 1 / 8e15,
+        Const.UnitOfInformation.EXABYTES: 1 / 8e18,
+        Const.UnitOfInformation.ZETTABYTES: 1 / 8e21,
+        Const.UnitOfInformation.YOTTABYTES: 1 / 8e24,
+        Const.UnitOfInformation.KIBIBYTES: 1 / 2**13,
+        Const.UnitOfInformation.MEBIBYTES: 1 / 2**23,
+        Const.UnitOfInformation.GIBIBYTES: 1 / 2**33,
+        Const.UnitOfInformation.TEBIBYTES: 1 / 2**43,
+        Const.UnitOfInformation.PEBIBYTES: 1 / 2**53,
+        Const.UnitOfInformation.EXBIBYTES: 1 / 2**63,
+        Const.UnitOfInformation.ZEBIBYTES: 1 / 2**73,
+        Const.UnitOfInformation.YOBIBYTES: 1 / 2**83,
+    }
+    VALID_UNITS = set(Const.UnitOfInformation)
+
+
+class UnitlessRatioConverter(BaseUnitConverter):
+    """Utility to convert unitless ratios."""
+
+    UNIT_CLASS = "unitless"
+    NORMALIZED_UNIT = None
+    _UNIT_CONVERSION: dict[str | None, float] = {
+        None: 1,
+        Const.CONCENTRATION_PARTS_PER_BILLION: 1000000000,
+        Const.CONCENTRATION_PARTS_PER_MILLION: 1000000,
+        Const.PERCENTAGE: 100,
+    }
+    VALID_UNITS = {
+        None,
+        Const.PERCENTAGE,
     }

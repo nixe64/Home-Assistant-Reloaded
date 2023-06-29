@@ -267,7 +267,6 @@ class GlobalContextMgr:
                 will_reload.add(root)
 
         if len(will_reload) > 0:
-
             ctx2imports: dict[str, set[str]] = {}
 
             def import_recurse(ctx_name, visited: set[str]):

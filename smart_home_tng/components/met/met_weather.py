@@ -66,7 +66,7 @@ class MetWeather(core.CoordinatorEntity[MetDataUpdateCoordinator], core.WeatherE
         return self.coordinator.owner
 
     @property
-    def track_home(self) -> (typing.Any | bool):
+    def track_home(self) -> typing.Any | bool:
         """Return if we are tracking home."""
         return self._config.get(Const.CONF_TRACK_HOME, False)
 

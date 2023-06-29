@@ -555,7 +555,10 @@ class Const:
 
     # #### UNITS OF MEASUREMENT ####
     # Apparent power units
-    POWER_VOLT_AMPERE: typing.Final = "VA"
+    class UnitOfApparentPower(strenum.StrEnum):
+        """Apparent power units."""
+
+        VOLT_AMPERE = "VA"
 
     # Power units
     class UnitOfPower(strenum.StrEnum):
@@ -574,16 +577,21 @@ class Const:
 
         GIGA_JOULE = "GJ"
         KILO_WATT_HOUR = "kWh"
+        MEGA_JOULE = "MJ"
         MEGA_WATT_HOUR = "MWh"
         WATT_HOUR = "Wh"
 
-    # Electric_current units
-    ELECTRIC_CURRENT_MILLIAMPERE: typing.Final = "mA"
-    ELECTRIC_CURRENT_AMPERE: typing.Final = "A"
+    class UnitOfElectricCurrent(strenum.StrEnum):
+        """Electric current units."""
 
-    # Electric_potential units
-    ELECTRIC_POTENTIAL_MILLIVOLT: typing.Final = "mV"
-    ELECTRIC_POTENTIAL_VOLT: typing.Final = "V"
+        MILLIAMPERE = "mA"
+        AMPERE = "A"
+
+    class UnitOfElectricPotential(strenum.StrEnum):
+        """Electric potential units."""
+
+        MILLIVOLT = "mV"
+        VOLT = "V"
 
     # Degree units
     DEGREE: typing.Final = "°"
@@ -602,15 +610,18 @@ class Const:
         KELVIN = "K"
 
     # Time units
-    TIME_MICROSECONDS: typing.Final = "μs"
-    TIME_MILLISECONDS: typing.Final = "ms"
-    TIME_SECONDS: typing.Final = "s"
-    TIME_MINUTES: typing.Final = "min"
-    TIME_HOURS: typing.Final = "h"
-    TIME_DAYS: typing.Final = "d"
-    TIME_WEEKS: typing.Final = "w"
-    TIME_MONTHS: typing.Final = "m"
-    TIME_YEARS: typing.Final = "y"
+    class UnitOfTime(strenum.StrEnum):
+        """Time units."""
+
+        MICROSECONDS = "µs"
+        MILLISECONDS = "ms"
+        SECONDS = "s"
+        MINUTES = "min"
+        HOURS = "h"
+        DAYS = "d"
+        WEEKS = "w"
+        MONTHS = "m"
+        YEARS = "y"
 
     # Length units
     class UnitOfLength(strenum.StrEnum):
@@ -626,10 +637,13 @@ class Const:
         MILES = "mi"
 
     # Frequency units
-    FREQUENCY_HERTZ: typing.Final = "Hz"
-    FREQUENCY_KILOHERTZ: typing.Final = "kHz"
-    FREQUENCY_MEGAHERTZ: typing.Final = "MHz"
-    FREQUENCY_GIGAHERTZ: typing.Final = "GHz"
+    class UnitOfFrequency(strenum.StrEnum):
+        """Frequency units."""
+
+        HERTZ = "Hz"
+        KILOHERTZ = "kHz"
+        MEGAHERTZ = "MHz"
+        GIGAHERTZ = "GHz"
 
     # Pressure units
     class UnitOfPressure(strenum.StrEnum):
@@ -646,14 +660,16 @@ class Const:
         PSI = "psi"
 
     # Sound pressure units
-    SOUND_PRESSURE_DB: typing.Final = "dB"
-    SOUND_PRESSURE_WEIGHTED_DBA: typing.Final = "dBa"
+    class UnitOfSoundPressure(strenum.StrEnum):
+        DECIBEL = "dB"
+        WEIGHTED_DECIBEL_A = "dBA"
 
     # Volume units
     class UnitOfVolume(strenum.StrEnum):
         """Volume units."""
 
         CUBIC_FEET = "ft³"
+        CENTUM_CUBIC_FEET = "CCF"
         CUBIC_METERS = "m³"
         LITERS = "L"
         MILLILITERS = "mL"
@@ -699,9 +715,11 @@ class Const:
     # Rotational speed units
     REVOLUTIONS_PER_MINUTE: typing.Final = "rpm"
 
-    # Irradiation units
-    IRRADIATION_WATTS_PER_SQUARE_METER: typing.Final = "W/m²"
-    IRRADIATION_BTUS_PER_HOUR_SQUARE_FOOT: typing.Final = "BTU/(h×ft²)"
+    class UnitOfIrradiance(strenum.StrEnum):
+        """Irradiance units."""
+
+        WATTS_PER_SQUARE_METER = "W/m²"
+        BTUS_PER_HOUR_SQUARE_FOOT = "BTU/(h⋅ft²)"
 
     class UnitOfVolumetricFlux(strenum.StrEnum):
         """Volumetric flux, commonly used for precipitation intensity.
@@ -722,10 +740,21 @@ class Const:
         MILLIMETERS_PER_HOUR = "mm/h"
         """Derived from mm³/(mm².h)"""
 
-    # Precipitation units
-    PRECIPITATION_MILLIMETERS_PER_HOUR: typing.Final = "mm/h"
-    PRECIPITATION_INCHES: typing.Final = "in"
-    PRECIPITATION_INCHES_PER_HOUR: typing.Final = "in/h"
+    class UnitOfPrecipitationDepth(strenum.StrEnum):
+        """Precipitation depth.
+
+        The derivation of these units is a volume of rain amassing in a container
+        with constant cross section
+        """
+
+        INCHES = "in"
+        """Derived from in³/in²"""
+
+        MILLIMETERS = "mm"
+        """Derived from mm³/mm²"""
+
+        CENTIMETERS = "cm"
+        """Derived from cm³/cm²"""
 
     # Concentration units
     CONCENTRATION_MICROGRAMS_PER_CUBIC_METER: typing.Final = "µg/m³"
@@ -750,40 +779,46 @@ class Const:
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT: typing.Final = "dBm"
 
     # Data units
-    DATA_BITS: typing.Final = "bit"
-    DATA_KILOBITS: typing.Final = "kbit"
-    DATA_MEGABITS: typing.Final = "Mbit"
-    DATA_GIGABITS: typing.Final = "Gbit"
-    DATA_BYTES: typing.Final = "B"
-    DATA_KILOBYTES: typing.Final = "kB"
-    DATA_MEGABYTES: typing.Final = "MB"
-    DATA_GIGABYTES: typing.Final = "GB"
-    DATA_TERABYTES: typing.Final = "TB"
-    DATA_PETABYTES: typing.Final = "PB"
-    DATA_EXABYTES: typing.Final = "EB"
-    DATA_ZETTABYTES: typing.Final = "ZB"
-    DATA_YOTTABYTES: typing.Final = "YB"
-    DATA_KIBIBYTES: typing.Final = "KiB"
-    DATA_MEBIBYTES: typing.Final = "MiB"
-    DATA_GIBIBYTES: typing.Final = "GiB"
-    DATA_TEBIBYTES: typing.Final = "TiB"
-    DATA_PEBIBYTES: typing.Final = "PiB"
-    DATA_EXBIBYTES: typing.Final = "EiB"
-    DATA_ZEBIBYTES: typing.Final = "ZiB"
-    DATA_YOBIBYTES: typing.Final = "YiB"
+    class UnitOfInformation(strenum.StrEnum):
+        """Information units."""
+
+        BITS = "bit"
+        KILOBITS = "kbit"
+        MEGABITS = "Mbit"
+        GIGABITS = "Gbit"
+        BYTES = "B"
+        KILOBYTES = "kB"
+        MEGABYTES = "MB"
+        GIGABYTES = "GB"
+        TERABYTES = "TB"
+        PETABYTES = "PB"
+        EXABYTES = "EB"
+        ZETTABYTES = "ZB"
+        YOTTABYTES = "YB"
+        KIBIBYTES = "KiB"
+        GIBIBYTES = "GiB"
+        MEBIBYTES = "MiB"
+        TEBIBYTES = "TiB"
+        PEBIBYTES = "PiB"
+        EXBIBYTES = "EiB"
+        ZEBIBYTES = "ZiB"
+        YOBIBYTES = "YiB"
 
     # Data_rate units
-    DATA_RATE_BITS_PER_SECOND: typing.Final = "bit/s"
-    DATA_RATE_KILOBITS_PER_SECOND: typing.Final = "kbit/s"
-    DATA_RATE_MEGABITS_PER_SECOND: typing.Final = "Mbit/s"
-    DATA_RATE_GIGABITS_PER_SECOND: typing.Final = "Gbit/s"
-    DATA_RATE_BYTES_PER_SECOND: typing.Final = "B/s"
-    DATA_RATE_KILOBYTES_PER_SECOND: typing.Final = "kB/s"
-    DATA_RATE_MEGABYTES_PER_SECOND: typing.Final = "MB/s"
-    DATA_RATE_GIGABYTES_PER_SECOND: typing.Final = "GB/s"
-    DATA_RATE_KIBIBYTES_PER_SECOND: typing.Final = "KiB/s"
-    DATA_RATE_MEBIBYTES_PER_SECOND: typing.Final = "MiB/s"
-    DATA_RATE_GIBIBYTES_PER_SECOND: typing.Final = "GiB/s"
+    class UnitOfDataRate(strenum.StrEnum):
+        """Data rate units."""
+
+        BITS_PER_SECOND = "bit/s"
+        KILOBITS_PER_SECOND = "kbit/s"
+        MEGABITS_PER_SECOND = "Mbit/s"
+        GIGABITS_PER_SECOND = "Gbit/s"
+        BYTES_PER_SECOND = "B/s"
+        KILOBYTES_PER_SECOND = "kB/s"
+        MEGABYTES_PER_SECOND = "MB/s"
+        GIGABYTES_PER_SECOND = "GB/s"
+        KIBIBYTES_PER_SECOND = "KiB/s"
+        MEBIBYTES_PER_SECOND = "MiB/s"
+        GIBIBYTES_PER_SECOND = "GiB/s"
 
     # #### SERVICES ####
     SERVICE_SHC_STOP: typing.Final = "stop"

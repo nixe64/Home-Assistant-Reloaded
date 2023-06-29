@@ -141,7 +141,6 @@ class MutexPool(sql_pool.StaticPool):
         MutexPool.pool_lock.release()
 
     def _do_get(self) -> typing.Any:
-
         if _DEBUG_MUTEX_POOL_TRACE:
             trace = traceback.extract_stack()
             trace_msg = "".join(traceback.format_list(trace[:-1]))

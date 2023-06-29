@@ -27,7 +27,7 @@ import voluptuous as vol
 
 from ... import core
 
-_cv: typing.TypeAlias = core.ConfigValidation
+_ConfVal: typing.TypeAlias = core.ConfigValidation
 
 
 # pylint: disable=unused-variable
@@ -38,14 +38,14 @@ class Const:
     TAG_ID: typing.Final = "tag_id"
     LAST_SCANNED: typing.Final = "last_scanned"
     CREATE_FIELDS: typing.Final = {
-        vol.Optional(TAG_ID): _cv.string,
+        vol.Optional(TAG_ID): _ConfVal.string,
         vol.Optional(core.Const.CONF_NAME): vol.All(str, vol.Length(min=1)),
-        vol.Optional("description"): _cv.string,
-        vol.Optional(LAST_SCANNED): _cv.datetime,
+        vol.Optional("description"): _ConfVal.string,
+        vol.Optional(LAST_SCANNED): _ConfVal.datetime,
     }
 
     UPDATE_FIELDS: typing.Final = {
         vol.Optional(core.Const.CONF_NAME): vol.All(str, vol.Length(min=1)),
-        vol.Optional("description"): _cv.string,
-        vol.Optional(LAST_SCANNED): _cv.datetime,
+        vol.Optional("description"): _ConfVal.string,
+        vol.Optional(LAST_SCANNED): _ConfVal.datetime,
     }

@@ -127,7 +127,7 @@ _SENSOR_DESCRIPTIONS: typing.Final[dict[str, core.Sensor.EntityDescription]] = {
     ),
     "CURRENT": core.Sensor.EntityDescription(
         key="CURRENT",
-        native_unit_of_measurement=core.Const.ELECTRIC_CURRENT_MILLIAMPERE,
+        native_unit_of_measurement=core.Const.UnitOfElectricsCurrent.MILLIAMPERE,
         device_class=core.Sensor.DeviceClass.CURRENT,
         state_class=core.Sensor.StateClass.MEASUREMENT,
     ),
@@ -151,7 +151,7 @@ _SENSOR_DESCRIPTIONS: typing.Final[dict[str, core.Sensor.EntityDescription]] = {
     ),
     "VOLTAGE": core.Sensor.EntityDescription(
         key="VOLTAGE",
-        native_unit_of_measurement=core.Const.ELECTRIC_POTENTIAL_VOLT,
+        native_unit_of_measurement=core.Const.UnitOfElectricPotential.VOLT,
         device_class=core.Sensor.DeviceClass.VOLTAGE,
         state_class=core.Sensor.StateClass.MEASUREMENT,
     ),
@@ -196,7 +196,7 @@ _SENSOR_DESCRIPTIONS: typing.Final[dict[str, core.Sensor.EntityDescription]] = {
     ),
     "FREQUENCY": core.Sensor.EntityDescription(
         key="FREQUENCY",
-        native_unit_of_measurement=core.Const.FREQUENCY_HERTZ,
+        native_unit_of_measurement=core.Const.UnitOfFrequency.HERTZ,
     ),
     "VALUE": core.Sensor.EntityDescription(
         key="VALUE",

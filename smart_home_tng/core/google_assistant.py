@@ -391,7 +391,6 @@ class _AbstractConfig(abc.ABC):
             return
 
         for user_agent_id, _ in self._store.agent_user_ids.items():
-
             if (webhook_id := self.get_local_webhook_id(user_agent_id)) is None:
                 setup_successful = False
                 break

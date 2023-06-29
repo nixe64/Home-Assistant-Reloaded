@@ -30,6 +30,7 @@ import boto3
 from ... import core
 from .const import Const
 
+# pylint: disable=invalid-name
 _tts: typing.TypeAlias = core.TTS
 _LOGGER: typing.Final = logging.getLogger(__name__)
 

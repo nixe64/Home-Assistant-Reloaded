@@ -317,7 +317,6 @@ class _CommonFlowHandler:
             # Make a copy of the schema with suggested values set to saved options
             schema = {}
             for key, val in data_schema.schema.items():
-
                 if isinstance(key, vol.Marker):
                     # Exclude advanced field
                     if (

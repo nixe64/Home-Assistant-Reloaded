@@ -34,6 +34,7 @@ from .link_user_view import LinkUserView
 from .login_flow_index_view import LoginFlowIndexView
 from .login_flow_resource_view import LoginFlowResourceView
 from .mfa_flow_manager import MfaFlowManager
+from .revoke_token_view import RevokeTokenView
 from .token_view import TokenView
 
 _WS_TYPE_CURRENT_USER: typing.Final = "auth/current_user"
@@ -205,6 +206,7 @@ class Auth(core.AuthComponent):
         self._shc.data[self.domain] = store_result
 
         self._shc.register_view(TokenView(retrieve_result))
+        self._shc.register_view(RevokeTokenView())
         self._shc.register_view(LinkUserView(retrieve_result))
         self._shc.register_view(core.OAuth2AuthorizeCallbackView())
 

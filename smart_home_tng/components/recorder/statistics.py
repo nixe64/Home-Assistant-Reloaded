@@ -1003,6 +1003,57 @@ def _reduce_statistics_per_day(
     )
 
 
+def reduce_week_factory() -> (
+    tuple[
+        typing.Callable[[dt.datetime, dt.datetime], bool],
+        typing.Callable[[float], tuple[float, float]],
+    ]
+):
+    """Return functions to match same week and week start end."""
+    _boundaries: tuple[dt.datetime, dt.datetime] = (None, None)
+
+    def _same_week(time1: dt.datetime, time2: dt.datetime) -> bool:
+        """Return True if time1 and time2 are in the same year and week."""
+        nonlocal _boundaries
+        time1 = core.helpers.as_local(time1)
+        time2 = core.helpers.as_local(time2)
+        if (
+            _boundaries[0] is None
+            or _boundaries[1] is None
+            or not _boundaries[0] <= time1 < _boundaries[1]
+        ):
+            _boundaries = _week_start_end_cached(time1)
+        return _boundaries[0] <= time2 < _boundaries[1]
+
+    def _week_start_end(time: dt.datetime) -> tuple[dt.datetime, dt.datetime]:
+        """Return the start and end of the period (week) time is within."""
+        nonlocal _boundaries
+        time_local = core.helpers.as_local(time)
+        start_local = time_local.replace(
+            hour=0, minute=0, second=0, microsecond=0
+        ) - dt.timedelta(days=time_local.weekday())
+        return (
+            start_local,
+            (start_local + dt.timedelta(days=7)),
+        )
+
+    # We create _week_start_end_ts_cached in the closure in case the timezone changes
+    _week_start_end_cached = ft.lru_cache(maxsize=6)(_week_start_end)
+
+    return _same_week, _week_start_end_cached
+
+
+def _reduce_statistics_per_week(
+    stats: dict[str, list[dict[str, typing.Any]]],
+    types: set[typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]],
+) -> dict[str, list[dict[str, typing.Any]]]:
+    """Reduce hourly statistics to weekly statistics."""
+    _same_week, _week_start_end = reduce_week_factory()
+    return _reduce_statistics(
+        stats, _same_week, _week_start_end, dt.timedelta(days=7), types
+    )
+
+
 def same_month(time1: dt.datetime, time2: dt.datetime) -> bool:
     """Return True if time1 and time2 are in the same year and month."""
     date1 = core.helpers.as_local(time1).date()
@@ -1034,6 +1085,33 @@ def _reduce_statistics_per_month(
     )
 
 
+_type_column_mapping: typing.Final = {
+    "last_reset": "last_reset",
+    "max": "max",
+    "mean": "mean",
+    "min": "min",
+    "state": "state",
+    "sum": "sum",
+}
+
+
+def _generate_select_columns_for_types_stmt(
+    table: type[model.StatisticsBase],
+    types: set[typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]],
+) -> sql.sql.StatementLambdaElement:
+    columns = sql.select(table.metadata_id, table.start)
+    track_on: list[str | None] = [
+        table.__tablename__,  # type: ignore[attr-defined]
+    ]
+    for key, column in _type_column_mapping.items():
+        if key in types:
+            columns = columns.add_columns(getattr(table, column))
+            track_on.append(column)
+        else:
+            track_on.append(None)
+    return sql.lambda_stmt(lambda: columns, track_on=track_on)
+
+
 def _statistics_during_period_stmt(
     start_time: dt.datetime,
     end_time: dt.datetime,
@@ -1045,29 +1123,99 @@ def _statistics_during_period_stmt(
 
     This prepares a lambda_stmt query, so we don't insert the parameters yet.
     """
-    columns = [table.metadata_id, table.start]
-    if "last_reset" in types:
-        columns.append(table.last_reset)
-    if "max" in types:
-        columns.append(table.max)
-    if "mean" in types:
-        columns.append(table.mean)
-    if "min" in types:
-        columns.append(table.min)
-    if "state" in types:
-        columns.append(table.state)
-    if "sum" in types:
-        columns.append(table.sum)
-
-    stmt = sql.lambda_stmt(
-        lambda: sql.select(columns).filter(table.start >= start_time)
-    )
+    stmt = _generate_select_columns_for_types_stmt(table, types)
+    stmt += lambda q: q.filter(table.start >= start_time)
     if end_time is not None:
         stmt += lambda q: q.filter(table.start < end_time)
     if metadata_ids:
-        stmt += lambda q: q.filter(table.metadata_id.in_(metadata_ids))
+        stmt += lambda q: q.filter(
+            # https://github.com/python/mypy/issues/2608
+            table.metadata_id.in_(metadata_ids)  # type:ignore[arg-type]
+        )
     stmt += lambda q: q.order_by(table.metadata_id, table.start)
     return stmt
+
+
+def _extract_metadata_and_discard_impossible_columns(
+    metadata: dict[str, tuple[int, _statistic.MetaData]],
+    types: set[typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]],
+) -> list[int]:
+    """Extract metadata ids from metadata and discard impossible columns."""
+    metadata_ids = []
+    has_mean = False
+    has_sum = False
+    for metadata_id, stats_metadata in metadata.values():
+        metadata_ids.append(metadata_id)
+        has_mean |= stats_metadata["has_mean"]
+        has_sum |= stats_metadata["has_sum"]
+    if not has_mean:
+        types.discard("mean")
+        types.discard("min")
+        types.discard("max")
+    if not has_sum:
+        types.discard("sum")
+        types.discard("state")
+    return metadata_ids
+
+
+def _find_month_end_time(timestamp: dt.datetime) -> dt.datetime:
+    """Return the end of the month (midnight at the first day of the next month)."""
+    # We add 4 days to the end to make sure we are in the next month
+    return (timestamp.replace(day=28) + dt.timedelta(days=4)).replace(
+        day=1, hour=0, minute=0, second=0, microsecond=0
+    )
+
+
+def _augment_result_with_change(
+    rec_comp: RecorderComponent,
+    session: sql_orm.Session,
+    start_time: dt.datetime,
+    units: dict[str, str] | None,
+    types: set[
+        typing.Literal["change", "last_reset", "max", "mean", "min", "state", "sum"]
+    ],
+    table: type[model.Statistics | model.StatisticsShortTerm],
+    metadata: dict[str, tuple[int, _statistic.MetaData]],
+    result: dict[str, list[dict[str, typing.Any]]],
+) -> None:
+    """Add change to the result."""
+    drop_sum = "sum" not in types
+    prev_sums = {}
+    if tmp := _statistics_at_time(
+        session,
+        {metadata[statistic_id][0] for statistic_id in result},
+        table,
+        start_time,
+    ):
+        _metadata = dict(metadata.values())
+        for row in tmp:
+            metadata_by_id = _metadata[row.metadata_id]
+            statistic_id = metadata_by_id["statistic_id"]
+
+            state_unit = unit = metadata_by_id["unit_of_measurement"]
+            if state := rec_comp.controller.states.get(statistic_id):
+                state_unit = state.attributes.get(core.Const.ATTR_UNIT_OF_MEASUREMENT)
+            convert = _get_statistic_to_display_unit_converter(unit, state_unit, units)
+
+            if convert is not None:
+                prev_sums[statistic_id] = convert(row.sum)
+            else:
+                prev_sums[statistic_id] = row.sum
+
+    for statistic_id, rows in result.items():
+        prev_sum = prev_sums.get(statistic_id) or 0
+        for statistics_row in rows:
+            if "sum" not in statistics_row:
+                continue
+            if drop_sum:
+                _sum = statistics_row.pop("sum")
+            else:
+                _sum = statistics_row["sum"]
+            if _sum is None:
+                statistics_row["change"] = None
+                continue
+            statistics_row["change"] = _sum - prev_sum
+            prev_sum = _sum
 
 
 def statistics_during_period(
@@ -1077,7 +1225,9 @@ def statistics_during_period(
     statistic_ids: list[str],
     period: typing.Literal["5minute", "day", "hour", "month"],
     units: dict[str, str],
-    types: set[typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]],
+    types: set[
+        typing.Literal["change", "last_reset", "max", "mean", "min", "state", "sum"]
+    ],
 ) -> dict[str, list[dict[str, typing.Any]]]:
     """Return statistics during UTC period start_time - end_time for the statistic_ids.
 
@@ -1091,9 +1241,50 @@ def statistics_during_period(
         if not metadata:
             return {}
 
+        _types: set[
+            typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]
+        ] = set()
+        for stat_type in types:
+            if stat_type == "change":
+                _types.add("sum")
+                continue
+            _types.add(stat_type)
+
         metadata_ids = None
         if statistic_ids is not None:
-            metadata_ids = [metadata_id for metadata_id, _ in metadata.values()]
+            metadata_ids = _extract_metadata_and_discard_impossible_columns(
+                metadata, _types
+            )
+
+        # Align start_time and end_time with the period
+        if period == "day":
+            start_time = core.helpers.as_local(start_time).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            start_time = start_time.replace()
+            if end_time is not None:
+                end_local = core.helpers.as_local(end_time)
+                end_time = end_local.replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                ) + dt.timedelta(days=1)
+        elif period == "week":
+            start_local = core.helpers.as_local(start_time)
+            start_time = start_local.replace(
+                hour=0, minute=0, second=0, microsecond=0
+            ) - dt.timedelta(days=start_local.weekday())
+            if end_time is not None:
+                end_local = core.helpers.as_local(end_time)
+                end_time = (
+                    end_local.replace(hour=0, minute=0, second=0, microsecond=0)
+                    - dt.timedelta(days=end_local.weekday())
+                    + dt.timedelta(days=7)
+                )
+        elif period == "month":
+            start_time = core.helpers.as_local(start_time).replace(
+                day=1, hour=0, minute=0, second=0, microsecond=0
+            )
+            if end_time is not None:
+                end_time = _find_month_end_time(core.helpers.as_local(end_time))
 
         if period == "5minute":
             table = model.StatisticsShortTerm
@@ -1101,26 +1292,12 @@ def statistics_during_period(
             table = model.Statistics
 
         stmt = _statistics_during_period_stmt(
-            start_time, end_time, metadata_ids, table, types
+            start_time, end_time, metadata_ids, table, _types
         )
         stats = util.execute_stmt_lambda_element(session, stmt)
 
         if not stats:
             return {}
-        # Return statistics combined with metadata
-        if period not in ("day", "month"):
-            return _sorted_statistics_to_dict(
-                rec_comp,
-                session,
-                stats,
-                statistic_ids,
-                metadata,
-                True,
-                table,
-                start_time,
-                units,
-                types,
-            )
 
         result = _sorted_statistics_to_dict(
             rec_comp,
@@ -1132,13 +1309,25 @@ def statistics_during_period(
             table,
             start_time,
             units,
-            types,
+            _types,
         )
 
-        if period == "day":
-            return _reduce_statistics_per_day(result, types)
+    if period == "day":
+        result = _reduce_statistics_per_day(result, _types)
 
-        return _reduce_statistics_per_month(result, types)
+    elif period == "week":
+        result = _reduce_statistics_per_week(result, _types)
+
+    elif period == "month":
+        result = _reduce_statistics_per_month(result, _types)
+
+    if "change" in types:
+        _augment_result_with_change(
+            rec_comp, session, start_time, units, types, table, metadata, result
+        )
+
+    # Return statistics combined with metadata
+    return result
 
 
 def _get_last_statistics_stmt(

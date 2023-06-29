@@ -115,7 +115,6 @@ class FritzboxPortSwitch(FritzboxBaseSwitch, core.Switch.Entity):
             self._attributes[attr] = self.port_mapping[key]
 
     async def _async_switch_on_off_executor(self, turn_on: bool) -> bool:
-
         if self.port_mapping is None:
             return False
 
