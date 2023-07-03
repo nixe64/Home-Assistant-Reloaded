@@ -33,7 +33,7 @@ from .const import Const
 from .group import Group
 from .group_integration_registry import GroupIntegrationRegistry, _current_domain
 
-_cv: typing.TypeAlias = core.ConfigValidation
+_ConfVal: typing.TypeAlias = core.ConfigValidation
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
 _PLATFORMS: typing.Final = [
@@ -78,7 +78,7 @@ class GroupComponent(
         schema = vol.Schema(
             {
                 self.domain: vol.Schema(
-                    {_cv.match_all: vol.All(_conf_preprocess, Const.GROUP_SCHEMA)}
+                    {_ConfVal.match_all: vol.All(_conf_preprocess, Const.GROUP_SCHEMA)}
                 )
             },
             extra=vol.ALLOW_EXTRA,
@@ -257,14 +257,16 @@ class GroupComponent(
             schema=vol.All(
                 vol.Schema(
                     {
-                        vol.Required(Const.ATTR_OBJECT_ID): _cv.slug,
-                        vol.Optional(core.Const.ATTR_NAME): _cv.string,
-                        vol.Optional(core.Const.ATTR_ICON): _cv.string,
-                        vol.Optional(Const.ATTR_ALL): _cv.boolean,
-                        vol.Exclusive(Const.ATTR_ENTITIES, "entities"): _cv.entity_ids,
+                        vol.Required(Const.ATTR_OBJECT_ID): _ConfVal.slug,
+                        vol.Optional(core.Const.ATTR_NAME): _ConfVal.string,
+                        vol.Optional(core.Const.ATTR_ICON): _ConfVal.string,
+                        vol.Optional(Const.ATTR_ALL): _ConfVal.boolean,
+                        vol.Exclusive(
+                            Const.ATTR_ENTITIES, "entities"
+                        ): _ConfVal.entity_ids,
                         vol.Exclusive(
                             Const.ATTR_ADD_ENTITIES, "entities"
-                        ): _cv.entity_ids,
+                        ): _ConfVal.entity_ids,
                     }
                 )
             ),
@@ -274,7 +276,7 @@ class GroupComponent(
             self.domain,
             Const.SERVICE_REMOVE,
             self._groups_service_handler,
-            schema=vol.Schema({vol.Required(Const.ATTR_OBJECT_ID): _cv.slug}),
+            schema=vol.Schema({vol.Required(Const.ATTR_OBJECT_ID): _ConfVal.slug}),
         )
         return True
 

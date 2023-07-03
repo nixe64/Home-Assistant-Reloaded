@@ -53,7 +53,9 @@ class RecorderStatisticsBase(Protocol):
         statistic_ids: list[str],
         period: typing.Literal["5minute", "day", "hour", "month"],
         units: dict[str, str],
-        types: set[typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]],
+        types: set[
+            typing.Literal["change", "last_reset", "max", "mean", "min", "state", "sum"]
+        ],
     ) -> dict[str, list[dict[str, typing.Any]]]:
         """Return statistics during UTC period start_time - end_time for the statistic_ids.
 

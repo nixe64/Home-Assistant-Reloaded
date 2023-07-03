@@ -36,7 +36,7 @@ from .core.the_next_generation import TheNextGeneration
 from .core.event_loop_policy import EventLoopPolicy
 from .core.setup_manager import SetupManager
 
-_FAULT_LOG_FILENAME: typing.Final = "smart-home-tng.log.fault"
+_FAULT_LOG_FILENAME: typing.Final = "smart_home_tng.log.fault"
 _TASK_CANCELATION_TIMEOUT: typing.Final = 5
 _LOGGER: typing.Final = logging.getLogger(__name__)
 
@@ -125,7 +125,7 @@ def _get_arguments() -> argparse.Namespace:
         "--log-file",
         type=str,
         default=None,
-        help="Log file to write to.  If not set, CONFIG/smart-home-tng.log is used",
+        help="Log file to write to.  If not set, CONFIG/smart_home_tng.log is used",
     )
     parser.add_argument(
         "--log-no-color", action="store_true", help="Disable color logs"

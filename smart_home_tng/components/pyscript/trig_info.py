@@ -587,7 +587,11 @@ class TrigInfo:
         ev_name = self.name.replace(".", "_")
         ev_entity_id = f"pyscript.{ev_name}"
 
-        event_data = dict(name=ev_name, entity_id=ev_entity_id, func_args=func_args)
+        event_data = {
+            "name": ev_name,
+            "entity_id": ev_entity_id,
+            "func_args": func_args,
+        }
         self.controller.bus.async_fire(
             Const.EVENT_PYSCRIPT_RUNNING, event_data, context=context
         )

@@ -24,15 +24,15 @@ This is free software and for that reason the [license agreement][license-url] a
 
 If something gets stuck, I'll still help (as far as I can).
 
-[logo]: images/hassio-icon.png
-[project-url]: https://www.home-assistant.io/docs/automation/using_blueprints/
+[logo]: images/logo.svg
+[project-url]: https://github.com/nixe64/The-Next-Generation/
 
 [license-badge]: images/license.en.svg
 [license-url]: ../COPYRIGHT.en.md
 
 [version-badge]: images/version.svg
-[version-url]: https://github.com/nixe64/Home-Assistant-Blueprint/releases
+[version-url]: https://github.com/nixe64/The-Next-Generation/releases
 
-[issue-url]: https://github.com/nixe64/Home-Assistant-Blueprint/issues
+[issue-url]:https://github.com/nixe64/The-Next-Generation/issues
 
 [soq-url]: https://stackoverflow.com/questions/

@@ -128,7 +128,6 @@ class Auth:
         return core.helpers.utcnow() < preemptive_expire_time
 
     async def _async_request_new_token(self, lwa_params: dict):
-
         try:
             session = core.HttpClient.async_get_clientsession(self._shc)
             async with async_timeout.timeout(10):

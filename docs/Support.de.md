@@ -23,15 +23,15 @@ Der technische Support für die Software in meinen Repositories ist nur sehr ein
 
 Wenn es irgendwo klemmt, helfe ich aber trotzdem (soweit es mir möglich ist).
 
-[logo]: images/hassio-icon.png
-[project-url]: https://www.home-assistant.io/docs/automation/using_blueprints/
+[logo]: images/logo.svg
+[project-url]: https://github.com/nixe64/The-Next-Generation/
 
 [license-badge]: images/license.de.svg
 [license-url]: ../COPYRIGHT.de.md
 
 [version-badge]: images/version.svg
-[version-url]: https://github.com/nixe64/Home-Assistant-Blueprint/releases
+[version-url]: https://github.com/nixe64/The-Next-Generation/releases
 
-[issue-url]: https://github.com/nixe64/Home-Assistant-Blueprint/issues
+[issue-url]: https://github.com/nixe64/The-Next-Generation/issues
 
 [soq-url]: https://stackoverflow.com/questions/

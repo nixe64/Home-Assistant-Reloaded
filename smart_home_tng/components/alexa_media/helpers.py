@@ -160,7 +160,9 @@ async def _calculate_uuid(
         + return_index
         # hash email/url in case HA uuid duplicated
         + int(  # nosec
-            hashlib.md5((email.lower() + url.lower()).encode()).hexdigest(),
+            hashlib.md5(
+                (email.lower() + url.lower()).encode(), usedforsecurity=False
+            ).hexdigest(),
             16,
         )
     )[-32:]

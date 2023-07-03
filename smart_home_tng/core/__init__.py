@@ -356,13 +356,18 @@ from .unauthorized import Unauthorized
 from .undefined_substitution import UndefinedSubstitution
 from .unit_conversion import (
     BaseUnitConverter,
+    DataRateConverter,
     DistanceConverter,
+    ElectricCurrentConverter,
+    ElectricPotentialConverter,
     EnergyConverter,
+    InformationConverter,
     MassConverter,
     PowerConverter,
     PressureConverter,
     SpeedConverter,
     TemperatureConverter,
+    UnitlessRatioConverter,
     VolumeConverter,
 )
 from .unit_system import UnitSystem

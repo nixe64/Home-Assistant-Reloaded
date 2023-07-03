@@ -78,7 +78,7 @@ class Const:
         POSTGRESQL = enum.auto()
 
     DEFAULT_URL: typing.Final = "sqlite:///{shc_config_path}"
-    DEFAULT_DB_FILE: typing.Final = "smart-home-tng.db"
+    DEFAULT_DB_FILE: typing.Final = "smart_home_tng.db"
     DEFAULT_DB_INTEGRITY_CHECK: typing.Final = True
     DEFAULT_DB_MAX_RETRIES: typing.Final = 10
     DEFAULT_DB_RETRY_WAIT: typing.Final = 3

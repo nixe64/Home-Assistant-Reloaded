@@ -43,11 +43,18 @@ from .extra_stored_data import ExtraStoredData
 from .state_type import StateType
 from .unit_conversion import (
     BaseUnitConverter,
+    DataRateConverter,
     DistanceConverter,
+    ElectricCurrentConverter,
+    ElectricPotentialConverter,
+    EnergyConverter,
+    InformationConverter,
     MassConverter,
+    PowerConverter,
     PressureConverter,
     SpeedConverter,
     TemperatureConverter,
+    UnitlessRatioConverter,
     VolumeConverter,
 )
 
@@ -67,6 +74,12 @@ class _DeviceClass(strenum.LowercaseStrEnum):
     """Air Quality Index.
 
     Unit of measurement: `None`
+    """
+
+    ATMOSPHERIC_PRESSURE = enum.auto()
+    """Atmospheric pressure.
+
+    Unit of measurement: `UnitOfPressure` units
     """
 
     BATTERY = enum.auto()
@@ -91,6 +104,18 @@ class _DeviceClass(strenum.LowercaseStrEnum):
     """Current.
 
     Unit of measurement: `A`
+    """
+
+    DATA_RATE = enum.auto()
+    """Data rate.
+
+    Unit of measurement: UnitOfDataRate
+    """
+
+    DATA_SIZE = enum.auto()
+    """Data size.
+
+    Unit of measurement: UnitOfInformation
     """
 
     DATE = enum.auto()
@@ -121,6 +146,23 @@ class _DeviceClass(strenum.LowercaseStrEnum):
     Unit of measurement: `Wh`, `kWh`, `MWh`, `GJ`
     """
 
+    ENERGY_STORAGE = enum.auto()
+    """Stored energy.
+
+    Use this device class for sensors measuring stored energy, for example the amount
+    of electric energy currently stored in a battery or the capacity of a battery.
+
+    Unit of measurement: `Wh`, `kWh`, `MWh`, `MJ`, `GJ`
+    """
+
+    ENUM = enum.auto()
+    """Enumeration.
+
+    Provides a fixed list of options the state of the sensor can be in.
+
+    Unit of measurement: `None`
+    """
+
     FREQUENCY = enum.auto()
     """Frequency.
 
@@ -143,6 +185,14 @@ class _DeviceClass(strenum.LowercaseStrEnum):
     """Illuminance.
 
     Unit of measurement: `lx`, `lm`
+    """
+
+    IRRADIANCE = enum.auto()
+    """Irradiance.
+
+    Unit of measurement:
+    - SI / metric: `W/m²`
+    - USCS / imperial: `BTU/(h⋅ft²)`
     """
 
     MOISTURE = enum.auto()
@@ -251,6 +301,12 @@ class _DeviceClass(strenum.LowercaseStrEnum):
     Unit of measurement: `dB`, `dBm`
     """
 
+    SOUND_PRESSURE = enum.auto()
+    """Sound pressure.
+
+    Unit of measurement: `dB`, `dBA`
+    """
+
     SPEED = enum.auto()
     """Generic speed.
 
@@ -286,6 +342,12 @@ class _DeviceClass(strenum.LowercaseStrEnum):
     Unit of measurement: `µg/m³`
     """
 
+    VOLATILE_ORGANIC_COMPOUNDS_PARTS = enum.auto()
+    """Ratio of VOC.
+
+    Unit of measurement: `ppm`, `ppb`
+    """
+
     VOLTAGE = enum.auto()
     """Voltage.
 
@@ -298,6 +360,18 @@ class _DeviceClass(strenum.LowercaseStrEnum):
     Unit of measurement: `VOLUME_*` units
     - SI / metric: `mL`, `L`, `m³`
     - USCS / imperial: `fl. oz.`, `ft³`, `gal` (warning: volumes expressed in
+    USCS/imperial units are currently assumed to be US volumes)
+    """
+
+    VOLUME_STORAGE = enum.auto()
+    """Generic stored volume.
+
+    Use this device class for sensors measuring stored volume, for example the amount
+    of fuel in a fuel tank.
+
+    Unit of measurement: `VOLUME_*` units
+    - SI / metric: `mL`, `L`, `m³`
+    - USCS / imperial: `ft³`, `CCF`, `fl. oz.`, `gal` (warning: volumes expressed in
     USCS/imperial units are currently assumed to be US volumes)
     """
 
@@ -690,14 +764,169 @@ class Sensor:
     StateClass: typing.TypeAlias = _StateClass
 
     UNIT_CONVERTERS: typing.Final[dict[_DeviceClass | str, type[BaseUnitConverter]]] = {
+        _DeviceClass.ATMOSPHERIC_PRESSURE: PressureConverter,
+        _DeviceClass.CURRENT: ElectricCurrentConverter,
+        _DeviceClass.DATA_RATE: DataRateConverter,
+        _DeviceClass.DATA_SIZE: InformationConverter,
         _DeviceClass.DISTANCE: DistanceConverter,
+        _DeviceClass.ENERGY: EnergyConverter,
+        _DeviceClass.ENERGY_STORAGE: EnergyConverter,
         _DeviceClass.GAS: VolumeConverter,
+        _DeviceClass.POWER: PowerConverter,
+        _DeviceClass.POWER_FACTOR: UnitlessRatioConverter,
         _DeviceClass.PRECIPITATION: DistanceConverter,
+        _DeviceClass.PRECIPITATION_INTENSITY: SpeedConverter,
         _DeviceClass.PRESSURE: PressureConverter,
         _DeviceClass.SPEED: SpeedConverter,
         _DeviceClass.TEMPERATURE: TemperatureConverter,
+        _DeviceClass.VOLATILE_ORGANIC_COMPOUNDS_PARTS: UnitlessRatioConverter,
+        _DeviceClass.VOLTAGE: ElectricPotentialConverter,
         _DeviceClass.VOLUME: VolumeConverter,
         _DeviceClass.WATER: VolumeConverter,
         _DeviceClass.WEIGHT: MassConverter,
         _DeviceClass.WIND_SPEED: SpeedConverter,
+    }
+
+    NON_NUMERIC_DEVICE_CLASSES: typing.Final = {
+        _DeviceClass.DATE,
+        _DeviceClass.ENUM,
+        _DeviceClass.TIMESTAMP,
+    }
+
+    DEVICE_CLASS_UNITS: typing.Final[
+        dict[_DeviceClass, set[type[strenum.StrEnum] | str | None]]
+    ] = {
+        _DeviceClass.APPARENT_POWER: set(Const.UnitOfApparentPower),
+        _DeviceClass.AQI: {None},
+        _DeviceClass.ATMOSPHERIC_PRESSURE: set(Const.UnitOfPressure),
+        _DeviceClass.BATTERY: {Const.PERCENTAGE},
+        _DeviceClass.CO: {Const.CONCENTRATION_PARTS_PER_MILLION},
+        _DeviceClass.CO2: {Const.CONCENTRATION_PARTS_PER_MILLION},
+        _DeviceClass.CURRENT: set(Const.UnitOfElectricCurrent),
+        _DeviceClass.DATA_RATE: set(Const.UnitOfDataRate),
+        _DeviceClass.DATA_SIZE: set(Const.UnitOfInformation),
+        _DeviceClass.DISTANCE: set(Const.UnitOfLength),
+        _DeviceClass.DURATION: {
+            Const.UnitOfTime.DAYS,
+            Const.UnitOfTime.HOURS,
+            Const.UnitOfTime.MINUTES,
+            Const.UnitOfTime.SECONDS,
+            Const.UnitOfTime.MILLISECONDS,
+        },
+        _DeviceClass.ENERGY: set(Const.UnitOfEnergy),
+        _DeviceClass.ENERGY_STORAGE: set(Const.UnitOfEnergy),
+        _DeviceClass.FREQUENCY: set(Const.UnitOfFrequency),
+        _DeviceClass.GAS: {
+            Const.UnitOfVolume.CENTUM_CUBIC_FEET,
+            Const.UnitOfVolume.CUBIC_FEET,
+            Const.UnitOfVolume.CUBIC_METERS,
+        },
+        _DeviceClass.HUMIDITY: {Const.PERCENTAGE},
+        _DeviceClass.ILLUMINANCE: {Const.LIGHT_LUX},
+        _DeviceClass.IRRADIANCE: set(Const.UnitOfIrradiance),
+        _DeviceClass.MOISTURE: {Const.PERCENTAGE},
+        _DeviceClass.NITROGEN_DIOXIDE: {Const.CONCENTRATION_MICROGRAMS_PER_CUBIC_METER},
+        _DeviceClass.NITROGEN_MONOXIDE: {
+            Const.CONCENTRATION_MICROGRAMS_PER_CUBIC_METER
+        },
+        _DeviceClass.NITROUS_OXIDE: {Const.CONCENTRATION_MICROGRAMS_PER_CUBIC_METER},
+        _DeviceClass.OZONE: {Const.CONCENTRATION_MICROGRAMS_PER_CUBIC_METER},
+        _DeviceClass.PM1: {Const.CONCENTRATION_MICROGRAMS_PER_CUBIC_METER},
+        _DeviceClass.PM10: {Const.CONCENTRATION_MICROGRAMS_PER_CUBIC_METER},
+        _DeviceClass.PM25: {Const.CONCENTRATION_MICROGRAMS_PER_CUBIC_METER},
+        _DeviceClass.POWER_FACTOR: {Const.PERCENTAGE, None},
+        _DeviceClass.POWER: {Const.UnitOfPower.WATT, Const.UnitOfPower.KILO_WATT},
+        _DeviceClass.PRECIPITATION: set(Const.UnitOfPrecipitationDepth),
+        _DeviceClass.PRECIPITATION_INTENSITY: set(Const.UnitOfVolumetricFlux),
+        _DeviceClass.PRESSURE: set(Const.UnitOfPressure),
+        _DeviceClass.REACTIVE_POWER: {Const.POWER_VOLT_AMPERE_REACTIVE},
+        _DeviceClass.SIGNAL_STRENGTH: {
+            Const.SIGNAL_STRENGTH_DECIBELS,
+            Const.SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+        },
+        _DeviceClass.SOUND_PRESSURE: set(Const.UnitOfSoundPressure),
+        _DeviceClass.SPEED: set(Const.UnitOfSpeed).union(
+            set(Const.UnitOfVolumetricFlux)
+        ),
+        _DeviceClass.SULPHUR_DIOXIDE: {Const.CONCENTRATION_MICROGRAMS_PER_CUBIC_METER},
+        _DeviceClass.TEMPERATURE: set(Const.UnitOfTemperature),
+        _DeviceClass.VOLATILE_ORGANIC_COMPOUNDS: {
+            Const.CONCENTRATION_MICROGRAMS_PER_CUBIC_METER
+        },
+        _DeviceClass.VOLATILE_ORGANIC_COMPOUNDS_PARTS: {
+            Const.CONCENTRATION_PARTS_PER_BILLION,
+            Const.CONCENTRATION_PARTS_PER_MILLION,
+        },
+        _DeviceClass.VOLTAGE: set(Const.UnitOfElectricPotential),
+        _DeviceClass.VOLUME: set(Const.UnitOfVolume),
+        _DeviceClass.WATER: {
+            Const.UnitOfVolume.CENTUM_CUBIC_FEET,
+            Const.UnitOfVolume.CUBIC_FEET,
+            Const.UnitOfVolume.CUBIC_METERS,
+            Const.UnitOfVolume.GALLONS,
+            Const.UnitOfVolume.LITERS,
+        },
+        _DeviceClass.WEIGHT: set(Const.UnitOfMass),
+        _DeviceClass.WIND_SPEED: set(Const.UnitOfSpeed),
+    }
+
+    DEVICE_CLASS_STATE_CLASSES: dict[_DeviceClass, set[_StateClass]] = {
+        _DeviceClass.APPARENT_POWER: {_StateClass.MEASUREMENT},
+        _DeviceClass.AQI: {_StateClass.MEASUREMENT},
+        _DeviceClass.ATMOSPHERIC_PRESSURE: {_StateClass.MEASUREMENT},
+        _DeviceClass.BATTERY: {_StateClass.MEASUREMENT},
+        _DeviceClass.CO: {_StateClass.MEASUREMENT},
+        _DeviceClass.CO2: {_StateClass.MEASUREMENT},
+        _DeviceClass.CURRENT: {_StateClass.MEASUREMENT},
+        _DeviceClass.DATA_RATE: {_StateClass.MEASUREMENT},
+        _DeviceClass.DATA_SIZE: set(_StateClass),
+        _DeviceClass.DATE: set(),
+        _DeviceClass.DISTANCE: set(_StateClass),
+        _DeviceClass.DURATION: set(_StateClass),
+        _DeviceClass.ENERGY: {
+            _StateClass.TOTAL,
+            _StateClass.TOTAL_INCREASING,
+        },
+        _DeviceClass.ENERGY_STORAGE: {_StateClass.MEASUREMENT},
+        _DeviceClass.ENUM: set(),
+        _DeviceClass.FREQUENCY: {_StateClass.MEASUREMENT},
+        _DeviceClass.GAS: {_StateClass.TOTAL, _StateClass.TOTAL_INCREASING},
+        _DeviceClass.HUMIDITY: {_StateClass.MEASUREMENT},
+        _DeviceClass.ILLUMINANCE: {_StateClass.MEASUREMENT},
+        _DeviceClass.IRRADIANCE: {_StateClass.MEASUREMENT},
+        _DeviceClass.MOISTURE: {_StateClass.MEASUREMENT},
+        _DeviceClass.MONETARY: {_StateClass.TOTAL},
+        _DeviceClass.NITROGEN_DIOXIDE: {_StateClass.MEASUREMENT},
+        _DeviceClass.NITROGEN_MONOXIDE: {_StateClass.MEASUREMENT},
+        _DeviceClass.NITROUS_OXIDE: {_StateClass.MEASUREMENT},
+        _DeviceClass.OZONE: {_StateClass.MEASUREMENT},
+        _DeviceClass.PM1: {_StateClass.MEASUREMENT},
+        _DeviceClass.PM10: {_StateClass.MEASUREMENT},
+        _DeviceClass.PM25: {_StateClass.MEASUREMENT},
+        _DeviceClass.POWER_FACTOR: {_StateClass.MEASUREMENT},
+        _DeviceClass.POWER: {_StateClass.MEASUREMENT},
+        _DeviceClass.PRECIPITATION: set(_StateClass),
+        _DeviceClass.PRECIPITATION_INTENSITY: {_StateClass.MEASUREMENT},
+        _DeviceClass.PRESSURE: {_StateClass.MEASUREMENT},
+        _DeviceClass.REACTIVE_POWER: {_StateClass.MEASUREMENT},
+        _DeviceClass.SIGNAL_STRENGTH: {_StateClass.MEASUREMENT},
+        _DeviceClass.SOUND_PRESSURE: {_StateClass.MEASUREMENT},
+        _DeviceClass.SPEED: {_StateClass.MEASUREMENT},
+        _DeviceClass.SULPHUR_DIOXIDE: {_StateClass.MEASUREMENT},
+        _DeviceClass.TEMPERATURE: {_StateClass.MEASUREMENT},
+        _DeviceClass.TIMESTAMP: set(),
+        _DeviceClass.VOLATILE_ORGANIC_COMPOUNDS: {_StateClass.MEASUREMENT},
+        _DeviceClass.VOLATILE_ORGANIC_COMPOUNDS_PARTS: {_StateClass.MEASUREMENT},
+        _DeviceClass.VOLTAGE: {_StateClass.MEASUREMENT},
+        _DeviceClass.VOLUME: {
+            _StateClass.TOTAL,
+            _StateClass.TOTAL_INCREASING,
+        },
+        _DeviceClass.VOLUME_STORAGE: {_StateClass.MEASUREMENT},
+        _DeviceClass.WATER: {
+            _StateClass.TOTAL,
+            _StateClass.TOTAL_INCREASING,
+        },
+        _DeviceClass.WEIGHT: {_StateClass.MEASUREMENT},
+        _DeviceClass.WIND_SPEED: {_StateClass.MEASUREMENT},
     }

@@ -266,7 +266,7 @@ class Store(typing.Generic[_T]):
                 await self._shc.async_add_executor_job(
                     self._write_data, self.path, data
                 )
-            except (SerializationError) as err:
+            except SerializationError as err:
                 _LOGGER.error(f"Error writing config for {self._key}: {err}")
 
     def _write_data(self, path: str, data: dict) -> None:

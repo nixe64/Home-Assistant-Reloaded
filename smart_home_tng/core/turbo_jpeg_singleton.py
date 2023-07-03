@@ -28,6 +28,7 @@ import typing
 try:
     import turbojpeg
 
+    # pylint: disable=invalid-name
     TurboJPEG: typing.TypeAlias = turbojpeg.TurboJPEG
 except ImportError:
     turbojpeg = None
@@ -48,7 +49,7 @@ class TurboJPEGSingleton:
     __instance = None
 
     @staticmethod
-    def instance() -> TurboJPEG:
+    def instance():
         """Singleton for TurboJPEG."""
         if TurboJPEGSingleton.__instance is None and turbojpeg is not None:
             TurboJPEGSingleton()

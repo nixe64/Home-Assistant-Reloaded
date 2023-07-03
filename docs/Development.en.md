@@ -240,7 +240,7 @@ and success in programming your Integration.
 [project-url]: https://github.com/nixe64/The-Next-Generation
 
 [version-badge]: images/version.svg
-[version-url]: https://github.com/nixe64/Home-Assistant-Blueprint/releases
+[version-url]: https://github.com/nixe64/The-Next-Generation/releases
 
 [ggshield]: images/gg-logo.svg
 [ggshield-url]: https://www.gitguardian.com/

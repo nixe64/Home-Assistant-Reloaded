@@ -7,7 +7,7 @@
 
 ### Smart Home - The Next Generation
 
-Copyright © 2022, Andreas Nixdorf.
+Copyright © 2022-2023, Andreas Nixdorf.
 
 This program is free software: you can redistribute it and/or
 modify it under the terms of the GNU General Public License as
@@ -172,7 +172,7 @@ Public Domain.
 [cc-by-sa]: docs/License.cc-by-sa.en.md
 
 [version-badge]: docs/images/version.svg
-[version-url]: https://github.com/nixe64/Home-Assistant-Blueprint/releases
+[version-url]: https://github.com/nixe64/The-Next-Generation/releases
 
 [shields]: docs/images/shields-logo.svg
 [shields-url]: https://uptimerobot.com/terms/

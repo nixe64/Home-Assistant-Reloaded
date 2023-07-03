@@ -377,7 +377,7 @@ good-names=i,
 
 # Good variable names regexes, separated by a comma. If names match any regex,
 # they will always be accepted
-good-names-rgxs=
+good-names-rgxs=_([A-Za-z0-9]|_)*
 
 # Include a hint for the correct naming format with invalid-name.
 include-naming-hint=yes
@@ -583,5 +583,5 @@ preferred-modules=
 
 # Exceptions that will emit a warning when being caught. Defaults to
 # "BaseException, Exception".
-overgeneral-exceptions=BaseException,
-                       Exception
+overgeneral-exceptions=builtins.BaseException,
+                       builtins.Exception

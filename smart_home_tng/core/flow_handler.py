@@ -49,7 +49,6 @@ class FlowHandler:
         data: typing.Any = None,
         version: int = 1,
     ):
-
         # Set by flow manager
         self._cur_step: dict[str, typing.Any] = None
         # While not purely typed, it makes typehinting more useful for us

@@ -384,7 +384,6 @@ def _purge_unused_data_ids(
     data_ids_batch: set[int],
     using_sqlite: bool,
 ) -> None:
-
     if unused_data_ids_set := _select_unused_event_data_ids(
         session, data_ids_batch, using_sqlite
     ):

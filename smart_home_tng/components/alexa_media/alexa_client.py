@@ -255,7 +255,6 @@ class AlexaClient(core.MediaPlayer.Entity, AlexaMedia):
                 and self._last_called_timestamp
                 != event["last_called_change"]["timestamp"]
             ):
-
                 _LOGGER.debug(
                     f"{self.account}: {self} is last_called: "
                     + f"{alexapy.hide_serial(self.device_serial_number)}",

@@ -90,7 +90,6 @@ def _figure_out_source(record, call_stack, shc: core.SmartHomeController):
     x = "|".join([re.escape(x) for x in paths])
     paths_re = rf"(?:{x})/(.*)"
     for pathname in reversed(stack):
-
         # Try to match with a file within Home Assistant
         if match := re.match(paths_re, pathname[0]):
             return [match.group(1), pathname[1]]

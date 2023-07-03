@@ -55,8 +55,7 @@ class CameraImageView(CameraView):
             )
         except (core.SmartHomeControllerError, ValueError) as ex:
             raise web.HTTPInternalServerError() from ex
-        else:
-            return web.Response(body=image.content, content_type=image.content_type)
+        return web.Response(body=image.content, content_type=image.content_type)
 
 
 async def _async_get_image(

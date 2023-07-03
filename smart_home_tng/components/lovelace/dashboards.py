@@ -239,7 +239,6 @@ class Dashboards(core.SmartHomeControllerComponent, core.SystemHealthPlatform):
             return
 
         if change_type == core.Const.EVENT_COLLECTION_CHANGE_ADDED:
-
             existing = self._dashboards.get(url_path)
 
             if existing:
