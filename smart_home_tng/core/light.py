@@ -227,6 +227,29 @@ def _coerce_none(value: str) -> None:
         raise vol.Invalid("Not an empty string")
 
 
+_PROFILE_SCHEMA: typing.Final = vol.Schema(
+    vol.Any(
+        vol.ExactSequence(
+            (
+                str,
+                vol.Any(_cv.small_float, _coerce_none),
+                vol.Any(_cv.small_float, _coerce_none),
+                vol.Any(_cv.byte, _coerce_none),
+            )
+        ),
+        vol.ExactSequence(
+            (
+                str,
+                vol.Any(_cv.small_float, _coerce_none),
+                vol.Any(_cv.small_float, _coerce_none),
+                vol.Any(_cv.byte, _coerce_none),
+                vol.Any(_VALID_TRANSITION, _coerce_none),
+            )
+        ),
+    )
+)
+
+
 @dataclasses.dataclass
 class _Profile:
     """Representation of a profile."""
@@ -239,27 +262,7 @@ class _Profile:
     hs_color: tuple[float, float] = dataclasses.field(init=False)
 
     # pylint: disable=invalid-name
-    SCHEMA: typing.Final = vol.Schema(
-        vol.Any(
-            vol.ExactSequence(
-                (
-                    str,
-                    vol.Any(_cv.small_float, _coerce_none),
-                    vol.Any(_cv.small_float, _coerce_none),
-                    vol.Any(_cv.byte, _coerce_none),
-                )
-            ),
-            vol.ExactSequence(
-                (
-                    str,
-                    vol.Any(_cv.small_float, _coerce_none),
-                    vol.Any(_cv.small_float, _coerce_none),
-                    vol.Any(_cv.byte, _coerce_none),
-                    vol.Any(_VALID_TRANSITION, _coerce_none),
-                )
-            ),
-        )
-    )
+    SCHEMA: vol.Schema = dataclasses.field(init=False)
 
     def __post_init__(self) -> None:
         """Convert xy to hs color."""
@@ -274,7 +277,7 @@ class _Profile:
     @classmethod
     def from_csv_row(cls, csv_row: list[str]):
         """Create profile from a CSV row tuple."""
-        return cls(*cls.SCHEMA(csv_row))
+        return cls(*_PROFILE_SCHEMA(csv_row))
 
 
 class _Profiles:

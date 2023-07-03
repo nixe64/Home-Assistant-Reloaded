@@ -32,7 +32,7 @@ from .const import Const
 from .tag_id_manager import TagIDManager
 from .tag_storage_collection import TagStorageCollection
 
-_cv: typing.TypeAlias = core.ConfigValidation
+_ConfVal: typing.TypeAlias = core.ConfigValidation
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
 
@@ -92,12 +92,14 @@ class TagComponent(core.TagComponent, core.TriggerPlatform):
     async def async_validate_trigger_config(
         self, config: core.ConfigType
     ) -> core.ConfigType:
-        schema = _cv.TRIGGER_BASE_SCHEMA.extend(
+        schema = _ConfVal.TRIGGER_BASE_SCHEMA.extend(
             {
                 vol.Required(core.Const.CONF_PLATFORM): self.domain,
-                vol.Required(Const.TAG_ID): vol.All(_cv.ensure_list, [_cv.string]),
+                vol.Required(Const.TAG_ID): vol.All(
+                    _ConfVal.ensure_list, [_ConfVal.string]
+                ),
                 vol.Optional(core.Const.CONF_DEVICE_ID): vol.All(
-                    _cv.ensure_list, [_cv.string]
+                    _ConfVal.ensure_list, [_ConfVal.string]
                 ),
             }
         )

@@ -198,7 +198,6 @@ async def _async_setup_switches(
     entities: list[_switch.Entity] = []
 
     for switch in session.device_helper.smart_plugs:
-
         entities.append(
             BoschSwitch.Entity(
                 owner,
@@ -217,8 +216,7 @@ async def _async_setup_switches(
             )
         )
 
-    for switch in session.device_helper.light_switches:
-
+    for switch in session.device_helper.light_switches_bsm:
         entities.append(
             BoschSwitch.Entity(
                 owner,
@@ -230,7 +228,6 @@ async def _async_setup_switches(
         )
 
     for switch in session.device_helper.smart_plugs_compact:
-
         entities.append(
             BoschSwitch.Entity(
                 owner,
@@ -242,7 +239,6 @@ async def _async_setup_switches(
         )
 
     for switch in session.device_helper.camera_eyes:
-
         entities.append(
             BoschSwitch.Entity(
                 owner,
@@ -254,7 +250,6 @@ async def _async_setup_switches(
         )
 
     for switch in session.device_helper.camera_360:
-
         entities.append(
             BoschSwitch.Entity(
                 owner,

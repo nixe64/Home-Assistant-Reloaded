@@ -85,7 +85,7 @@ _SENSOR_TYPES: typing.Final[tuple[FritzSensorEntityDescription, ...]] = (
     FritzSensorEntityDescription(
         key="voltage",
         name="Voltage",
-        native_unit_of_measurement=core.Const.ELECTRIC_POTENTIAL_VOLT,
+        native_unit_of_measurement=core.Const.UnitOfElectricPotential.VOLT,
         device_class=core.Sensor.DeviceClass.VOLTAGE,
         state_class=core.Sensor.StateClass.MEASUREMENT,
         suitable=lambda device: device.has_powermeter,
@@ -96,7 +96,7 @@ _SENSOR_TYPES: typing.Final[tuple[FritzSensorEntityDescription, ...]] = (
     FritzSensorEntityDescription(
         key="electric_current",
         name="Electric Current",
-        native_unit_of_measurement=core.Const.ELECTRIC_CURRENT_AMPERE,
+        native_unit_of_measurement=core.Const.UnitOfElectricCurrent.AMPERE,
         device_class=core.Sensor.DeviceClass.CURRENT,
         state_class=core.Sensor.StateClass.MEASUREMENT,
         suitable=lambda device: device.has_powermeter,

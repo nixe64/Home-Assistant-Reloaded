@@ -2,7 +2,7 @@
   "domain": "recorder",
   "name": "Recorder",
   "documentation": "https://www.home-assistant.io/integrations/recorder",
-  "requirements": ["sqlalchemy>=1.4.37", "fnvhash>=0.1.0", "lru-dict>=1.1.8"],
+  "requirements": ["sqlalchemy==1.4.37", "fnvhash==0.1.0", "lru-dict==1.1.8"],
   "codeowners": ["@nixe64"],
   "quality_scale": "internal"
 }

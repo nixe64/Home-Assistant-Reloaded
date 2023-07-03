@@ -223,7 +223,6 @@ class JupyterKernel:
 
         msg_type = msg["header"]["msg_type"]
         if msg_type == "execute_request":
-
             content = {
                 "execution_count": self._execution_count,
                 "code": msg["content"]["code"],

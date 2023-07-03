@@ -47,6 +47,26 @@ _T = typing.TypeVar("_T")
 _LOGGER: typing.Final = logging.getLogger(__name__)
 _PLATFORMS: typing.Final = dict[str, core.RecorderPlatform]()
 
+_UNIT_SCHEMA: typing.Final = vol.Schema(
+    {
+        vol.Optional("data_rate"): vol.In(core.DataRateConverter.VALID_UNITS),
+        vol.Optional("distance"): vol.In(core.DistanceConverter.VALID_UNITS),
+        vol.Optional("electric_current"): vol.In(
+            core.ElectricCurrentConverter.VALID_UNITS
+        ),
+        vol.Optional("voltage"): vol.In(core.ElectricPotentialConverter.VALID_UNITS),
+        vol.Optional("energy"): vol.In(core.EnergyConverter.VALID_UNITS),
+        vol.Optional("information"): vol.In(core.InformationConverter.VALID_UNITS),
+        vol.Optional("mass"): vol.In(core.MassConverter.VALID_UNITS),
+        vol.Optional("power"): vol.In(core.PowerConverter.VALID_UNITS),
+        vol.Optional("pressure"): vol.In(core.PressureConverter.VALID_UNITS),
+        vol.Optional("speed"): vol.In(core.SpeedConverter.VALID_UNITS),
+        vol.Optional("temperature"): vol.In(core.TemperatureConverter.VALID_UNITS),
+        vol.Optional("unitless"): vol.In(core.UnitlessRatioConverter.VALID_UNITS),
+        vol.Optional("volume"): vol.In(core.VolumeConverter.VALID_UNITS),
+    }
+)
+
 _LIST_STATISTICS: typing.Final = {
     vol.Required("type"): "recorder/list_statistic_ids",
     vol.Optional("statistic_type"): vol.Any("sum", "mean"),
@@ -57,6 +77,18 @@ _VALIDATE_STATISTICS: typing.Final = {
 _CLEAR_STATISTICS: typing.Final = {
     vol.Required("type"): "recorder/clear_statistics",
     vol.Required("statistic_ids"): [str],
+}
+_STATISTICS_DURING_PERIOD: typing.Final = {
+    vol.Required("type"): "recorder/statistics_during_period",
+    vol.Required("start_time"): str,
+    vol.Optional("end_time"): str,
+    vol.Required("statistic_ids"): vol.All([str], vol.Length(min=1)),
+    vol.Required("period"): vol.Any("5minute", "hour", "day", "week", "month"),
+    vol.Optional("units"): _UNIT_SCHEMA,
+    vol.Optional("types"): vol.All(
+        [vol.Any("change", "last_reset", "max", "mean", "min", "state", "sum")],
+        vol.Coerce(set),
+    ),
 }
 _STATISTICS_METADATA: typing.Final = {
     vol.Required("type"): "recorder/get_statistics_metadata",
@@ -413,7 +445,9 @@ class RecorderComponent(
         statistic_ids: list[str],
         period: typing.Literal["5minute", "day", "hour", "month"],
         units: dict[str, str],
-        types: set[typing.Literal["last_reset", "max", "mean", "min", "state", "sum"]],
+        types: set[
+            typing.Literal["change", "last_reset", "max", "mean", "min", "state", "sum"]
+        ],
     ) -> dict[str, list[dict[str, typing.Any]]]:
         """Return statistics during UTC period start_time - end_time for the statistic_ids.
 
@@ -549,6 +583,9 @@ class RecorderComponent(
         comp.register_command(self._update_statistics_metadata, _UPDATE_METADATA)
         comp.register_command(self._info, _RECORDER_INFO)
         comp.register_command(self._adjust_sum_statistics, _ADJUST_SUM_STATISTICS)
+        comp.register_command(
+            self._get_statistics_during_period, _STATISTICS_DURING_PERIOD
+        )
 
     def _ws_list_statistic_ids(
         self,
@@ -562,6 +599,63 @@ class RecorderComponent(
                 msg_id, self.list_statistic_ids(None, statistic_type)
             )
         )
+
+    async def _get_statistics_during_period(
+        self, connection: core.WebSocket.Connection, msg: dict
+    ) -> None:
+        """Handle statistics websocket command."""
+        start_time_str = msg["start_time"]
+        end_time_str = msg.get("end_time")
+
+        if start_time := core.helpers.parse_datetime(start_time_str):
+            start_time = core.helpers.as_utc(start_time)
+        else:
+            connection.send_error(msg["id"], "invalid_start_time", "Invalid start_time")
+            return
+
+        if end_time_str:
+            if end_time := core.helpers.parse_datetime(end_time_str):
+                end_time = core.helpers.as_utc(end_time)
+            else:
+                connection.send_error(msg["id"], "invalid_end_time", "Invalid end_time")
+                return
+        else:
+            end_time = None
+
+        if (types := msg.get("types")) is None:
+            types = {"change", "last_reset", "max", "mean", "min", "state", "sum"}
+        connection.send_message(
+            await self.async_add_executor_job(
+                self._ws_get_statistics_during_period,
+                connection,
+                msg["id"],
+                start_time,
+                end_time,
+                set(msg["statistic_ids"]),
+                msg.get("period"),
+                msg.get("units"),
+                types,
+            )
+        )
+
+    def _ws_get_statistics_during_period(
+        self,
+        connection: core.WebSocket.Connection,
+        msg_id: int,
+        start_time: dt.datetime,
+        end_time: dt.datetime | None,
+        statistic_ids: set[str] | None,
+        period: typing.Literal["5minute", "day", "hour", "week", "month"],
+        units: dict[str, str],
+        types: set[
+            typing.Literal["change", "last_reset", "max", "mean", "min", "state", "sum"]
+        ],
+    ) -> str:
+        result = self.statistics.statistics_during_period(
+            start_time, end_time, statistic_ids, period, units, types
+        )
+
+        return core.Const.JSON_DUMP(connection.result_message(msg_id, result))
 
     async def _list_statistics(
         self, connection: core.WebSocket.Connection, msg: dict

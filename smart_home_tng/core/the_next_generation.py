@@ -1007,7 +1007,6 @@ class TheNextGeneration(SmartHomeController):
 
         # Try finding an URL in the order specified
         for url_type in order:
-
             if allow_internal and url_type == _UrlType.INTERNAL:
                 with contextlib.suppress(NoURLAvailableError):
                     return self._get_internal_url(

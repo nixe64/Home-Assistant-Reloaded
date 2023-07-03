@@ -28,8 +28,6 @@ import logging
 import pathlib
 import typing
 
-import orjson
-
 from ..serialization_error import SerializationError
 from ..smart_home_controller_error import SmartHomeControllerError
 from .file import write_utf8_file, write_utf8_file_atomic
@@ -162,5 +160,4 @@ def find_paths_unserializable_data(
     return invalid
 
 
-# pylint: disable=no-member
-json_loads = orjson.loads
+json_loads = json.loads

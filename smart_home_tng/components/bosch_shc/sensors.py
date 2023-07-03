@@ -153,7 +153,7 @@ async def _async_setup_sensors(
         )
 
     for sensor in (
-        session.device_helper.smart_plugs + session.device_helper.light_switches
+        session.device_helper.smart_plugs + session.device_helper.light_switches_bsm
     ):
         entities.append(
             PowerSensor(

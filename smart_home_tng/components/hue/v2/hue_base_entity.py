@@ -97,10 +97,10 @@ class HueBaseEntity(core.Entity):
             # should be handled in the platform instead
             return self._resource.type.value
         # if resource is a light, use the name from metadata
-        if self._resource.type == ResourceTypes.LIGHT:
-            return self._resource.name
-        # for sensors etc, use devicename + pretty name of type
         dev_name = self._device.metadata.name
+        if self._resource.type == ResourceTypes.LIGHT:
+            return dev_name
+        # for sensors etc, use devicename + pretty name of type
         type_title = _RESOURCE_TYPE_NAMES.get(
             self._resource.type, self._resource.type.value.replace("_", " ").title()
         )

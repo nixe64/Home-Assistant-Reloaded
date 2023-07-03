@@ -984,7 +984,7 @@ class SmartHomeControllerHTTP:
                 str, yarl.URL(self._shc.get_url(prefer_external=True)).host
             )
         except NoURLAvailableError:
-            host = "smart-home-tng.local"
+            host = "smart_home_tng.local"
         key = rsa.generate_private_key(
             public_exponent=65537,
             key_size=2048,

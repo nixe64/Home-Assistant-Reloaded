@@ -64,6 +64,7 @@ from .config_validation import ConfigValidation as cv
 from .const import Const
 from .dependency_error import DependencyError
 from .dhcp_matcher import DHCPMatcher
+from .discovery_dict import DiscoveryDict
 from .discovery_info_type import DiscoveryInfoType
 from .entity_component import EntityComponent
 from .entity_platform import EntityPlatform
@@ -81,10 +82,9 @@ from .requirements_not_found import RequirementsNotFound
 from .secrets import Secrets
 from .smart_home_controller_component import SmartHomeControllerComponent
 from .smart_home_controller_error import SmartHomeControllerError
+from .smart_home_controller_job import SmartHomeControllerJob
 from .unit_system import UnitSystem
 from .yaml_loader import YamlLoader
-from .smart_home_controller_job import SmartHomeControllerJob
-from .discovery_dict import DiscoveryDict
 
 if not typing.TYPE_CHECKING:
 
@@ -105,7 +105,7 @@ _MOVED_ZEROCONF_PROPS: typing.Final = ("macaddress", "model", "manufacturer")
 _DATA_PERSISTENT_ERRORS: typing.Final = "setup.persistent_errors"
 _YAML_CONFIG_FILE: typing.Final = "configuration.yaml"
 _VERSION_FILE: typing.Final = ".SHC_VERSION"
-_CONFIG_DIR_NAME: typing.Final = ".smart-home-tng"
+_CONFIG_DIR_NAME: typing.Final = ".smart_home_tng"
 _DATA_CUSTOMIZE: typing.Final = "setup.shc_customize"
 # The default is too low when the internet connection is satellite or high latency
 _PIP_TIMEOUT: typing.Final = 60
@@ -185,10 +185,6 @@ _DEFAULT_CONFIG: typing.Final = f"""
 # Loads default set of integrations. Do not remove.
 default_config:
 
-# Text to speech
-tts:
-- platform: google_translate
-
 automation: !include {_AUTOMATION_CONFIG_PATH}
 script: !include {_SCRIPT_CONFIG_PATH}
 scene: !include {_SCENE_CONFIG_PATH}
@@ -222,7 +218,7 @@ _SLOW_SETUP_WARNING: typing.Final = 15
 _SLOW_SETUP_MAX_WAIT: typing.Final = 300
 _PACKAGE_CUSTOM_COMPONENTS: typing.Final = "custom_components"
 _PACKAGE_BUILTIN: typing.Final = "smart_home_tng.components"
-_ERROR_LOG_FILENAME: typing.Final = "smart-home-tng.log"
+_ERROR_LOG_FILENAME: typing.Final = "smart_home_tng.log"
 
 _SIGNAL_PLATFORM_DISCOVERED: typing.Final = "discovery.platform_discovered.{}"
 _EVENT_LOAD_PLATFORM: typing.Final = "load_platform.{}"

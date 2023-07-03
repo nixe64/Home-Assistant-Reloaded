@@ -517,7 +517,7 @@ class AlexaAccountInfo:
                 _LOGGER.debug(f"Excluding {dev_name} for lacking capability")
                 continue
 
-            if "bluetoothStates" in bluetooth:
+            if bluetooth is not None and "bluetoothStates" in bluetooth:
                 for b_state in bluetooth["bluetoothStates"]:
                     if serial == b_state["deviceSerialNumber"]:
                         device["bluetooth_state"] = b_state
@@ -588,7 +588,7 @@ class AlexaAccountInfo:
         for device_entry in device_registry.async_entries_for_config_entry(
             self._config_entry.entry_id
         ):
-            for (_, identifier) in device_entry.identifiers:
+            for _, identifier in device_entry.identifiers:
                 if identifier in self._media_player_devices or identifier in map(
                     lambda key: core.helpers.slugify(f"{key}_{email}"),
                     self._media_player_devices,
@@ -808,7 +808,6 @@ class AlexaAccountInfo:
         seen_commands = self._websocket_commands
         coord = self._coordinator
         if command and json_payload:
-
             _LOGGER.debug(
                 f"{alexapy.hide_email(self.email)}: Received websocket command: "
                 + f"{command} : {alexapy.hide_serial(json_payload)}",

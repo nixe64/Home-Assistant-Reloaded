@@ -154,7 +154,7 @@ def _frontend_root(dev_repo_path: str) -> pathlib.Path:
         return pathlib.Path(dev_repo_path) / "hass_frontend"
     # Keep import here so that we can import frontend without installing reqs
     # pylint: disable=import-outside-toplevel
-    import frontend
+    from ... import frontend
 
     return frontend.where()
 

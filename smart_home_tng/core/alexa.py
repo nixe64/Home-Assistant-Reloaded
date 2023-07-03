@@ -22,11 +22,9 @@ License along with this program.  If not, see
 http://www.gnu.org/licenses/.
 """
 
-import enum
 import collections
 import typing
 
-from ..backports import strenum
 from . import (
     abstract_alexa_config,
     alexa_capability,
@@ -34,6 +32,7 @@ from . import (
     alexa_config_store,
     alexa_entity,
     alexa_errors,
+    alexa_intents,
 )
 from .climate import Climate as _climate
 from .alexa_errors import _API_TEMP_UNITS
@@ -287,14 +286,7 @@ class Alexa:
             "tv": "TV",
         }
 
-    class SpeechType(strenum.PascalCaseStrEnum):
-        """The Alexa speech types."""
-
-        PLAIN_TEXT = enum.auto()
-        SSML = "SSML"
-
-    class CardType(strenum.PascalCaseStrEnum):
-        """The Alexa card types."""
-
-        SIMPLE = enum.auto()
-        LINK_ACCOUNT = enum.auto()
+    CardType: typing.TypeAlias = alexa_intents.CardType
+    SpeechType: typing.TypeAlias = alexa_intents.SpeechType
+    Intent: typing.TypeAlias = alexa_intents.Intent
+    IntentResponse: typing.TypeAlias = alexa_intents.IntentResponse

@@ -255,7 +255,6 @@ class AlexaClient(core.MediaPlayer.Entity, AlexaMedia):
                 and self._last_called_timestamp
                 != event["last_called_change"]["timestamp"]
             ):
-
                 _LOGGER.debug(
                     f"{self.account}: {self} is last_called: "
                     + f"{alexapy.hide_serial(self.device_serial_number)}",
@@ -542,6 +541,7 @@ class AlexaClient(core.MediaPlayer.Entity, AlexaMedia):
                         else self._media_vol_level
                     )
                 if self._session.get("isPlayingInLemur"):
+                    media_players = self._info.media_players
                     asyncio.gather(
                         *map(
                             lambda x: (media_players[x].async_update()),

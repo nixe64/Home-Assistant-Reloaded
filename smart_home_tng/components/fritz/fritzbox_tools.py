@@ -380,6 +380,7 @@ class FritzboxTools(core.DataUpdateCoordinator):
 
         try:
             if not (topology := self.fritz_hosts.get_mesh_topology()):
+                # pylint: disable=broad-exception-raised
                 raise Exception("Mesh supported but empty topology reported")
         except fritz_exceptions.FritzActionError:
             self._mesh_role = Const.MeshRole.SLAVE

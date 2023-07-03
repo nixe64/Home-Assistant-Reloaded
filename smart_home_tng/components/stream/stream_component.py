@@ -216,7 +216,7 @@ class StreamComponent(core.StreamComponent):
 
     def redact_credentials(self, data: str) -> str:
         """Redact credentials from string data."""
-        for (pattern, repl) in _STREAM_SOURCE_REDACT_PATTERN:
+        for pattern, repl in _STREAM_SOURCE_REDACT_PATTERN:
             data = pattern.sub(repl, data)
         return data
 

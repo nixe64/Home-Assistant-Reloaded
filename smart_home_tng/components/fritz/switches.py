@@ -118,7 +118,6 @@ def _port_entities_list(
     _LOGGER.debug(f"IP source for {avm_wrapper.host} is {local_ip}")
 
     for i in range(port_forwards_count):
-
         portmap = avm_wrapper.get_port_mapping(avm_wrapper.device_conn_type, i)
         if not portmap:
             _LOGGER.debug(

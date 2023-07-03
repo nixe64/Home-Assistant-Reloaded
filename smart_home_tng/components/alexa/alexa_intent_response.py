@@ -33,21 +33,23 @@ _LOGGER: typing.Final = logging.getLogger(__name__)
 
 
 # pylint: disable=unused-variable
-class AlexaIntentResponse:
+class AlexaIntentResponse(_alexa.IntentResponse):
     """Help generating the response for Alexa."""
 
-    def __init__(self, intent_info: dict):
+    def __init__(self, intent: _alexa.Intent, should_end_session: bool = True):
         """Initialize the response."""
         self._speech = None
         self._card = None
         self._reprompt = None
         self._session_attributes = {}
-        self._should_end_session = True
-        self._variables = {}
+        self._should_end_session = should_end_session
+        self._variables: dict[str, any] = {}
+        self._directives: list[dict[str, any]] = None
+        self._new_session: bool = False
 
         # Intent is None if request was a LaunchRequest or SessionEndedRequest
-        if intent_info is not None:
-            for key, value in intent_info.get("slots", {}).items():
+        if intent is not None:
+            for key, value in intent.slots.items():
                 # Only include slots with values
                 if "value" not in value:
                     continue
@@ -55,18 +57,28 @@ class AlexaIntentResponse:
                 _key = key.replace(".", "_")
 
                 self._variables[_key] = _resolve_slot_synonyms(key, value)
+            self._session_attributes = intent.session_attributes
+            self._new_session = intent.new_session
+
+    @property
+    def in_active_conversation(self) -> bool:
+        return not self._new_session
 
     @property
     def variables(self):
         return self._variables
 
-    def add_card(self, card_type, title, content):
+    def add_card(self, card_type: _alexa.CardType, title: str, content: str):
         """Add a card to the response."""
         assert self._card is None
 
         card = {"type": card_type.value}
 
         if card_type == _alexa.CardType.LINK_ACCOUNT:
+            self._card = card
+            return
+        if card_type == _alexa.CardType.ASK_FOR_PERMISSIONS_CONSENT:
+            card["permissions"] = content
             self._card = card
             return
 
@@ -92,6 +104,40 @@ class AlexaIntentResponse:
 
         self._reprompt = {"type": speech_type.value, key: text}
 
+    def audio_player_play(
+        self,
+        stream: str,
+        title: str,
+        sub_title: str,
+        image: str,
+        play_behaviour: str = "REPLACE_ALL",
+        token: str = None,
+        previous_token: str = None,
+        offset: int = 0,
+    ) -> None:
+        """Add a AudioPlayer.Play directive to the response."""
+        directive: dict[str, any] = {}
+        directive["type"] = "AudioPlayer.Play"
+        directive["playBehavior"] = play_behaviour
+        stream: dict[str, any] = {
+            "url": stream,
+            "token": token,
+            "offsetInMilliseconds": offset,
+        }
+        if play_behaviour == "ENQUEUE":
+            stream["expectedPreviousToken"] = previous_token
+        directive["audioItem"] = {
+            "stream": stream,
+            "metadata": {
+                "title": title,
+                "subtitle": sub_title,
+                "art": {"sources": [{"url": image}]},
+            },
+        }
+        if self._directives is None:
+            self._directives = []
+        self._directives.append(directive)
+
     def as_dict(self):
         """Return response in an Alexa valid dict."""
         response = {"shouldEndSession": self._should_end_session}
@@ -104,6 +150,9 @@ class AlexaIntentResponse:
 
         if self._reprompt is not None:
             response["reprompt"] = {"outputSpeech": self._reprompt}
+
+        if self._directives is not None and len(self._directives) > 0:
+            response["directives"] = self._directives
 
         return {
             "version": "1.0",
@@ -124,7 +173,6 @@ def _resolve_slot_synonyms(key: str, request: dict):
         and "resolutionsPerAuthority" in request["resolutions"]
         and len(request["resolutions"]["resolutionsPerAuthority"]) >= 1
     ):
-
         # Extract all of the possible values from each authority with a
         # successful match
         possible_values = []
