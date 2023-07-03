@@ -116,11 +116,11 @@ usability for a specific purpose.**
 [license-url]: ../COPYRIGHT.en.md
 
 [version-badge]: images/version.svg
-[version-url]: https://github.com/nixe64/Home-Assistant-Blueprint/releases
+[version-url]: https://github.com/nixe64/The-Next-Generation/releases
 
-[issues-url]: https://github.com/nixe64/Home-Assistant-Blueprint/issues
-[bugs-badge]: https://img.shields.io/github/issues/nixe64/Home-Assistant-Blueprint/bug.svg?label=Fehlerberichte&color=informational
-[bugs-url]: https://github.com/nixe64/Home-Assistant-Blueprint/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3Abug
+[issues-url]: https://github.com/nixe64/The-Next-Generation/issues
+[bugs-badge]: https://img.shields.io/github/issues/nixe64/the-next-generation/bug.svg?label=Fehlerberichte&color=informational
+[bugs-url]: https://github.com/nixe64/the-next-generation/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3Abug
 
 [contribute-url]: contributing/Contributions.en.md
 [coc-url]: contributing/CodeOfConduct.en.md
