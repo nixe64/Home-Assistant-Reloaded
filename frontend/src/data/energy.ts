@@ -22,6 +22,7 @@ import {
   StatisticsMetaData,
   StatisticsUnitConfiguration,
 } from "./recorder";
+import { ErrorCode } from "intl-messageformat";
 
 const energyCollectionKeys: (string | undefined)[] = [];
 
@@ -179,10 +180,29 @@ export const getEnergyPreferenceValidation = (hass: HomeAssistant) =>
     type: "energy/validate",
   });
 
-export const getEnergyPreferences = (hass: HomeAssistant) =>
-  hass.callWS<EnergyPreferences>({
+class NotFoundError extends Error {
+    code: string = "not_found";
+
+    constructor(message?: string) {
+      super(message);
+      Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
+export const getEnergyPreferences = async (hass: HomeAssistant, check_configured: boolean = false) => {
+  const prefs = await hass.callWS<EnergyPreferences>({
     type: "energy/get_prefs",
   });
+  if (check_configured)
+  {
+    const hasSources = prefs.energy_sources.length > 0;
+    const hasDevices = prefs.device_consumption.length > 0;
+
+    if (!hasSources && !hasDevices)
+      throw new NotFoundError()
+  }
+  return prefs;
+}
 
 export const saveEnergyPreferences = async (
   hass: HomeAssistant,
@@ -505,7 +525,7 @@ export const getEnergyDataCollection = (
       if (!collection.prefs) {
         // This will raise if not found.
         // Detect by checking `e.code === "not_found"
-        collection.prefs = await getEnergyPreferences(hass);
+        collection.prefs = await getEnergyPreferences(hass, true);
       }
 
       if (collection._refreshTimeout) {

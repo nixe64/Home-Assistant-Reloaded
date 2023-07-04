@@ -29,7 +29,7 @@ export class EnergyStrategy {
     let prefs: EnergyPreferences;
 
     try {
-      prefs = await getEnergyPreferences(hass);
+      prefs = await getEnergyPreferences(hass, true);
     } catch (err: any) {
       if (err.code === "not_found") {
         return setupWizard();
@@ -51,7 +51,7 @@ export class EnergyStrategy {
       (source) => source.type === "solar"
     );
     const hasGas = prefs.energy_sources.some((source) => source.type === "gas");
-
+      
     if (info.narrow) {
       view.cards!.push({
         type: "energy-date-selection",
