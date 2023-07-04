@@ -2,6 +2,6 @@
   "domain": "blueprint",
   "name": "Blueprint",
   "documentation": "https://www.home-assistant.io/integrations/blueprint",
-  "codeowners": ["@hnixe64"],
+  "codeowners": ["@nixe64"],
   "quality_scale": "internal"
 }

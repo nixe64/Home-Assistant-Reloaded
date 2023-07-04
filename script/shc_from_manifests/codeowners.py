@@ -49,7 +49,6 @@ setup.cfg @nixe64
 
 _INDIVIDUAL_FILES: typing.Final = """
 # Individual files
-/smart_home_tng/components/demo/weather.py @fabaff
 """
 
 _REMOVE_CODEOWNERS: typing.Final = """
