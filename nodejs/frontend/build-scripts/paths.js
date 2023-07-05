@@ -5,13 +5,13 @@ module.exports = {
   polymer_dir: path.resolve(__dirname, ".."),
 
   build_dir: path.resolve(__dirname, "../build"),
-  app_output_root: path.resolve(__dirname, "../../smart_home_tng/frontend"),
-  app_output_static: path.resolve(__dirname, "../../smart_home_tng/frontend/static"),
+  app_output_root: path.resolve(__dirname, "../../../smart_home_tng/frontend"),
+  app_output_static: path.resolve(__dirname, "../../../smart_home_tng/frontend/static"),
   app_output_latest: path.resolve(
     __dirname,
-    "../../smart_home_tng/frontend/frontend_latest"
+    "../../../smart_home_tng/frontend/frontend_latest"
   ),
-  app_output_es5: path.resolve(__dirname, "../../smart_home_tng/frontend/frontend_es5"),
+  app_output_es5: path.resolve(__dirname, "../../../smart_home_tng/frontend/frontend_es5"),
 
   demo_dir: path.resolve(__dirname, "../demo"),
   demo_output_root: path.resolve(__dirname, "../demo/dist"),

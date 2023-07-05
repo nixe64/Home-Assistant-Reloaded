@@ -54,7 +54,8 @@ class RadioBrowserIntegration(
         """
         session = core.HttpClient.async_get_clientsession(self._shc)
         browser = radios.RadioBrowser(
-            session=session, user_agent=f"HomeAssistant/{core.Const.__version__}"
+            session=session,
+            user_agent=f"Smart Home - The Next Generation/{core.Const.__version__}",
         )
 
         try:

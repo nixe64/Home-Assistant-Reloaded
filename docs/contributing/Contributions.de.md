@@ -45,13 +45,13 @@ Noch interessiert? **Super, herzlich willkommen im Team!**
 [license-url]: ../../COPYRIGHT.de.md
 
 [version-badge]: ../images/version.svg
-[version-url]: https://github.com/nixe64/Home-Assistant-Blueprint/releases
+[version-url]: https://github.com/nixe64/the-next-generation/releases
 
-[issues-url]: https://github.com/nixe64/Home-Assistant-Blueprint/issues
-[bugs-badge]: https://img.shields.io/github/issues/nixe64/Home-Assistant-Blueprint/bug.svg?label=Fehlerberichte&color=informational
-[bugs-url]: https://github.com/nixe64/Home-Assistant-Blueprint/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3Abug
+[issues-url]: https://github.com/nixe64/the-next-generation/issues
+[bugs-badge]: https://img.shields.io/github/issues/nixe64/the-next-generation/bug.svg?label=Fehlerberichte&color=informational
+[bugs-url]: https://github.com/nixe64/the-next-generation/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3Abug
 
-[coc-url]: CodeOfConduct.de.md
+[coc-url]: ../../CODE_OF_CONDUCT.md
 [pr-reviews]: https://github.com/kubernetes/community/blob/master/contributors/guide/pull-requests.md#best-practices-for-faster-reviews
 [cla-url]: CLA.de.md
 [flow-url]: https://githubflow.github.io/

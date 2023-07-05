@@ -148,7 +148,7 @@
             "type": "shell",
             "command": "script/run-in-env.sh pylint --rcfile=.pylint smart_home_tng/ script/ tests/",
             "group": {
-                "kind": "test",
+                "kind": "build",
                 "isDefault": true
             },
             "presentation": {
@@ -175,10 +175,7 @@
             "label": "YAMLint",
             "type": "shell",
             "command": "script/run-in-env.sh yamllint ${file}",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
+            "group": "build",
             "presentation": {
                 "reveal": "always",
                 "panel": "new"

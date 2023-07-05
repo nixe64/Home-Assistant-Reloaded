@@ -836,7 +836,7 @@ class SetupManager:
                 conf_version = inp.readline().strip()
         except FileNotFoundError:
             # Last version to not have this file
-            conf_version = "0.7.7"
+            conf_version = "0.1.0"
 
         if conf_version == Const.__version__:
             return

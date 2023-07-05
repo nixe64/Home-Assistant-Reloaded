@@ -1,5 +1,5 @@
-<a href="CodeOfConduct.en.md"><img src="../images/en.svg" valign="top" align="right"/></a>
-<a href="CodeOfConduct.de.md"><img src="../images/de.svg" valign="top" align="right"/></a>
+<a href="CODE_OF_CONDUCT.en.md"><img src="docs/images/en.svg" valign="top" align="right"/></a>
+<a href="CODE_OF_CONDUCT.md"><img src="docs/images/de.svg" valign="top" align="right"/></a>
 <!--[![Version][version-badge]][version-url]-->
 [![License][license-badge]][license-url]
 <!--
@@ -229,13 +229,13 @@ Community Participation Guidelines Response Lead may amend the guidelines from t
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 
-[logo]: ../images/logo.svg
+[logo]: docs/images/logo.svg
 [project-url]: https://github.com/nixe64/The-Next-Generation/
 
-[license-badge]: ../images/license.cc-by-sa.en.svg
-[license-url]: ../License.cc-by-sa.en.md
+[license-badge]: docs/images/license.cc-by-sa.en.svg
+[license-url]: docs/License.cc-by-sa.en.md
 
-[version-badge]: ../images/version.svg
+[version-badge]: docs/images/version.svg
 [version-url]: https://github.com/nixe64/The-Next-Generation/releases
 
 [issues-url]: https://github.com/nixe64/The-Next-Generation/issues
