@@ -6,11 +6,11 @@
       "request": "launch",
       "type": "chrome",
       "url": "http://localhost:8123/",
-      "webRoot": "${workspaceFolder}/../smart_home_tng/frontend",
+      "webRoot": "${workspaceFolder}/../../smart_home_tng/frontend",
       "disableNetworkCache": true,
       "preLaunchTask": "Develop Frontend",
       "outFiles": [
-        "${workspaceFolder}/../smart_home_tng/frontend_latest/*.js"
+        "${workspaceFolder}/../../smart_home_tng/frontend_latest/*.js"
       ]
     },
     {

@@ -5,6 +5,7 @@
 build
 hass_frontend/*
 dist
+node_modules
 
 # yarn
 .yarn/*

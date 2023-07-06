@@ -136,7 +136,12 @@ class History(core.SmartHomeControllerComponent):
             comp.result_message(
                 msg_id,
                 self._recorder.statistics.statistics_during_period(
-                    start_time, end_time, statistic_ids, period
+                    start_time,
+                    end_time,
+                    statistic_ids,
+                    period,
+                    {"energy": "kWh", "volume": "m³"},
+                    {"min", "sum", "max", "last_reset", "state", "mean", "change"},
                 ),
             )
         )

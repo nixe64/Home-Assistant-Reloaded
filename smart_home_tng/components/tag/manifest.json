@@ -2,6 +2,6 @@
   "domain": "tag",
   "name": "Tags",
   "documentation": "https://www.home-assistant.io/integrations/tag",
-  "codeowners": ["@bnixe64"],
+  "codeowners": ["@nixe64"],
   "quality_scale": "internal"
 }

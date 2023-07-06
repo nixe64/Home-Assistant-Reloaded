@@ -88,6 +88,11 @@ class HaPanelProfile extends LitElement {
                 : ""}
             </div>
 
+            <div class="card-actions" style="border-top: None; border-bottom: 1px solid var(--divider-color, #e8e8e8); padding-bottom:16px">
+              <mwc-button @click=${this._handleLogOut} raised="true">
+                ${this.hass.localize("ui.panel.profile.logout")}
+              </mwc-button>
+            </div>
             <ha-pick-language-row
               .narrow=${this.narrow}
               .hass=${this.hass}
@@ -166,11 +171,6 @@ class HaPanelProfile extends LitElement {
               .narrow=${this.narrow}
               .hass=${this.hass}
             ></ha-enable-shortcuts-row>
-            <div class="card-actions">
-              <mwc-button class="warning" @click=${this._handleLogOut}>
-                ${this.hass.localize("ui.panel.profile.logout")}
-              </mwc-button>
-            </div>
           </ha-card>
 
           ${this.hass.user!.credentials.some(

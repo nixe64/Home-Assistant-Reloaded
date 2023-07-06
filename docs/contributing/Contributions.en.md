@@ -51,7 +51,7 @@ Still interested? **Great, welcome to the team!**
 [bugs-badge]: https://img.shields.io/github/issues/nixe64/the-next-generation/bug.svg?label=Fehlerberichte&color=informational
 [bugs-url]: https://github.com/nixe64/The-Next-Generation/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3Abug
 
-[coc-url]: CodeOfConduct.en.md
+[coc-url]: ../../CODE_OF_CONDUCT.en.md
 [pr-reviews]: https://github.com/kubernetes/community/blob/master/contributors/guide/pull-requests.md#best-practices-for-faster-reviews
 [cla-url]: CLA.en.md
 [flow-url]: https://githubflow.github.io/

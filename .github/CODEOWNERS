@@ -21,7 +21,7 @@ setup.cfg @nixe64
 /smart_home_tng/components/automation/ @nixe64
 /smart_home_tng/components/backup/ @nixe64
 /smart_home_tng/components/binary_sensor/ @nixe64
-/smart_home_tng/components/blueprint/ @hnixe64
+/smart_home_tng/components/blueprint/ @nixe64
 /smart_home_tng/components/bosch_shc/ @nixe64
 /smart_home_tng/components/button/ @nixe64
 /smart_home_tng/components/camera/ @nixe64
@@ -59,7 +59,7 @@ setup.cfg @nixe64
 /smart_home_tng/components/input_text/ @nixe64
 /smart_home_tng/components/intent/ @nixe64
 /smart_home_tng/components/light/ @nixe64
-/smart_home_tng/components/lock/ @home-assistant/core
+/smart_home_tng/components/lock/ @nixe64
 /smart_home_tng/components/logbook/ @nixe64
 /smart_home_tng/components/logger/ @nixe64
 /smart_home_tng/components/lovelace/ @nixe64
@@ -79,23 +79,23 @@ setup.cfg @nixe64
 /smart_home_tng/components/recorder/ @nixe64
 /smart_home_tng/components/safe_mode/ @nixe64
 /smart_home_tng/components/scene/ @nixe64
-/smart_home_tng/components/script/ @home-assistant/core
+/smart_home_tng/components/script/ @nixe64
 /smart_home_tng/components/search/ @nixe64
 /smart_home_tng/components/select/ @nixe64
 /smart_home_tng/components/sensor/ @nixe64
-/smart_home_tng/components/siren/ @home-assistant/core @raman325
+/smart_home_tng/components/siren/ @nixe64
 /smart_home_tng/components/ssdp/ @nixe64
 /smart_home_tng/components/stream/ @nixe64
-/smart_home_tng/components/sun/ @Swamp-Ig
+/smart_home_tng/components/sun/ @nixe64
 /smart_home_tng/components/switch/ @nixe64
 /smart_home_tng/components/switch_as_x/ @nixe64
 /smart_home_tng/components/system_health/ @nixe64
 /smart_home_tng/components/system_log/ @nixe64
-/smart_home_tng/components/tag/ @bnixe64
+/smart_home_tng/components/tag/ @nixe64
 /smart_home_tng/components/timer/ @nixe64
 /smart_home_tng/components/trace/ @nixe64
 /smart_home_tng/components/tts/ @nixe64
-/smart_home_tng/components/update/ @home-assistant/core
+/smart_home_tng/components/update/ @nixe64
 /smart_home_tng/components/usb/ @nixe64
 /smart_home_tng/components/vacuum/ @nixe64
 /smart_home_tng/components/weather/ @nixe64
@@ -105,7 +105,6 @@ setup.cfg @nixe64
 /smart_home_tng/components/zone/ @nixe64
 
 # Individual files
-/smart_home_tng/components/demo/weather.py @fabaff
 
 # Remove codeowners from files
 /homeassistant/components/*/translations/

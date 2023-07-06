@@ -3,6 +3,6 @@
   "name": "Scripts",
   "documentation": "https://www.home-assistant.io/integrations/script",
   "dependencies": ["blueprint", "trace"],
-  "codeowners": ["@home-assistant/core"],
+  "codeowners": ["@nixe64"],
   "quality_scale": "internal"
 }
