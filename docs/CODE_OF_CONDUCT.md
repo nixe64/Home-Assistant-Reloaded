@@ -1,5 +1,5 @@
-<a href="CODE_OF_CONDUCT.en.md"><img src="docs/images/en.svg" valign="top" align="right"/></a>
-<a href="CODE_OF_CONDUCT.md"><img src="docs/images/de.svg" valign="top" align="right"/></a>
+<a href="CODE_OF_CONDUCT.en.md"><img src="images/en.svg" valign="top" align="right"/></a>
+<a href="CODE_OF_CONDUCT.md"><img src="images/de.svg" valign="top" align="right"/></a>
 <!--[![Version][version-badge]][version-url]-->
 [![License][license-badge]][license-url]
 <!--
@@ -232,21 +232,19 @@ Die Verantwortlichen für die Einhaltung und Durchsetzung der Community-Standard
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 
-[logo]: docs/images/logo.svg
+[logo]: images/logo.svg
 [project-url]: https://github.com/nixe64/the-next-generation/
 
-[license-badge]: docs/images/license.cc-by-sa.de.svg
-[license-url]: docs/License.cc-by-sa.de.md
+[license-badge]: images/license.cc-by-sa.de.svg
+[license-url]: License.cc-by-sa.de.md
 
-[version-badge]: docs/images/version.svg
+[version-badge]: images/version.svg
 [version-url]: https://github.com/nixe64/the-next-generation/releases
 
 [issues-url]: https://github.com/nixe64/the-next-generation/issues
 [bugs-badge]: https://img.shields.io/github/issues/nixe64/the-next-generation/bug.svg?label=Fehlerberichte&color=informational
 [bugs-url]: https://github.com/nixe64/the-next-generation/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3Abug
 
-[coc-url]: CodeOfConduct.md
 [pr-reviews]: https://github.com/kubernetes/community/blob/master/contributors/guide/pull-requests.md#best-practices-for-faster-reviews
-[cla-url]: docs/contributing/CLA.de.md
 [flow-url]: (https://githubflow.github.io/)
 [pr-url]: https://github.com/nixe64/the-next-generation/pulls
