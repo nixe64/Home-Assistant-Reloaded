@@ -43,7 +43,7 @@ class Const:
     PATCH_VERSION: typing.Final = "0"
     __short_version__: typing.Final = f"{MAJOR_VERSION}.{MINOR_VERSION}"
     __version__: typing.Final = f"{__short_version__}.{PATCH_VERSION}"
-    REQUIRED_PYTHON_VER: typing.Final[tuple[int, int, int]] = (3, 10, 0)
+    REQUIRED_PYTHON_VER: typing.Final[tuple[int, int, int]] = (3, 11, 0)
     REQUIRED_NEXT_PYTHON_VER: typing.Final[tuple[int, int, int]] = (3, 11, 0)
     # Truthy date string triggers showing related deprecation warning messages.
     REQUIRED_NEXT_PYTHON_SHC_RELEASE: typing.Final = ""
