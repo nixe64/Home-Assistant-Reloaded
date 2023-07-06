@@ -152,7 +152,7 @@ _STAGE_1_INTEGRATIONS = {
     # To make sure we forward data to other instances
     "mqtt_eventstream",
     # To provide account link implementations
-    "cloud",
+    # "cloud",
     # Ensure supervisor is available
     # "hassio",
     # Get the frontend up and running as soon

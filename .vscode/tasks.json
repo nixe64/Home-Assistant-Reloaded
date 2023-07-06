@@ -2,15 +2,57 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "auf Entwicklungserver bereitstellen",
+            "label": "auf Gandalf bereitstellen",
             "type": "shell",
-            "command": "scp -r ${workspaceFolder}/custom_components/  homeassistant@smart-home:develop/home-assistant/",
+            "command": "script/deploy.sh",
             "group": "none",
             "presentation": {
                 "reveal": "always",
                 "panel": "new"
             },
             "problemMatcher": []
+        },
+        {
+            "label": "Develop Frontend",
+            "type": "shell",
+            "command": "nodejs/frontend/script/develop",
+            // Sync changes here to other tasks until issue resolved
+            // https://github.com/Microsoft/vscode/issues/61497
+            "problemMatcher": {
+                "owner": "ha-build",
+                "source": "ha-build",
+                "fileLocation": "absolute",
+                "severity": "error",
+                "pattern": [
+                    {
+                        "regexp": "(SyntaxError): (.+): (.+) \\((\\d+):(\\d+)\\)",
+                        "severity": 1,
+                        "file": 2,
+                        "message": 3,
+                        "line": 4,
+                        "column": 5
+                    }
+                ],
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "Changes detected. Starting compilation",
+                    "endsPattern": "Build done @"
+                }
+            },
+            "isBackground": true,
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "runOptions": {
+                "instanceLimit": 1
+            }
+        },
+        {
+            "label": "Frontend generieren",
+            "type": "shell",
+            "command": "nodejs/frontend/script/build_frontend",
+            "group": "build"
         },
         {
             "label": "Mit Black formatieren",
