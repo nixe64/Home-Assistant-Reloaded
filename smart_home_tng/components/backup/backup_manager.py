@@ -166,7 +166,7 @@ class BackupManager:
                 "date": date_str,
                 "type": "partial",
                 "folders": ["smart_home_tng"],
-                "homeassistant": {"version": core.Const.__version__},
+                "smart-home-controller": {"version": core.Const.__version__},
                 "compressed": True,
             }
             tar_file_path = pathlib.Path(self._backup_dir, f"{backup_data['slug']}.tar")

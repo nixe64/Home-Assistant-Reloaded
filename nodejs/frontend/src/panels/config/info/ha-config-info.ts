@@ -23,10 +23,6 @@ import type { HomeAssistant, Route } from "../../../types";
 import { githubUrl } from "../../../util/documentation-url";
 import { __SHC_VERSION__ } from "../../../types"
 
-const JS_TYPE = __BUILD__;
-const JS_VERSION = __VERSION__;
-const SHC_VERSION = __SHC_VERSION__;
-
 const PAGES: Array<{
   name: string;
   path: string;
@@ -76,15 +72,14 @@ class HaConfigInfo extends LitElement {
 
   @property({ attribute: false }) public route!: Route;
 
-  @state() private _osInfo?: HassioHassOSInfo;
-
-  @state() private _hassioInfo?: HassioInfo;
-
   protected render(): TemplateResult {
     const hass = this.hass;
     const customUiList: Array<{ name: string; url: string; version: string }> =
       (window as any).CUSTOM_UI_LIST || [];
-
+    let shcVersion = hass.connection.haVersion;
+    if (shcVersion.endsWith(".0")) {
+      shcVersion = shcVersion.substring(0, shcVersion.length - 2)
+    }
     return html`
       <hass-subpage
         .hass=${this.hass}
@@ -105,11 +100,11 @@ class HaConfigInfo extends LitElement {
             </a>
             </div>
             <div class="versions">
-              <p class="ha-version">Version ${SHC_VERSION}, Copyright © 2022-2023 Andreas Nixdorf</p>
+              <div class="ha-version"><b>Version ${shcVersion}</b><p class="versions">Copyright © 2022-2023 Andreas Nixdorf</p></div>
             </div>
             <mwc-list>
               ${PAGES.map(
-          (page) => html`
+      (page) => html`
                   <ha-clickable-list-item
                     graphic="avatar"
                     openNewTab
@@ -125,12 +120,12 @@ class HaConfigInfo extends LitElement {
                     </div>
                     <span>
                       ${this.hass.localize(
-            `ui.panel.config.info.items.${page.name}`
-          )}
+        `ui.panel.config.info.items.${page.name}`
+      )}
                     </span>
                   </ha-clickable-list-item>
                 `
-        )}
+    )}
             </mwc-list>
             ${!customUiList.length
         ? ""
@@ -147,7 +142,10 @@ class HaConfigInfo extends LitElement {
         )}
                   </div>
                 `}
-            <div class="versions">
+            <div class="versions" style="text-align: left">
+              <p>Dieses Programm ist freie Software. Sie können es unter den Bedingungen der Allgemeinen 
+                Öffentlichen GNU-Lizenz (GPL), wie von der Free Software Foundation veröffentlicht, weitergeben 
+                und/oder modifizieren, entweder gemäß Version 3 der Lizenz oder (nach Ihrer Option) jeder späteren Version.</p>
               <p>Die Veröffentlichung dieses Programms erfolgt in der Hoffnung, daß es Ihnen von Nutzen sein wird, 
                 <b>aber ohne irgendeine Garantie</b>, sogar ohne die implizite Garantie der <b>Marktreife</b> oder 
                 der <b>Verwendbarkeit für einen bestimmen Zweck</b>.</p>
@@ -168,20 +166,6 @@ class HaConfigInfo extends LitElement {
         this.requestUpdate();
       }
     }, 2000);
-
-    if (isComponentLoaded(this.hass, "hassio")) {
-      this._loadSupervisorInfo();
-    }
-  }
-
-  private async _loadSupervisorInfo(): Promise<void> {
-    const [osInfo, hassioInfo] = await Promise.all([
-      fetchHassioHassOsInfo(this.hass),
-      fetchHassioInfo(this.hass),
-    ]);
-
-    this._hassioInfo = hassioInfo;
-    this._osInfo = osInfo;
   }
 
   private _entryClicked(ev) {
@@ -214,23 +198,22 @@ class HaConfigInfo extends LitElement {
 
         .logo-versions {
           display: flex;
-          justify-content: center
+          justify-content: center;
           align-items: center;
         }
 
         .versions {
-          display: flex;
-          flex-direction: column;
           color: var(--secondary-text-color);
           padding: 12px 0;
+          font-size: 10pt;
           align-self: stretch;
-          justify-content: flex-start;
+          text-align: center;
         }
 
         .ha-version {
           color: #3e7dc0;
           font-weight: 500;
-          font-size: 16px;
+          font-size: 16pt;
           text-align: center;
         }
 

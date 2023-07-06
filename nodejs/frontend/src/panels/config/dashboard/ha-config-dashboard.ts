@@ -49,51 +49,7 @@ import "./ha-config-updates";
 const randomTip = (hass: HomeAssistant, narrow: boolean) => {
   const weighted: string[] = [];
   let tips = [
-    {
-      content: hass.localize(
-        "ui.panel.config.tips.join",
-        "forums",
-        html`<a
-          href="https://community.home-assistant.io"
-          target="_blank"
-          rel="noreferrer"
-          >Forums</a
-        >`,
-        "twitter",
-        html`<a
-          href=${documentationUrl(hass, `/twitter`)}
-          target="_blank"
-          rel="noreferrer"
-          >Twitter</a
-        >`,
-        "discord",
-        html`<a
-          href=${documentationUrl(hass, `/join-chat`)}
-          target="_blank"
-          rel="noreferrer"
-          >Chat</a
-        >`,
-        "blog",
-        html`<a
-          href=${documentationUrl(hass, `/blog`)}
-          target="_blank"
-          rel="noreferrer"
-          >Blog</a
-        >`,
-        "newsletter",
-        html`<span class="keep-together"
-          ><a
-            href=${documentationUrl(hass, `/newsletter`)}
-            target="_blank"
-            rel="noreferrer"
-            >Newsletter</a
-          >
-        </span>`
-      ),
-      weight: 2,
-      narrow: true,
-    },
-    { content: hass.localize("ui.tips.key_c_hint"), weight: 1, narrow: false },
+    { content: hass.localize("ui.tips.key_c_hint"), weight: 1, narrow: true },
     { content: hass.localize("ui.tips.key_m_hint"), weight: 1, narrow: false },
   ];
 
@@ -132,7 +88,7 @@ class HaConfigDashboard extends SubscribeMixin(LitElement) {
 
   private _pages = memoizeOne((clouStatus, isLoaded) => {
     const pages: PageNavigation[] = [];
-    if (clouStatus && isLoaded) {
+    if (clouStatus && isLoaded && false) {
       pages.push({
         component: "cloud",
         path: "/config/cloud",

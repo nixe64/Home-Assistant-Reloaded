@@ -24,6 +24,7 @@ http://www.gnu.org/licenses/.
 
 import collections.abc
 import datetime
+import threading
 import typing
 
 from . import helpers
@@ -43,7 +44,8 @@ if typing.TYPE_CHECKING:
 class RenderInfo:
     """Holds information about a template render."""
 
-    _active_instance = None
+    _active_instance: threading.local = threading.local()
+    _active_instance.instance = None
 
     _ALL_STATES_RATE_LIMIT: typing.Final = datetime.timedelta(minutes=1)
     _DOMAIN_STATES_RATE_LIMIT: typing.Final = datetime.timedelta(seconds=1)
@@ -58,7 +60,7 @@ class RenderInfo:
 
     @staticmethod
     def current():
-        return RenderInfo._active_instance
+        return RenderInfo._active_instance.instance
 
     def __init__(self, template: Template) -> None:
         """Initialise."""
@@ -128,7 +130,7 @@ class RenderInfo:
         self._freeze_static()
 
     def _freeze_static(self) -> None:
-        self._active_instance = None
+        self._active_instance.instance = None
         self._is_static = True
         self._freeze_sets()
         self._all_states = False
@@ -140,7 +142,7 @@ class RenderInfo:
 
     def freeze(self) -> None:
         """Freeze the result of the template rendering."""
-        self._active_instance = None
+        self._active_instance.instance = None
         self._freeze_sets()
 
         if self._rate_limit is None:
