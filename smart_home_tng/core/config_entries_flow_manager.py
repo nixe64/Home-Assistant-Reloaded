@@ -212,16 +212,17 @@ class ConfigEntriesFlowManager(FlowManager):
             self._shc.bus.async_fire(ConfigEntry.EVENT_FLOW_DISCOVERED)
             if comp is not None:
                 comp.async_create(
-                    "We have discovered new devices on your network. "
-                    + "[Check it out](/config/integrations).",
-                    "New devices discovered",
+                    "Wir haben neue Geräte in Ihrem Netzwerk entdeckt. "
+                    + "[Überprüfen Sie es](/config/integrations).",
+                    "Neue Geräte entdeckt",
                     ConfigEntry.DISCOVERY_NOTIFICATION_ID,
                 )
         elif source == ConfigEntrySource.REAUTH:
             if comp is not None:
                 comp.async_create(
-                    "At least one of your integrations requires reconfiguration to "
-                    + "continue functioning. [Check it out](/config/integrations).",
-                    "Integration requires reconfiguration",
+                    "Mindestens eine Ihrer Integrationen muss neu konfiguriert "
+                    + "werden, um weiter zu funktionieren. "
+                    + "[Überprüfen Sie es](/config/integrations).",
+                    "Integration erfordert Rekonfiguration",
                     Const.CONFIG_ENTRY_RECONFIGURE_NOTIFICATION_ID,
                 )

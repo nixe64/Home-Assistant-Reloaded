@@ -16,8 +16,6 @@
             "label": "Develop Frontend",
             "type": "shell",
             "command": "nodejs/frontend/script/develop",
-            // Sync changes here to other tasks until issue resolved
-            // https://github.com/Microsoft/vscode/issues/61497
             "problemMatcher": {
                 "owner": "ha-build",
                 "source": "ha-build",
@@ -251,6 +249,6 @@
                 "panel": "new"
             },
             "problemMatcher": []
-        },
+        }
     ],
 }

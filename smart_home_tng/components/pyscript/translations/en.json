@@ -22,17 +22,13 @@
         "title": "Update pyscript configuration",
         "data": {
           "allow_all_imports": "Allow All Imports?",
-          "shc_is_global": "Access shc as a global variable?"
+          "shc_is_global": "Access smart home controller as a global variable?"
         }
-      },
-      "no_ui_configuration_allowed": {
-        "title": "No UI configuration allowed",
-        "description": "This entry was created via `configuration.yaml`, so all configuration parameters must be updated there. The [`pyscript.reload`](developer-tools/service) service will allow you to apply the changes you make to `configuration.yaml` without restarting your Home Assistant instance."
-      },
-      "no_update": {
-        "title": "No update needed",
-        "description": "There is nothing to update."
       }
+    },
+    "abort": {
+      "no_ui_configuration_allowed": "## No UI configuration allowed\nThis entry was created via **configuration.yaml**, so all configuration parameters must be updated there. The [**pyscript.reload**](developer-tools/service) service will allow you to apply the changes you make to **configuration.yaml** without restarting your Smart Home instance.",
+      "no_update": "## No update needed\nThere is nothing to update."
     }
   }
 }
