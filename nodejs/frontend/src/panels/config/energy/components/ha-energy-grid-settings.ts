@@ -38,7 +38,6 @@ import {
 } from "../../../../dialogs/generic/show-dialog-box";
 import { haStyle } from "../../../../resources/styles";
 import { HomeAssistant } from "../../../../types";
-import { brandsUrl } from "../../../../util/brands-url";
 import { documentationUrl } from "../../../../util/documentation-url";
 import {
   showEnergySettingsGridFlowFromDialog,
@@ -60,10 +59,8 @@ export class EnergyGridSettings extends LitElement {
   @property({ attribute: false })
   public validationResult?: EnergyPreferencesValidation;
 
-  @state() private _co2ConfigEntry?: ConfigEntry;
-
   protected firstUpdated() {
-    this._fetchCO2SignalConfigEntries();
+    // this._fetchCO2SignalConfigEntries();
   }
 
   protected render(): TemplateResult {
@@ -211,84 +208,9 @@ export class EnergyGridSettings extends LitElement {
               )}</mwc-button
             >
           </div>
-
-          <h3>
-            ${this.hass.localize(
-              "ui.panel.config.energy.grid.grid_carbon_footprint"
-            )}
-          </h3>
-          ${this._co2ConfigEntry
-            ? html`<div class="row" .entry=${this._co2ConfigEntry}>
-                <img
-                  referrerpolicy="no-referrer"
-                  src=${brandsUrl({
-                    domain: "co2signal",
-                    type: "icon",
-                    darkOptimized: this.hass.themes?.darkMode,
-                  })}
-                />
-                <span class="content">${this._co2ConfigEntry.title}</span>
-                <a
-                  href=${`/config/integrations#config_entry=${this._co2ConfigEntry.entry_id}`}
-                >
-                  <ha-icon-button .path=${mdiPencil}></ha-icon-button>
-                </a>
-                <ha-icon-button
-                  .label=${this.hass.localize(
-                    "ui.panel.config.energy.grid.remove_co2_signal"
-                  )}
-                  @click=${this._removeCO2Sensor}
-                  .path=${mdiDelete}
-                ></ha-icon-button>
-              </div>`
-            : html`
-                <div class="row border-bottom">
-                  <img
-                    referrerpolicy="no-referrer"
-                    src=${brandsUrl({
-                      domain: "co2signal",
-                      type: "icon",
-                      darkOptimized: this.hass.themes?.darkMode,
-                    })}
-                  />
-                  <mwc-button @click=${this._addCO2Sensor}>
-                    ${this.hass.localize(
-                      "ui.panel.config.energy.grid.add_co2_signal"
-                    )}
-                  </mwc-button>
-                </div>
-              `}
         </div>
       </ha-card>
     `;
-  }
-
-  private async _fetchCO2SignalConfigEntries() {
-    const entries = await getConfigEntries(this.hass, { domain: "co2signal" });
-    this._co2ConfigEntry = entries.length ? entries[0] : undefined;
-  }
-
-  private _addCO2Sensor() {
-    showConfigFlowDialog(this, {
-      startFlowHandler: "co2signal",
-      dialogClosedCallback: () => {
-        this._fetchCO2SignalConfigEntries();
-      },
-    });
-  }
-
-  private async _removeCO2Sensor(ev) {
-    const entryId = ev.currentTarget.closest(".row").entry.entry_id;
-    if (
-      !(await showConfirmationDialog(this, {
-        title: this.hass.localize("ui.panel.config.energy.delete_integration"),
-      }))
-    ) {
-      return;
-    }
-
-    await deleteConfigEntry(this.hass, entryId);
-    this._fetchCO2SignalConfigEntries();
   }
 
   private _addFromSource() {

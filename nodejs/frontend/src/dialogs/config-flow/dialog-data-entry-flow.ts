@@ -248,7 +248,7 @@ class DataEntryFlowDialog extends LitElement {
                   this._params.manifest?.documentation
                     ? html`
                         <a
-                          href=${this._params.manifest.is_built_in
+                          href=${this._params.manifest.is_built_in && this._params?.manifest?.documentation === ""
                             ? documentationUrl(
                                 this.hass,
                                 `/integrations/${this._params.manifest.domain}`

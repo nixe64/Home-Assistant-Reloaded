@@ -309,13 +309,12 @@ class Template:
         **kwargs: typing.Any,
     ) -> RenderInfo:
         """Render the template and collect an entity filter."""
-        # pylint: disable=protected-access
 
-        assert self._shc and RenderInfo._active_instance.instance is None
+        # pylint: disable=protected-access
+        assert self._shc and RenderInfo.current() is None
 
         render_info = RenderInfo(self)
 
-        RenderInfo._active_instance.instance = render_info
         if self._is_static:
             render_info.set_static_result(self._template.strip())
             return render_info
