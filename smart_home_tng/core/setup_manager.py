@@ -105,7 +105,7 @@ _MOVED_ZEROCONF_PROPS: typing.Final = ("macaddress", "model", "manufacturer")
 _DATA_PERSISTENT_ERRORS: typing.Final = "setup.persistent_errors"
 _YAML_CONFIG_FILE: typing.Final = "configuration.yaml"
 _VERSION_FILE: typing.Final = ".SHC_VERSION"
-_CONFIG_DIR_NAME: typing.Final = ".smart_home_tng"
+_CONFIG_DIR_NAME: typing.Final = ".config/shc"
 _DATA_CUSTOMIZE: typing.Final = "setup.shc_customize"
 # The default is too low when the internet connection is satellite or high latency
 _PIP_TIMEOUT: typing.Final = 60

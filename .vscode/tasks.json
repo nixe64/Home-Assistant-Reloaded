@@ -50,7 +50,10 @@
             "label": "Frontend generieren",
             "type": "shell",
             "command": "nodejs/frontend/script/build_frontend",
-            "group": "build"
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
         },
         {
             "label": "Mit Black formatieren",
@@ -67,7 +70,10 @@
             "label": "format source code",
             "type": "shell",
             "command": "script/run-in-env.sh black --fast ${file}",
-            "group": "build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
             "presentation": {
                 "reveal": "always",
                 "panel": "new"
