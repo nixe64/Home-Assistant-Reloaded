@@ -122,8 +122,8 @@ usability for a specific purpose.**
 [bugs-badge]: https://img.shields.io/github/issues/nixe64/the-next-generation/bug.svg?label=Fehlerberichte&color=informational
 [bugs-url]: https://github.com/nixe64/the-next-generation/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3Abug
 
-[contribute-url]: contributing/Contributions.en.md
-[coc-url]: contributing/CodeOfConduct.en.md
+[contribute-url]: CONTRIBUTING.en.md
+[coc-url]: CODE_OF_CONDUCT.en.md
 
 [template-btn]: images/template-btn.svg
 
