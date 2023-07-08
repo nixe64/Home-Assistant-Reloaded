@@ -99,6 +99,14 @@ class BoschShcIntegration(core.SmartHomeControllerComponent, core.ConfigFlowPlat
             _LOGGER.warning(
                 "Please check for software updates in the Bosch Smart Home App"
             )
+            notify: core.PersistentNotificationComponent = (
+                self.controller.components.persistent_notification
+            )
+            if notify is not None:
+                notify.async_create(
+                    "Update verfügbar. Prüfe in der Bosch Smart Home App die Software-Updates.",
+                    "Bosch Smart Home Controller",
+                )
 
         self._sessions[entry.entry_id] = session
 
