@@ -586,7 +586,8 @@ async def webhook_get_config(
 
     with contextlib.suppress(core.CloudNotAvailable):
         cloud: core.CloudComponent = mobile_app.controller.components.cloud
-        resp[Const.CONF_REMOTE_UI_URL] = cloud.remote_ui_url
+        if cloud is not None:
+            resp[Const.CONF_REMOTE_UI_URL] = cloud.remote_ui_url
 
     webhook_id = config_entry.data[_const.CONF_WEBHOOK_ID]
 

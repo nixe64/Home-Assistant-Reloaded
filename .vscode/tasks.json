@@ -5,7 +5,10 @@
             "label": "auf Gandalf bereitstellen",
             "type": "shell",
             "command": "script/deploy.sh",
-            "group": "none",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
             "presentation": {
                 "reveal": "always",
                 "panel": "new"
