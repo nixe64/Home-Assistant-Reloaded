@@ -2108,7 +2108,10 @@ class SetupManager:
         except ValueError:
             # This is a zip file. We no longer use this in Smart Home - TNG,
             # leaving it in for custom components.
-            req = pkg_resources.Requirement.parse(url.parse_url(package).fragment)
+            tmp = url.parse_url(package)
+            if tmp is None:
+                return False
+            req = pkg_resources.Requirement.parse(tmp.fragment)
 
         try:
             installed_version = metadata.version(req.project_name)
