@@ -176,14 +176,10 @@ class LocalSource(core.MediaSource):
             return media
 
         # Append first level children
-        media.children = []
         for child_path in path.iterdir():
             if child_path.name[0] != ".":
                 child = self._build_item_response(source_dir_id, child_path, True)
                 if child:
-                    media.children.append(child)
-
-        # Sort children showing directories first, then by name
-        media.children.sort(key=lambda child: (child.can_play, child.title))
+                    media.add_child(child)
 
         return media

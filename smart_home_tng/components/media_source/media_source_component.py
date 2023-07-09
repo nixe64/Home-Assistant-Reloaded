@@ -83,7 +83,7 @@ class MediaSourceComponent(core.MediaSourceComponent):
         self._source = source
         _MEDIA_SOURCES[self.domain] = source
         shc.register_view(LocalMediaView(shc, source))
-        shc.register_view(UploadMediaView(shc, source))
+        shc.register_view(UploadMediaView(self, source))
 
         websocket_api.register_command(self._browse_media, _BROWSE_MEDIA)
         websocket_api.register_command(self._resolve_media, _RESOLVE_MEDIA)

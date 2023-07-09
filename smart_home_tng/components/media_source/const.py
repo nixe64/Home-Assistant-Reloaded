@@ -37,6 +37,4 @@ class Const:
         "video": core.MediaPlayer.MediaClass.VIDEO,
         "image": core.MediaPlayer.MediaClass.IMAGE,
     }
-    VALID_CONTENT_TYPES: typing.Final = {
-        mimetype + "/" for mimetype in MEDIA_MIME_TYPES
-    }
+    VALID_CONTENT_TYPES: typing.Final = ("audio/", "video/", "image/")

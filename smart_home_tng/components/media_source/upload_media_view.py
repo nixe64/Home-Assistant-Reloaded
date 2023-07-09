@@ -71,7 +71,7 @@ class UploadMediaView(core.SmartHomeControllerView):
 
     async def post(self, request: web.Request) -> web.Response:
         """Handle upload."""
-        if not request.app[core.Const.KEY_SHC].is_admin:
+        if not request[core.Const.KEY_SHC_USER].is_admin:
             raise core.Unauthorized()
 
         # Increase max payload

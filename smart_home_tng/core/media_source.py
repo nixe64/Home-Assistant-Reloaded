@@ -24,7 +24,7 @@ http://www.gnu.org/licenses/.
 
 import abc
 
-from .browse_media_source import BrowseMediaSource
+from .browse_media import BrowseMediaSource
 from .media_source_item import MediaSourceItem
 from .play_media import PlayMedia
 

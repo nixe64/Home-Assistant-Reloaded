@@ -56,8 +56,7 @@ from .binary_sensor import BinarySensor
 from .blueprint_base import BlueprintBase
 from .blueprint_component import BlueprintComponent
 from .blueprint_inputs_base import BlueprintInputsBase
-from .browse_media import BrowseMedia
-from .browse_media_source import BrowseMediaSource
+from .browse_media import BrowseMedia, BrowseMediaSource
 from .button import Button
 from .caching_static_resource import CachingStaticResource
 from .callback import callback, is_callback
