@@ -191,7 +191,7 @@ def _ensure_config_path(config_dir: str) -> None:
             sys.exit(1)
 
 
-def _main() -> int:
+def main() -> int:
     """Start Smart Home - The Next Generation."""
     _validate_python()
 
@@ -282,4 +282,4 @@ def _cancel_all_tasks_with_timeout(
 
 
 if __name__ == "__main__":
-    sys.exit(_main())
+    sys.exit(main())

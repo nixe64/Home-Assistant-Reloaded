@@ -201,7 +201,7 @@ tts:
 _TTS_92: typing.Final = """
 tts:
 - platform: google_translate
-service_name: google_say
+  service_name: google_say
 """
 
 _DATA_SETUP_DONE: typing.Final = "setup.done"

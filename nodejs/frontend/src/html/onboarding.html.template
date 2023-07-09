@@ -65,7 +65,7 @@
     <div class="content">
       <div class="header">
         <img src="/static/icons/favicon-192x192.png" height="52" width="52" alt="" />
-        Home Assistant
+        <img src="/static/images/logo.svg" height="52" alt="" />
       </div>
 
       <ha-onboarding></ha-onboarding>

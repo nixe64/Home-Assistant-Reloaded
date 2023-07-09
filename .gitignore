@@ -4,5 +4,7 @@
 *-badge.md
 .config/
 smart_home_tng/frontend/**
+.pytest_cache
+dist
 
 .gitsecret/keys/random_seed

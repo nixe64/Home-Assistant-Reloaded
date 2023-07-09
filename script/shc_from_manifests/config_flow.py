@@ -62,8 +62,8 @@ class ConfigFlowGenerator(CodeGenerator):
         """Validate config flow of an integration."""
         config_flow_file = integration.path / "config_flow.py"
 
-        if not config_flow_file.is_file():
-            if integration.manifest.get("config_flow") and not integration.core:
+        if not config_flow_file.is_file() or integration.core:
+            if integration.config_flow and not integration.core:
                 integration.add_error(
                     "config_flow",
                     "Config flows need to be defined in the file config_flow.py",
