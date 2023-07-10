@@ -3,12 +3,10 @@
   "name": "Google Cast",
   "config_flow": true,
   "documentation": "https://www.home-assistant.io/integrations/cast",
-  "requirements": ["pychromecast>=12.1.4"],
+  "requirements": ["pychromecast>=13.0.7, < 13.1"],
   "after_dependencies": [
-    "cloud",
     "http",
     "media_source",
-    "plex",
     "tts",
     "zeroconf"
   ],

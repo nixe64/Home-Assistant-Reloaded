@@ -66,11 +66,12 @@ class PyscriptConfigFlow(core.ConfigFlow):
         self, user_input: dict[str, typing.Any] = None
     ) -> dict[str, typing.Any]:
         """Handle a flow initialized by the user."""
+        domain = self._owner.domain
+        if len(self._shc.config_entries.async_entries(domain)) > 0 or (
+            self.controller.components.pyscript is not None and user_input is None
+        ):
+            return self.async_abort(reason="single_instance_allowed")
         if user_input is not None:
-            domain = self._owner.domain
-            if len(self._shc.config_entries.async_entries(domain)) > 0:
-                return self.async_abort(reason="single_instance_allowed")
-
             await self.async_set_unique_id(domain)
             return self.async_create_entry(title=domain, data=user_input)
 

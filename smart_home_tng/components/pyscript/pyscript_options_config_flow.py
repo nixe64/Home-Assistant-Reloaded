@@ -95,9 +95,7 @@ class PyscriptOptionsConfigFlow(core.OptionsFlow):
         """Tell user no UI configuration is allowed."""
         if self._show_form:
             self._show_form = False
-            return self.async_show_form(
-                step_id="no_ui_configuration_allowed", data_schema=vol.Schema({})
-            )
+            return self.async_abort(reason="no_ui_configuration_allowed")
 
         return self.async_create_entry(title="", data={})
 
@@ -107,6 +105,6 @@ class PyscriptOptionsConfigFlow(core.OptionsFlow):
         """Tell user no update to process."""
         if self._show_form:
             self._show_form = False
-            return self.async_show_form(step_id="no_update", data_schema=vol.Schema({}))
+            return self.async_abort(reason="no_update")
 
         return self.async_create_entry(title="", data={})

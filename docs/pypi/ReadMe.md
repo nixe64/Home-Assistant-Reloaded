@@ -1,12 +1,4 @@
-<a href="ReadMe.en.md"><img src="images/en.svg" valign="top" align="right"/></a>
-<a href="ReadMe.md"><img src="images/de.svg" valign="top" align="right"/></a>
-<!--[![Version][version-badge]][version-url]-->
-[![License][license-badge]][license-url]
-<!--
-[![Bugs][bugs-badge]][bugs-url]
--->
-
-[![Logo][logo]][project-url]
+# Smart Home - The Next Generation
 
 ### Live Long And Prosper
 
@@ -40,44 +32,63 @@ find the project interesting and usable too much.
 Python was used for good reason for the development of Home Assistant
 and I don't want to change that.
 
-### Why a “new home assistant” if what exists is so good?
+### Installation
 
-Well, at first glance it might look like you could/should be perfectly
-happy with Home Assistant. Great interface, very active community, 
-very comprehensive support of smart devices, ... What more do you want?
+In order to use **Smart Home - The Next Generation**, you need Python 3.11.4
+or later. Create a new virtual environment and use it with 
 
-Unfortunately I had to risk a second look (in the source code) because I
-failed in developing a new integration for Home Assistant (my *”Jarvis”*).
-Due to circular imports Home Assistant couldn't be imported by “Jarvis", 
-which is neccesarry to test the new integration with pytest.
-My bug report to Home Assistant ran into "Nirvana", the issue is still 
-untouched. 
-I was able to patch my “development version” of Home Assistant after all
-so far that the parts I needed are imported “without complaining”
-and “Jarvis” could be tested with pytest.
+```
+source <venv-path>/bin/activate
+```
+Afterwards you have to install `wheel`, wich is required to download and
+install `smart-home-tng` and all requirements. Now you can install 
+**Smart Home - The Next Generation** using this command line:
+```
+pip install --upgrade smart-home-tng
+```
+The same command line can be used to upgrade smart-home-tng to the newest version.
 
-Trying to share my gained insights with the Home Assistant Community
-and make the project (even if only a little) better was just as welcome 
-as a fly fly on the breakfast jam (probably Nabu Casa earns already too much 
-money by hosting the **”Home Assistant Cloud”** that the Open-Source thought 
-is only propagated for advertising purposes). 
-I don’t want to be the fifth wheel at the car, so all I have left is to 
-realize my vision of a reliable centralized control system myself and 
-to hope that a few like-minded people consider my approach interesting 
-enough to advance the project through their participation.
+Now, you are ready to start `Smart Home - The Next Generation`.
+```
+usage: smart-home-tng [-h] [--version] [-c path_to_config_dir] [--safe-mode] [--debug] [--open-ui] [--skip-pip] [-v]
+                      [--log-rotate-days LOG_ROTATE_DAYS] [--log-file LOG_FILE] [--log-no-color] [--script ...]
+                      [--ignore-os-check]
 
+Smart Home - The Next Generation: Observe, Control, Automate.
+
+options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+  -c path_to_config_dir, --config path_to_config_dir
+                        Directory that contains the Smart Home - The Next Generation configuration
+  --safe-mode           Start Smart Home - The Next Generation in safe mode
+  --debug               Start Smart Home - The Next Generation in debug mode
+  --open-ui             Open the webinterface in a browser
+  --skip-pip            Skips pip install of required packages on startup
+  -v, --verbose         Enable verbose logging to file.
+  --log-rotate-days LOG_ROTATE_DAYS
+                        Enables daily log rotation and keeps up to the specified days
+  --log-file LOG_FILE   Log file to write to. If not set, CONFIG/smart_home_tng.log is used
+  --log-no-color        Disable color logs
+  --script ...          Run one of the embedded scripts
+  --ignore-os-check     Skips validation of operating system
+
+If restart is requested, exits with code 100
+```
 ### Feature Requests / Bug Reports / Service Requests
 
 If you have suggestions for new features, want to report a bug, or get stuck 
-on a problem, please first check [Support and Servicing][support-url]. It 
-explains in detail how and where you can make your case.
+on a problem, feel free to open a new [issue][issues-url] on GitHub. But please,
+check the existings issues if anyone else has already opened an issue for the 
+same feature request or bug. Thank you.
 
 ### Contributing
 
 Contributions are what make the open source community such a great place to 
 learn, inspire, and create. I would be happy if you would like to contribute 
 a new feature, bugfix or anything else to this project. Anything that makes 
-this project better is welcome. But please read [Contributions][contribute-url] 
+this project better is welcome. Please visit the project on [GitHub][project-url]
+to get more information read [Contributions][contribute-url] 
 to this project and the [Code of Conduct][coc-url] for contributors first 
 **before** you start coding.
 
@@ -99,33 +110,12 @@ have deserved).
 ### License
 
 Distributed for free use/modification under the terms of
-the [GNU General Public License v3][license-url].
+the `GNU General Public License v3`.
 
 But “dear lovers” (as Brisko Schneider would have said), always remember:
 
 **This is free software, without any warranty on functionality or 
 usability for a specific purpose.**
 
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-
-[logo]: images/logo.svg
-[project-url]: https://github.com/nixe64/The-Next-Generation/
-
-[license-badge]: images/license.en.svg
-[license-url]: ../COPYRIGHT.en.md
-
-[version-badge]: images/version.svg
-[version-url]: https://github.com/nixe64/The-Next-Generation/releases
-
-[issues-url]: https://github.com/nixe64/The-Next-Generation/issues
-[bugs-badge]: https://img.shields.io/github/issues/nixe64/the-next-generation/bug.svg?label=Fehlerberichte&color=informational
-[bugs-url]: https://github.com/nixe64/the-next-generation/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3Abug
-
-[contribute-url]: CONTRIBUTING.en.md
-[coc-url]: CODE_OF_CONDUCT.en.md
-
-[template-btn]: images/template-btn.svg
-
-[support-url]: Support.en.md
-[development-url]: Development.en.md
+[issues-url]: https://github.com/nixe64/the-next-generation/issues
+[project-url]: https://github.com/nixe64/the-next-generation/

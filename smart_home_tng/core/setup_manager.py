@@ -105,7 +105,7 @@ _MOVED_ZEROCONF_PROPS: typing.Final = ("macaddress", "model", "manufacturer")
 _DATA_PERSISTENT_ERRORS: typing.Final = "setup.persistent_errors"
 _YAML_CONFIG_FILE: typing.Final = "configuration.yaml"
 _VERSION_FILE: typing.Final = ".SHC_VERSION"
-_CONFIG_DIR_NAME: typing.Final = ".smart_home_tng"
+_CONFIG_DIR_NAME: typing.Final = ".config/shc"
 _DATA_CUSTOMIZE: typing.Final = "setup.shc_customize"
 # The default is too low when the internet connection is satellite or high latency
 _PIP_TIMEOUT: typing.Final = 60
@@ -201,7 +201,7 @@ tts:
 _TTS_92: typing.Final = """
 tts:
 - platform: google_translate
-service_name: google_say
+  service_name: google_say
 """
 
 _DATA_SETUP_DONE: typing.Final = "setup.done"
@@ -2108,7 +2108,10 @@ class SetupManager:
         except ValueError:
             # This is a zip file. We no longer use this in Smart Home - TNG,
             # leaving it in for custom components.
-            req = pkg_resources.Requirement.parse(url.parse_url(package).fragment)
+            tmp = url.parse_url(package)
+            if tmp is None:
+                return False
+            req = pkg_resources.Requirement.parse(tmp.fragment)
 
         try:
             installed_version = metadata.version(req.project_name)
@@ -3290,6 +3293,7 @@ def _write_default_config(config_dir: str) -> bool:
     automation_yaml_path = os.path.join(config_dir, _AUTOMATION_CONFIG_PATH)
     script_yaml_path = os.path.join(config_dir, _SCRIPT_CONFIG_PATH)
     scene_yaml_path = os.path.join(config_dir, _SCENE_CONFIG_PATH)
+    media_dir_path = os.path.join(config_dir, "media")
 
     # Writing files with YAML does not create the most human readable results
     # So we're hard coding a YAML template.
@@ -3316,6 +3320,8 @@ def _write_default_config(config_dir: str) -> bool:
             with open(scene_yaml_path, "wt", encoding="utf8"):
                 pass
 
+        if not os.path.isdir(media_dir_path):
+            os.mkdir(media_dir_path)
         return True
 
     except OSError:

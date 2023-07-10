@@ -38,7 +38,7 @@ from .setup_flow import SetupFlow
 _cv: typing.TypeAlias = core.ConfigValidation
 
 # pylint: disable=unused-variable
-REQUIREMENTS: typing.Final = ["pyotp>=2.6.0"]
+REQUIREMENTS: typing.Final = ["pyotp>=2.8.0, < 2.9"]
 
 _CONF_MESSAGE: typing.Final = "message"
 

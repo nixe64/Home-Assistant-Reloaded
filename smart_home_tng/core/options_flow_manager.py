@@ -46,7 +46,7 @@ class OptionsFlowManager(FlowManager):
         handler_key: typing.Any,
         *,
         context: dict[str, typing.Any] = None,
-        data: dict[str, typing.Any] = None
+        data: dict[str, typing.Any] = None,
     ) -> FlowHandler:
         """Create an options flow for a config entry.
 

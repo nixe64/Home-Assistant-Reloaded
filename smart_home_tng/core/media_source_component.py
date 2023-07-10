@@ -25,8 +25,7 @@ http://www.gnu.org/licenses/.
 import abc
 import collections.abc
 
-from .browse_media import BrowseMedia
-from .browse_media_source import BrowseMediaSource
+from .browse_media import BrowseMedia, BrowseMediaSource
 from .play_media import PlayMedia
 from .smart_home_controller_component import SmartHomeControllerComponent
 

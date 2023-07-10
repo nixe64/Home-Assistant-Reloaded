@@ -24,9 +24,11 @@ http://www.gnu.org/licenses/.
 
 import typing
 
+from .const import Const
 from .media_player import MediaPlayer
 
 _BrowseMediaT = typing.TypeVar("_BrowseMediaT", bound="BrowseMedia")
+_BrowseMediaSourceT = typing.TypeVar("_BrowseMediaSourceT", bound="BrowseMediaSource")
 
 
 # pylint: disable=unused-variable
@@ -84,6 +86,16 @@ class BrowseMedia:
         if self._children is None:
             return None
         return iter(self._children)
+
+    def add_child(self, child: _BrowseMediaSourceT) -> None:
+        if child is None:
+            return
+        if self._children is None:
+            self._children = []
+        self._children.append(child)
+        if len(self._children) > 1:
+            # Sort children showing directories first, then by name
+            self._children.sort(key=lambda child: (child.can_play, child.title))
 
     @property
     def children_media_class(self) -> str:
@@ -147,3 +159,27 @@ class BrowseMedia:
     def __repr__(self) -> str:
         """Return representation of browse media."""
         return f"<BrowseMedia {self.title} ({self.media_class})>"
+
+
+# pylint: disable=unused-variable
+class BrowseMediaSource(BrowseMedia):
+    """Represent a browsable media file."""
+
+    def __init__(self, *, domain: str, identifier: str, **kwargs: typing.Any) -> None:
+        """Initialize media source browse media."""
+        media_content_id = f"{Const.MEDIA_SOURCE_URI_SCHEME}{domain or ''}"
+        if identifier:
+            media_content_id += f"/{identifier}"
+
+        super().__init__(media_content_id=media_content_id, **kwargs)
+
+        self._domain = domain
+        self._identifier = identifier
+
+    @property
+    def domain(self) -> str:
+        return self._domain
+
+    @property
+    def identifier(self) -> str:
+        return self._identifier

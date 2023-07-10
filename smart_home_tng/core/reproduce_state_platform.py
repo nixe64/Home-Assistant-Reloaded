@@ -48,6 +48,6 @@ class ReproduceStatePlatform(PlatformImplementation):
         states: list[State],
         *,
         context: Context = None,
-        reproduce_options: dict[str, typing.Any] = None
+        reproduce_options: dict[str, typing.Any] = None,
     ):
         """Reproduce Platform states."""

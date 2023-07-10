@@ -651,7 +651,7 @@ class BinarySensorComponent(
         _old_attrs: dict,
         new_state: str,
         _new_attrs: dict,
-        **_kwargs: typing.Any
+        **_kwargs: typing.Any,
     ) -> bool:
         """Test if state significantly changed."""
         if old_state != new_state:

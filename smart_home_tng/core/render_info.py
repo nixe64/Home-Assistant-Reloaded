@@ -45,7 +45,6 @@ class RenderInfo:
     """Holds information about a template render."""
 
     _active_instance: threading.local = threading.local()
-    _active_instance.instance = None
 
     _ALL_STATES_RATE_LIMIT: typing.Final = datetime.timedelta(minutes=1)
     _DOMAIN_STATES_RATE_LIMIT: typing.Final = datetime.timedelta(seconds=1)
@@ -60,11 +59,15 @@ class RenderInfo:
 
     @staticmethod
     def current():
-        return RenderInfo._active_instance.instance
+        try:
+            return RenderInfo._active_instance.instance
+        except AttributeError:
+            return None
 
     def __init__(self, template: Template) -> None:
         """Initialise."""
 
+        RenderInfo._active_instance.instance = self
         self._template = template
         # Will be set sensibly once frozen.
         self._filter_lifecycle: typing.Callable[[str], bool] = RenderInfo._true

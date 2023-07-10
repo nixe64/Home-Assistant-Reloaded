@@ -8,6 +8,4 @@ import typing
 # fmt: off
 
 # pylint: disable=unused-variable
-APPLICATION_CREDENTIALS: typing.Final = [
-    "application_credentials"
-]
+APPLICATION_CREDENTIALS: typing.Final = []

@@ -63,11 +63,12 @@ class ApplicationCredentialsGenerator(CodeGenerator):
         match_list = []
 
         for domain in sorted(integrations):
+            if domain == "default_config":
+                continue
+
             integration = integrations[domain]
-            application_credentials_file = (
-                integration.path / "application_credentials.py"
-            )
-            if not application_credentials_file.is_file():
+            dependencies = integration.manifest.get("dependencies")
+            if dependencies is None or not "application_credentials" in dependencies:
                 continue
 
             match_list.append(domain)

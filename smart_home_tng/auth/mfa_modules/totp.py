@@ -36,7 +36,7 @@ from .multi_factor_auth_module import MultiFactorAuthModule, _MULTI_FACTOR_AUTH_
 from .setup_flow import SetupFlow
 
 # pylint: disable=unused-variable
-REQUIREMENTS: typing.Final = ["pyotp>=2.6.0", "PyQRCode>=1.2.1"]
+REQUIREMENTS: typing.Final = ["pyotp>=2.8.0, < 2.9", "PyQRCode>=1.2.1, < 1.3"]
 
 _STORAGE_VERSION: typing.Final = 1
 _STORAGE_KEY: typing.Final = "auth_module.totp"

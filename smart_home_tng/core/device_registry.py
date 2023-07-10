@@ -28,8 +28,6 @@ import logging
 import time
 import typing
 
-import attr
-
 from ..backports import strenum
 from . import helpers
 from .callback import callback
@@ -584,15 +582,23 @@ class DeviceRegistry:
                 continue
             if config_entries == {config_entry_id}:
                 # Add a time stamp when the deleted device became orphaned
-                self.deleted_devices[deleted_device.id] = attr.evolve(
-                    deleted_device, orphaned_timestamp=now_time, config_entries=set()
+                self.deleted_devices[deleted_device.id] = DeletedDevice(
+                    device_id=deleted_device.id,
+                    config_entries=set(),
+                    connections=deleted_device.connections,
+                    identifiers=deleted_device.identifiers,
+                    orphaned_timestamp=now_time,
                 )
             else:
                 config_entries = config_entries - {config_entry_id}
                 # No need to reindex here since we currently
                 # do not have a lookup by config entry
-                self.deleted_devices[deleted_device.id] = attr.evolve(
-                    deleted_device, config_entries=config_entries
+                self.deleted_devices[deleted_device.id] = DeletedDevice(
+                    device_id=deleted_device.id,
+                    config_entries=config_entries,
+                    connections=deleted_device.connections,
+                    identifiers=deleted_device.identifiers,
+                    orphaned_timestamp=deleted_device.orphaned_timestamp,
                 )
             self.async_schedule_save()
 
