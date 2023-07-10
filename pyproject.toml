@@ -4,10 +4,10 @@ build-backend = "hatchling.build"
 
 [project]
 name        = "smart-home-tng"
-version     = "2023.0.2"
+version     = "2023.1.0"
 description = "Open-source home automation platform running on Python 3.11"
 licence     = "file: LICENSE.md"
-readme      = "docs/ReadMe.md"
+readme      = "docs/pypi/ReadMe.de.md"
 authors     = [
     { name = "Andreas Nixdorf" }
 ]

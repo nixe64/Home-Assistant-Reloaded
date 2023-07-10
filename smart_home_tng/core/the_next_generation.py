@@ -885,7 +885,7 @@ class TheNextGeneration(SmartHomeController):
             )
 
         if result and runtime_config.open_ui:
-            result.add_job(result.open_shc_ui, result)
+            result.add_job(result.open_shc_ui)
 
         return result
 
@@ -911,7 +911,7 @@ class TheNextGeneration(SmartHomeController):
 
         if not webbrowser.open(uri):
             _LOGGER.warning(
-                f"Unable to open the Home Assistant UI in a browser. Open it yourself at {uri}"
+                f"Unable to open the UI in a browser. Open it yourself at {uri}"
             )
 
     async def async_get_user_site(self, deps_dir: str) -> str:

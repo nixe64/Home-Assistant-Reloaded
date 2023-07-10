@@ -39,7 +39,7 @@ class Const:
     """global constants for Smart Home - The Next Generation"""
 
     MAJOR_VERSION: typing.Final = 2023
-    MINOR_VERSION: typing.Final = 0
+    MINOR_VERSION: typing.Final = 1
     PATCH_VERSION: typing.Final = "0"
     __short_version__: typing.Final = f"{MAJOR_VERSION}.{MINOR_VERSION}"
     __version__: typing.Final = f"{__short_version__}.{PATCH_VERSION}"
