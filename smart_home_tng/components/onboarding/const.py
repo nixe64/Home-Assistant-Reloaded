@@ -34,7 +34,7 @@ class Const:
     STEPS: typing.Final = [
         Step.USER.value,
         Step.CORE_CONFIG.value,
-        Step.ANALYTICS.value,
+        # Step.ANALYTICS.value,
         Step.INTEGRATION.value,
     ]
 
