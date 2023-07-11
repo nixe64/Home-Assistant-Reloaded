@@ -25,8 +25,6 @@ http://www.gnu.org/licenses/.
 import abc
 import typing
 
-import hass_nabucasa as nabucasa
-
 from .cloud_connection_state import CloudConnectionState
 from .smart_home_controller_component import SmartHomeControllerComponent
 
@@ -37,7 +35,7 @@ class CloudComponent(SmartHomeControllerComponent):
 
     @property
     @abc.abstractmethod
-    def cloud(self) -> nabucasa.Cloud:
+    def cloud(self) -> typing.Any:
         """Return the configured nabacasa cloud implementation."""
 
     @property

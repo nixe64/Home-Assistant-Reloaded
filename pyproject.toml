@@ -4,7 +4,6 @@ build-backend = "hatchling.build"
 
 [project]
 name        = "smart-home-tng"
-version     = "2023.1.0"
 description = "Open-source home automation platform running on Python 3.11"
 licence     = "file: LICENSE.md"
 readme      = "docs/pypi/ReadMe.de.md"
@@ -34,8 +33,7 @@ dependencies = [
     "certifi >= 2023.5.7, < 2023.6",
     "ciso8601 >= 2.3.0, < 2.4",
     "colorlog >= 6.7.0, < 6.8",
-    "cryptography >= 36.0.2, < 36.1",
-    "hass-nabucasa >= 0.54.1, < 0.55",
+    "cryptography >= 41.0.2, < 41.1",
     "jinja2 >= 3.1.2, < 3.2",
     "pyJWT >= 2.6.0, < 2.7",
     "pyotp >= 2.8.0, < 2.9",
@@ -43,15 +41,22 @@ dependencies = [
     "PyTurboJPEG >= 1.7.1, < 1.8",
     "pyYAML >= 6.0, < 6.1",
     "python-slugify >= 8.0.1, < 8.2",
+    "requests >= 2.31.0, < 2.32",
     "SQLAlchemy >= 1.4.37, < 1.5",
     "urllib3 >= 1.26.16, < 1.27",
     "voluptuous >= 0.13.1, < 0.14",
     "voluptuous-serialize >= 2.6.0, < 2.7",
     "zeroconf >= 0.69.0, < 0.70",
 ]
+dynamic = [
+    "version",
+]
 
 [project.scripts]
 smart-home-tng = "smart_home_tng.__main__:main"
+
+[tool.hatch.version]
+path = "smart_home_tng/__about__.py"
 
 [tool.hatch.build]
 ignore-vcs = false
@@ -63,7 +68,11 @@ artifacts = [
 exclude = [
     ".github",
     ".config", 
-    ".pytest_cache"
+    ".pytest_cache",
+    "nodejs/frontend/build",
+    "nodejs/frontend/node_modules",
+    "nodejs/frontend/.yarn/cache",
+    "nodejs/frontend/.yarn/install-state.gz"
 ]
 
 [tool.hatch.build.targets.wheel]
