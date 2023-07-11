@@ -4,7 +4,6 @@ build-backend = "hatchling.build"
 
 [project]
 name        = "smart-home-tng"
-version     = "2023.1.0"
 description = "Open-source home automation platform running on Python 3.11"
 licence     = "file: LICENSE.md"
 readme      = "docs/pypi/ReadMe.de.md"
@@ -49,9 +48,15 @@ dependencies = [
     "voluptuous-serialize >= 2.6.0, < 2.7",
     "zeroconf >= 0.69.0, < 0.70",
 ]
+dynamic = [
+    "version",
+]
 
 [project.scripts]
 smart-home-tng = "smart_home_tng.__main__:main"
+
+[tool.hatch.version]
+path = "smart_home_tng/__about__.py"
 
 [tool.hatch.build]
 ignore-vcs = false
