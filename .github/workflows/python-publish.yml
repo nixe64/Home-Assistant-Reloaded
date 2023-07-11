@@ -33,10 +33,10 @@ jobs:
                 cache-dependency-path: "nodejs/frontend/yarn.lock"
 
             - name: Install dependencies
-              run: .nodejs/frontend/script/bootstrap
+              run: nodejs/frontend/script/bootstrap
 
             - name: Build frontend
-              run: .nodejs/frontend/script/build_frontend
+              run: nodejs/frontend/script/build_frontend
 
             - name: Build and release package
               # remove source package (about 670MB),
