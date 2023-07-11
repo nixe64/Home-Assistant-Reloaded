@@ -30,6 +30,7 @@ jobs:
               with:
                 node-version: 16
                 cache: yarn
+                cache-dependency-path: "nodejs/frontend/yarn.lock"
 
             - name: Install dependencies
               run: .nodejs/frontend/script/bootstrap
