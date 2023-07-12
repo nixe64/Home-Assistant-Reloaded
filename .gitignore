@@ -1,10 +1,10 @@
 **/__pycache__
-.venv/
-.secrets
+/.venv/
+/.secrets
 *-badge.md
-.config/
-smart_home_tng/frontend/**
-.pytest_cache
-dist
+/.config/
+!manifest.json
+/.pytest_cache
+/dist
 
-.gitsecret/keys/random_seed
+/.gitsecret/keys/random_seed
