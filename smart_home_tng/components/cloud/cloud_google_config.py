@@ -5,7 +5,7 @@ Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
 home-assistant.io and the Home Assistant Community.
 
-Copyright (c) 2022, Andreas Nixdorf
+Copyright (c) 2022-2023, Andreas Nixdorf
 
 This program is free software: you can redistribute it and/or
 modify it under the terms of the GNU General Public License as
@@ -27,12 +27,14 @@ import http
 import logging
 import typing
 
-import hass_nabucasa as nabucasa
-from hass_nabucasa import cloud_api, google_report_state
+import hass_nabucasa as nabucasa  # pylint: disable=import-error
 
 from ... import core
 from .cloud_preferences import CloudPreferences
 from .const import Const
+
+_cloud_api: typing.TypeAlias = nabucasa.cloud_api
+_report_state: typing.TypeAlias = nabucasa.google_report_state
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
 
@@ -191,7 +193,7 @@ class CloudGoogleConfig(core.GoogleAssistant.AbstractConfig):
         """Send a state report to Google."""
         try:
             await self._cloud.google_report_state.async_send_message(message)
-        except google_report_state.ErrorResponse as err:
+        except _report_state.ErrorResponse as err:
             _LOGGER.warning(f"Error reporting state - {err.code}: {err.message}")
 
     async def _async_request_sync_devices(self, agent_user_id: str):
@@ -200,7 +202,7 @@ class CloudGoogleConfig(core.GoogleAssistant.AbstractConfig):
             return http.HTTPStatus.OK
 
         async with self._sync_entities_lock:
-            resp = await cloud_api.async_google_actions_request_sync(self._cloud)
+            resp = await _cloud_api.async_google_actions_request_sync(self._cloud)
             return resp.status
 
     async def _async_prefs_updated(self, prefs):
