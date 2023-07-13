@@ -5,7 +5,7 @@ Smart Home - TNG is a Home Automation framework for observing the state
 of entities and react to changes. It is based on Home Assistant from
 home-assistant.io and the Home Assistant Community.
 
-Copyright (c) 2022, Andreas Nixdorf
+Copyright (c) 2022-2023, Andreas Nixdorf
 
 This program is free software: you can redistribute it and/or
 modify it under the terms of the GNU General Public License as
@@ -86,7 +86,7 @@ class Onboarding(core.OnboardingComponent):
                 data["done"].append(Step.USER.value)
                 await store.async_save(data)
 
-        if set(data["done"]) == set(Const.STEPS):
+        if set(data["done"]).issuperset(set(Const.STEPS)):
             self._data = True
             return True
 
