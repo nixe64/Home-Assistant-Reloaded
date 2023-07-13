@@ -26,7 +26,7 @@ import asyncio
 import logging
 import typing
 
-import hass_nabucasa.account_link as nabucasa_account_link
+import hass_nabucasa.account_link as nabucasa_account_link  # pylint: disable=import-error
 
 from ... import core
 

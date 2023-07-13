@@ -30,10 +30,7 @@ import async_timeout
 import aiohttp
 import attr
 import awesomeversion as asv
-import hass_nabucasa as nabucasa
-import hass_nabucasa.account_link as nabucasa_account_link
-import hass_nabucasa.cloud_api as nabucasa_cloud_api
-import hass_nabucasa.thingtalk as nabucasa_thingtalk
+import hass_nabucasa as nabucasa  # pylint: disable=import-error
 import voluptuous as vol
 import yarl
 
@@ -54,6 +51,10 @@ from .speech_to_text_provider import SpeechToTextProvider
 from .text_to_speech_provider import TextToSpeechProvider, _CONF_GENDER
 
 _cv: typing.TypeAlias = core.ConfigValidation
+_account_link: typing.TypeAlias = nabucasa.account_link
+_cloud_api: typing.TypeAlias = nabucasa.cloud_api
+_thingtalk: typing.TypeAlias = nabucasa.thingtalk
+
 
 # from alexa const
 _CONF_DISPLAY_CATEGORIES: typing.Final = "display_categories"
@@ -458,9 +459,7 @@ class CloudComponent(
             return services
 
         try:
-            services = await nabucasa_account_link.async_fetch_available_services(
-                self._cloud
-            )
+            services = await _account_link.async_fetch_available_services(self._cloud)
         except (aiohttp.ClientError, asyncio.TimeoutError):
             return []
 
@@ -582,7 +581,7 @@ class CloudComponent(
         if self._check_cloud_auth(connection, msg):
             try:
                 async with async_timeout.timeout(Const.REQUEST_TIMEOUT):
-                    data = await nabucasa_cloud_api.async_subscription_info(self._cloud)
+                    data = await _cloud_api.async_subscription_info(self._cloud)
             except aiohttp.ClientError:
                 connection.send_error(
                     msg["id"], "request_failed", "Failed to request subscription"
@@ -824,9 +823,9 @@ class CloudComponent(
             try:
                 connection.send_result(
                     msg["id"],
-                    await nabucasa_thingtalk.async_convert(cloud, msg["query"]),
+                    await _thingtalk.async_convert(cloud, msg["query"]),
                 )
-            except nabucasa_thingtalk.ThingTalkConversionError as err:
+            except _thingtalk.ThingTalkConversionError as err:
                 connection.send_error(
                     msg["id"], core.WebSocket.ERR_UNKNOWN_ERROR, str(err)
                 )

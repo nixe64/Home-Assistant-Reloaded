@@ -25,7 +25,7 @@ http://www.gnu.org/licenses/.
 import typing
 
 import aiohttp
-import hass_nabucasa as nabucasa
+import hass_nabucasa as nabucasa  # pylint: disable=import-error
 
 from ... import core
 

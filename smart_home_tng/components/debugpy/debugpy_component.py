@@ -52,7 +52,9 @@ class DebugPyComponent(core.SmartHomeControllerComponent):
             {
                 self.domain: vol.Schema(
                     {
-                        vol.Optional(_const.CONF_HOST, default="0.0.0.0"): _cv.string, # nosec
+                        vol.Optional(
+                            _const.CONF_HOST, default="0.0.0.0"  # nosec
+                        ): _cv.string,
                         vol.Optional(_const.CONF_PORT, default=5678): _cv.port,
                         vol.Optional(_CONF_START, default=True): _cv.boolean,
                         vol.Optional(_CONF_WAIT, default=False): _cv.boolean,

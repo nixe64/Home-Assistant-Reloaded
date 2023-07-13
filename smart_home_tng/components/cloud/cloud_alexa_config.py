@@ -22,6 +22,7 @@ License along with this program.  If not, see
 http://www.gnu.org/licenses/.
 """
 
+
 import asyncio
 import contextlib
 import datetime as dt
@@ -31,14 +32,14 @@ import typing
 
 import aiohttp
 import async_timeout
-import hass_nabucasa as nabucasa
-import hass_nabucasa.cloud_api as nabucasa_api
+import hass_nabucasa as nabucasa  # pylint: disable=import-error
 
 from ... import core
 from .cloud_preferences import CloudPreferences
 from .const import Const
 
 _alexa: typing.TypeAlias = core.Alexa
+_cloud_api: typing.TypeAlias = nabucasa.cloud_api
 
 _LOGGER: typing.Final = logging.getLogger(__name__)
 
@@ -176,7 +177,7 @@ class CloudAlexaConfig(_alexa.AbstractConfig):
         if self._token_valid is not None and self._token_valid > core.helpers.utcnow():
             return self._token
 
-        resp = await nabucasa_api.async_alexa_access_token(self._cloud)
+        resp = await _cloud_api.async_alexa_access_token(self._cloud)
         body = await resp.json()
 
         if resp.status == http.HTTPStatus.BAD_REQUEST:
