@@ -29,7 +29,7 @@ import pathlib
 import typing
 
 import aiohttp
-import hass_nabucasa.client as nabucasa
+import hass_nabucasa.client as nabucasa  # pylint: disable=import-error
 
 from ... import core
 from .const import Const

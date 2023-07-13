@@ -1161,13 +1161,13 @@ class Recorder(threading.Thread):
         if self._using_file_sqlite:
             util.validate_or_move_away_sqlite_database(self.db_url)
 
-        self._engine = sql.create_engine(self.db_url, **kwargs, future=True)
+        self._engine = sql.create_engine(self.db_url, **kwargs)
 
         sql_event.listen(self.engine, "connect", setup_recorder_connection)
 
         model.Base.metadata.create_all(self.engine)
         self._get_session = sql_orm.scoped_session(
-            sql_orm.sessionmaker(bind=self.engine, future=True)
+            sql_orm.sessionmaker(bind=self.engine)
         )
         _LOGGER.debug("Connected to recorder database")
 
