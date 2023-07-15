@@ -25,7 +25,7 @@ http://www.gnu.org/licenses/.
 # pylint: disable=unused-variable
 
 import collections.abc
-import datetime
+import datetime as dt
 import json
 import logging
 import typing
@@ -40,7 +40,6 @@ import sqlalchemy.dialects.oracle as dialect_oracle
 import sqlalchemy.dialects.mysql as dialect_mysql
 import sqlalchemy.dialects as sql_dialects
 import sqlalchemy.engine as sql_engine
-import sqlalchemy.ext.declarative as sql_decl
 import sqlalchemy.orm as sql_orm
 
 from ... import core
@@ -159,22 +158,34 @@ class Events(Base):
         {"mysql_default_charset": "utf8mb4", "mysql_collate": "utf8mb4_unicode_ci"},
     )
     __tablename__ = _TABLE_EVENTS
-    event_id = sql.Column(sql.Integer, sql.Identity(), primary_key=True)
-    event_type = sql.Column(sql.String(core.Const.MAX_LENGTH_EVENT_EVENT_TYPE))
-    event_data = sql.Column(
+    event_id: sql_orm.Mapped[int] = sql_orm.mapped_column(
+        sql.Integer, sql.Identity(), primary_key=True
+    )
+    event_type: sql_orm.Mapped[str] = sql_orm.mapped_column(
+        sql.String(core.Const.MAX_LENGTH_EVENT_EVENT_TYPE)
+    )
+    event_data: sql_orm.Mapped[str] = sql_orm.mapped_column(
         sql.Text().with_variant(sql_dialects.mysql.LONGTEXT, "mysql")
     )
-    origin = sql.Column(
+    origin: sql_orm.Mapped[str] = sql_orm.mapped_column(
         sql.String(core.Const.MAX_LENGTH_EVENT_ORIGIN)
     )  # no longer used for new rows
-    origin_idx = sql.Column(sql.SmallInteger)
-    time_fired = sql.Column(_DATETIME_TYPE, index=True)
-    context_id = sql.Column(
+    origin_idx: sql_orm.Mapped[int] = sql_orm.mapped_column(sql.SmallInteger)
+    time_fired: sql_orm.Mapped[dt.datetime] = sql_orm.mapped_column(
+        _DATETIME_TYPE, index=True
+    )
+    context_id: sql_orm.Mapped[str] = sql_orm.mapped_column(
         sql.String(core.Const.MAX_LENGTH_EVENT_CONTEXT_ID), index=True
     )
-    context_user_id = sql.Column(sql.String(core.Const.MAX_LENGTH_EVENT_CONTEXT_ID))
-    context_parent_id = sql.Column(sql.String(core.Const.MAX_LENGTH_EVENT_CONTEXT_ID))
-    data_id = sql.Column(sql.Integer, sql.ForeignKey("event_data.data_id"), index=True)
+    context_user_id: sql_orm.Mapped[str] = sql_orm.mapped_column(
+        sql.String(core.Const.MAX_LENGTH_EVENT_CONTEXT_ID)
+    )
+    context_parent_id: sql_orm.Mapped[str] = sql_orm.mapped_column(
+        sql.String(core.Const.MAX_LENGTH_EVENT_CONTEXT_ID)
+    )
+    data_id: sql_orm.Mapped[int] = sql_orm.mapped_column(
+        sql.Integer, sql.ForeignKey("event_data.data_id"), index=True
+    )
     event_data_rel = sql_orm.relationship("EventData")
 
     def __repr__(self) -> str:
@@ -229,10 +240,12 @@ class EventData(Base):
         {"mysql_default_charset": "utf8mb4", "mysql_collate": "utf8mb4_unicode_ci"},
     )
     __tablename__ = _TABLE_EVENT_DATA
-    data_id = sql.Column(sql.Integer, sql.Identity(), primary_key=True)
-    hash = sql.Column(sql.BigInteger, index=True)
+    data_id: sql_orm.Mapped[int] = sql_orm.mapped_column(
+        sql.Integer, sql.Identity(), primary_key=True
+    )
+    hash: sql_orm.Mapped[int] = sql_orm.mapped_column(sql.BigInteger, index=True)
     # Note that this is not named attributes to avoid confusion with the states table
-    shared_data = sql.Column(
+    shared_data: sql_orm.Mapped[str] = sql_orm.mapped_column(
         sql.Text().with_variant(sql_dialects.mysql.LONGTEXT, "mysql")
     )
 
@@ -281,29 +294,45 @@ class States(Base):
         {"mysql_default_charset": "utf8mb4", "mysql_collate": "utf8mb4_unicode_ci"},
     )
     __tablename__ = _TABLE_STATES
-    state_id = sql.Column(sql.Integer, sql.Identity(), primary_key=True)
-    entity_id = sql.Column(sql.String(core.Const.MAX_LENGTH_STATE_ENTITY_ID))
-    state = sql.Column(sql.String(core.Const.MAX_LENGTH_STATE_STATE))
-    attributes = sql.Column(
+    state_id: sql_orm.Mapped[int] = sql_orm.mapped_column(
+        sql.Integer, sql.Identity(), primary_key=True
+    )
+    entity_id: sql_orm.Mapped[str] = sql_orm.mapped_column(
+        sql.String(core.Const.MAX_LENGTH_STATE_ENTITY_ID)
+    )
+    state: sql_orm.Mapped[str] = sql_orm.mapped_column(
+        sql.String(core.Const.MAX_LENGTH_STATE_STATE)
+    )
+    attributes: sql_orm.Mapped[str] = sql_orm.mapped_column(
         sql.Text().with_variant(sql_dialects.mysql.LONGTEXT, "mysql")
     )  # no longer used for new rows
-    event_id = sql.Column(  # no longer used for new rows
+    event_id: sql_orm.Mapped[
+        int
+    ] = sql_orm.mapped_column(  # no longer used for new rows
         sql.Integer, sql.ForeignKey("events.event_id", ondelete="CASCADE"), index=True
     )
-    last_changed = sql.Column(_DATETIME_TYPE)
-    last_updated = sql.Column(_DATETIME_TYPE, default=core.helpers.utcnow, index=True)
-    old_state_id = sql.Column(
+    last_changed: sql_orm.Mapped[dt.datetime] = sql_orm.mapped_column(_DATETIME_TYPE)
+    last_updated: sql_orm.Mapped[dt.datetime] = sql_orm.mapped_column(
+        _DATETIME_TYPE, default=core.helpers.utcnow, index=True
+    )
+    old_state_id: sql_orm.Mapped[int] = sql_orm.mapped_column(
         sql.Integer, sql.ForeignKey("states.state_id"), index=True
     )
-    attributes_id = sql.Column(
+    attributes_id: sql_orm.Mapped[int] = sql_orm.mapped_column(
         sql.Integer, sql.ForeignKey("state_attributes.attributes_id"), index=True
     )
-    context_id = sql.Column(
+    context_id: sql_orm.Mapped[str] = sql_orm.mapped_column(
         sql.String(core.Const.MAX_LENGTH_EVENT_CONTEXT_ID), index=True
     )
-    context_user_id = sql.Column(sql.String(core.Const.MAX_LENGTH_EVENT_CONTEXT_ID))
-    context_parent_id = sql.Column(sql.String(core.Const.MAX_LENGTH_EVENT_CONTEXT_ID))
-    origin_idx = sql.Column(sql.SmallInteger)  # 0 is local, 1 is remote
+    context_user_id: sql_orm.Mapped[str] = sql_orm.mapped_column(
+        sql.String(core.Const.MAX_LENGTH_EVENT_CONTEXT_ID)
+    )
+    context_parent_id: sql_orm.Mapped[str] = sql_orm.mapped_column(
+        sql.String(core.Const.MAX_LENGTH_EVENT_CONTEXT_ID)
+    )
+    origin_idx: sql_orm.Mapped[int] = sql_orm.mapped_column(
+        sql.SmallInteger
+    )  # 0 is local, 1 is remote
     old_state = sql_orm.relationship("States", remote_side=[state_id])
     state_attributes = sql_orm.relationship("StateAttributes")
 
@@ -386,10 +415,12 @@ class StateAttributes(Base):  # type: ignore[misc,valid-type]
         {"mysql_default_charset": "utf8mb4", "mysql_collate": "utf8mb4_unicode_ci"},
     )
     __tablename__ = _TABLE_STATE_ATTRIBUTES
-    attributes_id = sql.Column(sql.Integer, sql.Identity(), primary_key=True)
-    hash = sql.Column(sql.BigInteger, index=True)
+    attributes_id: sql_orm.Mapped[int] = sql_orm.mapped_column(
+        sql.Integer, sql.Identity(), primary_key=True
+    )
+    hash: sql_orm.Mapped[int] = sql_orm.mapped_column(sql.BigInteger, index=True)
     # Note that this is not named attributes to avoid confusion with the states table
-    shared_attrs = sql.Column(
+    shared_attrs: sql_orm.Mapped[str] = sql_orm.mapped_column(
         sql.Text().with_variant(sql_dialects.mysql.LONGTEXT, "mysql")
     )
 
@@ -449,25 +480,28 @@ class StateAttributes(Base):  # type: ignore[misc,valid-type]
 class StatisticsBase:
     """Statistics base class."""
 
-    id = sql.Column(sql.Integer, sql.Identity(), primary_key=True)
-    created = sql.Column(_DATETIME_TYPE, default=core.helpers.utcnow)
+    id: sql_orm.Mapped[int] = sql_orm.mapped_column(
+        sql.Integer, sql.Identity(), primary_key=True
+    )
+    created: sql_orm.Mapped[dt.datetime] = sql_orm.mapped_column(
+        _DATETIME_TYPE, default=core.helpers.utcnow
+    )
 
-    @sql_decl.declared_attr
-    def metadata_id(self) -> sql.Column:
-        """Define the metadata_id column for sub classes."""
-        return sql.Column(
-            sql.Integer,
-            sql.ForeignKey(f"{_TABLE_STATISTICS_META}.id", ondelete="CASCADE"),
-            index=True,
-        )
+    metadata_id: sql_orm.Mapped[int] = sql_orm.mapped_column(
+        sql.Integer,
+        sql.ForeignKey(f"{_TABLE_STATISTICS_META}.id", ondelete="CASCADE"),
+        index=True,
+    )
 
-    start = sql.Column(_DATETIME_TYPE, index=True)
-    mean = sql.Column(_DOUBLE_TYPE)
-    min = sql.Column(_DOUBLE_TYPE)
-    max = sql.Column(_DOUBLE_TYPE)
-    last_reset = sql.Column(_DATETIME_TYPE)
-    state = sql.Column(_DOUBLE_TYPE)
-    sum = sql.Column(_DOUBLE_TYPE)
+    start: sql_orm.Mapped[dt.datetime] = sql_orm.mapped_column(
+        _DATETIME_TYPE, index=True
+    )
+    mean: sql_orm.Mapped[float] = sql_orm.mapped_column(_DOUBLE_TYPE)
+    min: sql_orm.Mapped[float] = sql_orm.mapped_column(_DOUBLE_TYPE)
+    max: sql_orm.Mapped[float] = sql_orm.mapped_column(_DOUBLE_TYPE)
+    last_reset: sql_orm.Mapped[dt.datetime] = sql_orm.mapped_column(_DATETIME_TYPE)
+    state: sql_orm.Mapped[float] = sql_orm.mapped_column(_DOUBLE_TYPE)
+    sum: sql_orm.Mapped[float] = sql_orm.mapped_column(_DOUBLE_TYPE)
 
     @classmethod
     def from_stats(cls, metadata_id: int, stats: _statistic.Data):
@@ -481,7 +515,7 @@ class StatisticsBase:
 class Statistics(Base, StatisticsBase):
     """Long term statistics."""
 
-    duration = datetime.timedelta(hours=1)
+    duration = dt.timedelta(hours=1)
 
     __table_args__ = (
         # Used for fetching statistics for a certain entity at a specific time
@@ -495,7 +529,7 @@ class Statistics(Base, StatisticsBase):
 class StatisticsShortTerm(Base, StatisticsBase):
     """Short term statistics."""
 
-    duration = datetime.timedelta(minutes=5)
+    duration = dt.timedelta(minutes=5)
 
     __table_args__ = (
         # Used for fetching statistics for a certain entity at a specific time
@@ -516,13 +550,17 @@ class StatisticsMeta(Base):
         {"mysql_default_charset": "utf8mb4", "mysql_collate": "utf8mb4_unicode_ci"},
     )
     __tablename__ = _TABLE_STATISTICS_META
-    id = sql.Column(sql.Integer, sql.Identity(), primary_key=True)
-    statistic_id = sql.Column(sql.String(255), index=True, unique=True)
-    source = sql.Column(sql.String(32))
-    unit_of_measurement = sql.Column(sql.String(255))
-    has_mean = sql.Column(sql.Boolean)
-    has_sum = sql.Column(sql.Boolean)
-    name = sql.Column(sql.String(255))
+    id: sql_orm.Mapped[int] = sql_orm.mapped_column(
+        sql.Integer, sql.Identity(), primary_key=True
+    )
+    statistic_id: sql_orm.Mapped[str] = sql_orm.mapped_column(
+        sql.String(255), index=True, unique=True
+    )
+    source: sql_orm.Mapped[str] = sql_orm.mapped_column(sql.String(32))
+    unit_of_measurement: sql_orm.Mapped[str] = sql_orm.mapped_column(sql.String(255))
+    has_mean: sql_orm.Mapped[bool] = sql_orm.mapped_column(sql.Boolean)
+    has_sum: sql_orm.Mapped[bool] = sql_orm.mapped_column(sql.Boolean)
+    name: sql_orm.Mapped[str] = sql_orm.mapped_column(sql.String(255))
 
     @staticmethod
     def from_meta(meta: _statistic.MetaData):
@@ -535,11 +573,21 @@ class RecorderRuns(Base):
 
     __table_args__ = (sql.Index("ix_recorder_runs_start_end", "start", "end"),)
     __tablename__ = _TABLE_RECORDER_RUNS
-    run_id = sql.Column(sql.Integer, sql.Identity(), primary_key=True)
-    start = sql.Column(sql.DateTime(timezone=True), default=core.helpers.utcnow)
-    end = sql.Column(sql.DateTime(timezone=True))
-    closed_incorrect = sql.Column(sql.Boolean, default=False)
-    created = sql.Column(sql.DateTime(timezone=True), default=core.helpers.utcnow)
+    run_id: sql_orm.Mapped[int] = sql_orm.mapped_column(
+        sql.Integer, sql.Identity(), primary_key=True
+    )
+    start: sql_orm.Mapped[dt.datetime] = sql_orm.mapped_column(
+        sql.DateTime(timezone=True), default=core.helpers.utcnow
+    )
+    end: sql_orm.Mapped[dt.datetime] = sql_orm.mapped_column(
+        sql.DateTime(timezone=True)
+    )
+    closed_incorrect: sql_orm.Mapped[bool] = sql_orm.mapped_column(
+        sql.Boolean, default=False
+    )
+    created = sql_orm.mapped_column(
+        sql.DateTime(timezone=True), default=core.helpers.utcnow
+    )
 
     def __repr__(self) -> str:
         """Return string representation of instance for debugging."""
@@ -554,7 +602,7 @@ class RecorderRuns(Base):
             f")>"
         )
 
-    def entity_ids(self, point_in_time: datetime.datetime = None) -> list[str]:
+    def entity_ids(self, point_in_time: dt.datetime = None) -> list[str]:
         """Return the entity ids that existed in this run.
 
         Specify point_in_time if you want to know which existed at that point
@@ -584,9 +632,13 @@ class SchemaChanges(Base):
     """Representation of schema version changes."""
 
     __tablename__ = _TABLE_SCHEMA_CHANGES
-    change_id = sql.Column(sql.Integer, sql.Identity(), primary_key=True)
-    schema_version = sql.Column(sql.Integer)
-    changed = sql.Column(sql.DateTime(timezone=True), default=core.helpers.utcnow)
+    change_id: sql_orm.Mapped[int] = sql_orm.mapped_column(
+        sql.Integer, sql.Identity(), primary_key=True
+    )
+    schema_version: sql_orm.Mapped[int] = sql_orm.mapped_column(sql.Integer)
+    changed: sql_orm.Mapped[dt.datetime] = sql_orm.mapped_column(
+        sql.DateTime(timezone=True), default=core.helpers.utcnow
+    )
 
     def __repr__(self) -> str:
         """Return string representation of instance for debugging."""
@@ -602,8 +654,12 @@ class StatisticsRuns(Base):
     """Representation of statistics run."""
 
     __tablename__ = _TABLE_STATISTICS_RUNS
-    run_id = sql.Column(sql.Integer, sql.Identity(), primary_key=True)
-    start = sql.Column(sql.DateTime(timezone=True), index=True)
+    run_id: sql_orm.Mapped[int] = sql_orm.mapped_column(
+        sql.Integer, sql.Identity(), primary_key=True
+    )
+    start: sql_orm.Mapped[dt.datetime] = sql_orm.mapped_column(
+        sql.DateTime(timezone=True), index=True
+    )
 
     def __repr__(self) -> str:
         """Return string representation of instance for debugging."""
@@ -642,16 +698,16 @@ def process_timestamp(ts: None) -> None:
 
 
 @typing.overload
-def process_timestamp(ts: datetime.datetime) -> datetime.time:
+def process_timestamp(ts: dt.datetime) -> dt.time:
     ...
 
 
-def process_timestamp(ts: datetime.datetime) -> datetime.datetime:
+def process_timestamp(ts: dt.datetime) -> dt.datetime:
     """Process a timestamp into datetime object."""
     if ts is None:
         return None
     if ts.tzinfo is None:
-        return ts.replace(tzinfo=datetime.timezone.utc)
+        return ts.replace(tzinfo=dt.timezone.utc)
 
     return core.helpers.as_utc(ts)
 
@@ -662,28 +718,28 @@ def process_timestamp_to_utc_isoformat(ts: None) -> None:
 
 
 @typing.overload
-def process_timestamp_to_utc_isoformat(ts: datetime.datetime) -> str:
+def process_timestamp_to_utc_isoformat(ts: dt.datetime) -> str:
     ...
 
 
-def process_timestamp_to_utc_isoformat(ts: datetime.datetime) -> str:
+def process_timestamp_to_utc_isoformat(ts: dt.datetime) -> str:
     """Process a timestamp into UTC isotime."""
     if ts is None:
         return None
-    if ts.tzinfo == datetime.timezone.utc:
+    if ts.tzinfo == dt.timezone.utc:
         return ts.isoformat()
     if ts.tzinfo is None:
         return f"{ts.isoformat()}{_DB_TIMEZONE}"
-    return ts.astimezone(datetime.timezone.utc).isoformat()
+    return ts.astimezone(dt.timezone.utc).isoformat()
 
 
-def process_datetime_to_timestamp(ts: datetime.datetime) -> float:
+def process_datetime_to_timestamp(ts: dt.datetime) -> float:
     """Process a datebase datetime to epoch.
 
     Mirrors the behavior of process_timestamp_to_utc_isoformat
     except it returns the epoch time.
     """
-    if ts.tzinfo is None or ts.tzinfo == datetime.timezone.utc:
+    if ts.tzinfo is None or ts.tzinfo == dt.timezone.utc:
         return core.helpers.utc_to_timestamp(ts)
     return ts.timestamp()
 
@@ -700,15 +756,15 @@ class LazyState(core.State):
         self,
         row: sql_engine.Row,
         attr_cache: dict[str, dict[str, typing.Any]],
-        start_time: datetime.datetime = None,
+        start_time: dt.datetime = None,
     ) -> None:
         """Init the lazy state."""
         self._row = row
         self._entity_id: str = self._row.entity_id
         self._state = self._row.state or ""
         self._attributes: dict[str, typing.Any] = None
-        self._last_changed: datetime.datetime = start_time
-        self._last_updated: datetime.datetime = start_time
+        self._last_changed: dt.datetime = start_time
+        self._last_updated: dt.datetime = start_time
         self._context: core.Context = None
         self._attr_cache = attr_cache
 
@@ -741,7 +797,7 @@ class LazyState(core.State):
         self._context = value
 
     @property
-    def last_changed(self) -> datetime.datetime:
+    def last_changed(self) -> dt.datetime:
         """Last changed datetime."""
         if self._last_changed is None:
             if (last_changed := self._row.last_changed) is not None:
@@ -751,19 +807,19 @@ class LazyState(core.State):
         return self._last_changed
 
     @last_changed.setter
-    def last_changed(self, value: datetime.datetime) -> None:
+    def last_changed(self, value: dt.datetime) -> None:
         """Set last changed datetime."""
         self._last_changed = value
 
     @property
-    def last_updated(self) -> datetime.datetime:
+    def last_updated(self) -> dt.datetime:
         """Last updated datetime."""
         if self._last_updated is None:
             self._last_updated = process_timestamp(self._row.last_updated)
         return self._last_updated
 
     @last_updated.setter
-    def last_updated(self, value: datetime.datetime) -> None:
+    def last_updated(self, value: dt.datetime) -> None:
         """Set last updated datetime."""
         self._last_updated = value
 
@@ -831,7 +887,7 @@ def decode_attributes_from_row(
 def row_to_compressed_state(
     row: sql_engine.Row,
     attr_cache: dict[str, dict[str, typing.Any]],
-    start_time: datetime.datetime = None,
+    start_time: dt.datetime = None,
 ) -> dict[str, typing.Any]:
     """Convert a database row to a compressed state."""
     comp_state = {
@@ -845,7 +901,7 @@ def row_to_compressed_state(
             core.WebSocket.COMPRESSED_STATE_LAST_UPDATED
         ] = start_time.timestamp()
     else:
-        row_last_updated: datetime = row.last_updated
+        row_last_updated: dt.datetime = row.last_updated
         comp_state[
             core.WebSocket.COMPRESSED_STATE_LAST_UPDATED
         ] = process_datetime_to_timestamp(row_last_updated)

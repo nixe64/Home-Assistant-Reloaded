@@ -197,6 +197,7 @@ class Filters(core.RecorderFiltersBase):
             return sql.or_(
                 (i_domains & ~(e_entities | e_entity_globs)),
                 (
+                    # pylint: disable=invalid-unary-operand-type
                     ~i_domains
                     & sql.or_(
                         (i_entity_globs & ~(sql.or_(*excludes))),

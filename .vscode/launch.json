@@ -21,6 +21,22 @@
       "args": []
     },
     {
+      "name": "Constraint Generator",
+      "type": "python",
+      "request": "launch",
+      "module": "script.gen_requirements_all",
+      "justMyCode": false,
+      "args": []
+    },
+    {
+      "name": "Check Requirments",
+      "type": "python",
+      "request": "launch",
+      "module": "script.shc_from_manifests",
+      "args": ["--requirements"],
+      "justMyCode": false,
+    },
+    {
       // Debug by attaching to local Smart Home - The Next Generation server using Remote Python Debugger.
       // See https://www.home-assistant.io/integrations/debugpy/
       "name": "Smart Home - The Next Generation: Attach Local",

@@ -32,6 +32,12 @@ jobs:
                 cache: yarn
                 cache-dependency-path: "nodejs/frontend/yarn.lock"
 
+            - name: Generate from Manifests
+              run: python3 -m script.shc_from_manifests
+
+            - name: Update Package Constraints
+              run: python3 -m script.gen_requirements_all
+              
             - name: Install dependencies
               run: nodejs/frontend/script/bootstrap
 

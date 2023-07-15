@@ -6,6 +6,7 @@
 
 # Smart Home - The Next Generation Core
 setup.cfg @nixe64
+pyproject.toml @nixe64
 /smart_home_tng/*.py @nixe64
 /smart_home_tng/core/*.py @nixe64
 
@@ -32,6 +33,7 @@ setup.cfg @nixe64
 /smart_home_tng/components/conversation/ @nixe64
 /smart_home_tng/components/counter/ @nixe64
 /smart_home_tng/components/cover/ @nixe64
+/smart_home_tng/components/debugpy/ @nixe64
 /smart_home_tng/components/default_config/ @nixe64
 /smart_home_tng/components/device_automation/ @nixe64
 /smart_home_tng/components/device_tracker/ @nixe64
@@ -107,4 +109,4 @@ setup.cfg @nixe64
 # Individual files
 
 # Remove codeowners from files
-/homeassistant/components/*/translations/
+/smart_home_tng/components/*/translations/

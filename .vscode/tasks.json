@@ -193,6 +193,15 @@
             "problemMatcher": []
         },
         {
+            "label": "Code Generator",
+            "type": "shell",
+            "command": "script/run-in-env.sh python -m script.shc_from_manifests",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
             "label": "build",
             "type": "shell",
             "command": "script/run-in-env.sh pylint --rcfile=.pylint smart_home_tng/ script/ tests/",
@@ -204,7 +213,7 @@
                 "reveal": "always",
                 "panel": "new"
             },
-            "problemMatcher": []
+            "problemMatcher": [],
         },
         {
             "label": "compile",

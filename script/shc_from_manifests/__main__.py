@@ -40,7 +40,6 @@ from .dhcp import DhcpGenerator
 from .integration import Integration
 from .json import JsonValidator
 from .manifest import ManifestValidator
-from .metadata import MetaDataValidator
 from .mqtt import MqttGenerator
 from .mypy_config import MyPyGenerator
 from .requirements import RequirementsValidator
@@ -70,7 +69,9 @@ _INTEGRATION_PLUGINS: typing.Final = [
 ]
 _SHC_PLUGINS: typing.Final = [
     MyPyGenerator(),
-    MetaDataValidator(),
+    # MetaDataValidator(),
+    # Wir verwenden setuptools nicht mehr zur Generierung
+    # der Distribution auf PyPI.
 ]
 
 _ALL_PLUGIN_NAMES: typing.Final = [

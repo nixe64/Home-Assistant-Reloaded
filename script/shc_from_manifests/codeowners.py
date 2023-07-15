@@ -41,6 +41,7 @@ _BASE: typing.Final = """
 
 # Smart Home - The Next Generation Core
 setup.cfg @nixe64
+pyproject.toml @nixe64
 /smart_home_tng/*.py @nixe64
 /smart_home_tng/core/*.py @nixe64
 
@@ -53,7 +54,7 @@ _INDIVIDUAL_FILES: typing.Final = """
 
 _REMOVE_CODEOWNERS: typing.Final = """
 # Remove codeowners from files
-/homeassistant/components/*/translations/
+/smart_home_tng/components/*/translations/
 """
 
 
