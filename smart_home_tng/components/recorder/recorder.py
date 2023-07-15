@@ -1196,6 +1196,7 @@ class Recorder(threading.Thread):
         start = start.replace(minute=0, second=0, microsecond=0)
 
         # Find the newest statistics run, if any
+        # pylint: disable=not-callable
         if last_run := session.query(sql.func.max(model.StatisticsRuns.start)).scalar():
             start = max(
                 start, model.process_timestamp(last_run) + datetime.timedelta(minutes=5)

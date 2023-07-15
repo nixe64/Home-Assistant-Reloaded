@@ -493,6 +493,7 @@ def _get_states_for_entities_stmt(
     stmt += lambda q: q.where(
         model.States.state_id
         == (
+            # pylint: disable=not-callable
             sql.select(sql.func.max(model.States.state_id).label("max_state_id"))
             .filter(
                 (model.States.last_updated >= run_start)
@@ -529,6 +530,7 @@ def _get_states_for_all_stmt(
     most_recent_states_by_date = (
         sql.select(
             model.States.entity_id.label("max_entity_id"),
+            # pylint: disable=not-callable
             sql.func.max(model.States.last_updated).label("max_last_updated"),
         )
         .filter(
@@ -541,6 +543,7 @@ def _get_states_for_all_stmt(
     stmt += lambda q: q.where(
         model.States.state_id
         == (
+            # pylint: disable=not-callable
             sql.select(sql.func.max(model.States.state_id).label("max_state_id"))
             .join(
                 most_recent_states_by_date,

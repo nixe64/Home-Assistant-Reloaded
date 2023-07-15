@@ -57,6 +57,7 @@ def find_shared_data_id(
 
 def _state_attrs_exist(attr: int) -> sql.sql.Select:
     """Check if a state attributes id exists in the states table."""
+    # pylint: disable=not-callable
     return sql.select(sql.func.min(model.States.attributes_id)).where(
         model.States.attributes_id == attr
     )
@@ -298,6 +299,7 @@ def data_ids_exist_in_events_sqlite(
 
 def _event_data_id_exist(data_id: int) -> sql.sql.Select:
     """Check if a event data id exists in the events table."""
+    # pylint: disable=not-callable
     return sql.select(sql.func.min(model.Events.data_id)).where(
         model.Events.data_id == data_id
     )
@@ -647,6 +649,7 @@ def find_statistics_runs_to_purge(
 
 def find_latest_statistics_runs_run_id() -> sql.sql.StatementLambdaElement:
     """Find the latest statistics_runs run_id."""
+    # pylint: disable=not-callable
     return sql.lambda_stmt(
         lambda: sql.select(sql.func.max(model.StatisticsRuns.run_id))
     )
@@ -671,4 +674,5 @@ def find_legacy_event_state_and_attributes_and_data_ids_to_purge(
 
 def find_legacy_row() -> sql.sql.StatementLambdaElement:
     """Check if there are still states in the table with an event_id."""
+    # pylint: disable=not-callable
     return sql.lambda_stmt(lambda: sql.select(sql.func.max(model.States.event_id)))

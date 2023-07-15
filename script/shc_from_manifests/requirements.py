@@ -24,15 +24,17 @@ License along with this program.  If not, see
 http://www.gnu.org/licenses/.
 """
 
+import asyncio
 import collections
+import importlib.metadata as imp_meta
 import json
 import os
-import re
 import subprocess
 import sys
 import typing
 
-import awesomeversion as asv
+import packaging.requirements as pack_req
+import packaging.utils as pack_utils
 import tqdm
 
 from smart_home_tng.core.const import Const as core
@@ -48,15 +50,6 @@ if sys.version_info < (3, 10):
 
 _NAME: typing.Final = "requirements"
 _IGNORE_PACKAGES: typing.Final = Const.COMMENT_REQUIREMENTS_NORMALIZED
-_PACKAGE_REGEX: typing.Final = re.compile(
-    r"^(?:--.+\s)?([-_,\.\w\d\[\]]+)(==|>=|<=|~=|!=|<|>|===)*(.*)$"
-)
-_PIP_REGEX: typing.Final = re.compile(
-    r"^(--.+\s)?([-_\.\w\d]+.*(?:==|>=|<=|~=|!=|<|>|===)?.*$)"
-)
-_PIP_VERSION_RANGE_SEPARATOR: typing.Final = re.compile(
-    r"^(==|>=|<=|~=|!=|<|>|===)?(.*)$"
-)
 _SUPPORTED_PYTHON_TUPLES: typing.Final = [
     core.REQUIRED_PYTHON_VER[:2],
 ]
@@ -92,14 +85,11 @@ _IGNORE_VIOLATIONS: typing.Final = {
 def normalize_package_name(requirement: str) -> str:
     """Return a normalized package name from a requirement string."""
     # This function is also used in hassfest.
-    match = Const.PACKAGE_REGEX.search(requirement)
-    if not match:
+    try:
+        parsed = pack_req.Requirement(requirement)
+    except pack_req.InvalidRequirement:
         return ""
-
-    # pipdeptree needs lowercase and dash instead of underscore as separator
-    package = match.group(1).lower().replace("_", "-")
-
-    return package
+    return pack_utils.canonicalize_name(parsed.name)
 
 
 # pylint: disable=unused-variable
@@ -151,8 +141,6 @@ class RequirementsValidator(CodeValidator):
                 self._validate_requirements_format(integration)
             return
 
-        self._ensure_cache()
-
         # check for incompatible requirements
 
         disable_tqdm = config.specific_integrations or os.environ.get("CI", False)
@@ -163,10 +151,10 @@ class RequirementsValidator(CodeValidator):
 
             self._validate_requirements(integration)
 
-    def _get_requirements(self, integration: Integration, packages: set[str]) -> set[str]:
+    def _get_requirements(
+        self, integration: Integration, packages: set[str]
+    ) -> set[str]:
         """Return all (recursively) requirements for an integration."""
-        self._ensure_cache()
-
         all_requirements = set()
 
         to_check = collections.deque(packages)
@@ -179,7 +167,11 @@ class RequirementsValidator(CodeValidator):
 
             all_requirements.add(package)
 
-            item = self._pip_deptree_cache.get(package)
+            try:
+                item = imp_meta.distribution(normalize_package_name(package))
+            except imp_meta.PackageNotFoundError:
+                item = None
+            # item = self._pip_deptree_cache.get(package())
 
             if item is None:
                 # Only warn if direct dependencies could not be resolved
@@ -188,8 +180,9 @@ class RequirementsValidator(CodeValidator):
                         "requirements", f"Failed to resolve requirements for {package}"
                     )
                 continue
-
-            to_check.extend(item["dependencies"])
+            required = item.requires
+            if required:
+                to_check.extend(required)
 
         return all_requirements
 
@@ -200,36 +193,30 @@ class RequirementsValidator(CodeValidator):
 
         Return True if successful.
         """
-        self._ensure_cache()
-
         current_shc = TheNextGeneration.current()
         if current_shc is None:
             current_shc = TheNextGeneration()
 
         for req in requirements:
-            match = _PIP_REGEX.search(req)
-
-            if not match:
+            try:
+                parsed = pack_req.Requirement(req)
+            except pack_req.InvalidRequirement:
                 integration.add_error(
                     "requirements",
                     f"Failed to parse requirement {req} before installation",
                 )
                 continue
 
-            requirement_arg = match.group(2)
-
             is_installed = False
 
-            normalized = normalize_package_name(requirement_arg)
+            normalized = normalize_package_name(req)
 
-            if normalized and "==" in requirement_arg:
-                ver = requirement_arg.split("==")[-1]
-                item = self._pip_deptree_cache.get(normalized)
-                is_installed = item and item["installed_version"] == ver
-            elif normalized and ">=" in requirement_arg:
-                ver = requirement_arg.split(">=")[-1]
-                item = self._pip_deptree_cache.get(normalized)
-                is_installed = item and item["installed_version"] >= ver
+            try:
+                item = imp_meta.distribution(normalized)
+                if item:
+                    is_installed = parsed.specifier.contains(item.version)
+            except imp_meta.PackageNotFoundError:
+                pass
 
             if not is_installed:
                 try:
@@ -240,7 +227,9 @@ class RequirementsValidator(CodeValidator):
             if is_installed:
                 continue
 
-            await current_shc.setup.async_process_requirements(integration.domain, [req])
+            await current_shc.setup.async_process_requirements(
+                integration.domain, [req]
+            )
             if current_shc.setup.is_installed(req):
                 # Clear the pipdeptree cache if something got installed
                 self._pip_deptree_cache = None
@@ -282,12 +271,16 @@ class RequirementsValidator(CodeValidator):
         if integration.disabled:
             return
 
-        install_ok = self._install_requirements(integration, integration_requirements)
+        install_ok = asyncio.run(
+            self._install_requirements(integration, integration_requirements)
+        )
 
         if not install_ok:
             return
 
-        all_integration_requirements = self._get_requirements(integration, integration_packages)
+        all_integration_requirements = self._get_requirements(
+            integration, integration_packages
+        )
 
         if integration_requirements and not all_integration_requirements:
             integration.add_error(
@@ -314,36 +307,20 @@ class RequirementsValidator(CodeValidator):
         start_errors = len(integration.errors)
 
         for req in integration.requirements:
-            if " " in req:
+            try:
+                parsed = pack_req.Requirement(req)
+            except pack_req.InvalidRequirement as e:
                 integration.add_error(
                     "requirements",
-                    f'Requirement "{req}" contains a space',
+                    f'Requirement "{req}" could not be parsed' + "\n\n" + str(e) + "\n",
                 )
                 continue
 
-            pkg, sep, version = _PACKAGE_REGEX.match(req).groups()
-
-            if integration.core and sep != "==" and sep != ">=":
+            if not parsed.specifier:
                 integration.add_error(
                     "requirements",
-                    f'Requirement {req} need to be pinned "<pkg name>==<version>".',
+                    f"Requirement {req} need to be pinned.",
                 )
                 continue
-
-            if not version:
-                continue
-
-            for part in version.split(","):
-                version_part = _PIP_VERSION_RANGE_SEPARATOR.match(part)
-                if (
-                    version_part
-                    and asv.AwesomeVersion(version_part.group(2)).strategy
-                    == asv.AwesomeVersionStrategy.UNKNOWN
-                ):
-                    integration.add_error(
-                        "requirements",
-                        f"Unable to parse package version ({version}) for {pkg}.",
-                    )
-                    continue
 
         return len(integration.errors) == start_errors

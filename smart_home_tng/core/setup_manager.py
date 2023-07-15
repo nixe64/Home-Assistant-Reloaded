@@ -28,6 +28,7 @@ import collections.abc
 import contextlib
 import datetime
 import importlib
+import importlib.metadata as imp_meta
 import logging
 import os
 import pathlib
@@ -41,10 +42,9 @@ import time
 import timeit
 import types
 import typing
-from importlib import metadata
 
 import awesomeversion as asv
-import pkg_resources
+import packaging.requirements as pack_req
 import voluptuous as vol
 import voluptuous.humanize as vh
 from urllib3.util import url
@@ -2100,31 +2100,20 @@ class SetupManager:
         Returns True when the requirement is met.
         Returns False when the package is not installed or doesn't meet req.
         """
-        try:
-            pkg_resources.get_distribution(package)
-            return True
-        except (pkg_resources.ResolutionError, pkg_resources.ExtractionError):
-            req = pkg_resources.Requirement.parse(package)
-        except ValueError:
-            # This is a zip file. We no longer use this in Smart Home - TNG,
-            # leaving it in for custom components.
-            tmp = url.parse_url(package)
-            if tmp is None:
-                return False
-            req = pkg_resources.Requirement.parse(tmp.fragment)
 
         try:
-            installed_version = metadata.version(req.project_name)
+            req = pack_req.Requirement(package)
+            installed_version = imp_meta.version(req.name)
             # This will happen when an install failed or
             # was aborted while in progress see
             # https://github.com/home-assistant/core/issues/47699
             if installed_version is None:
-                _LOGGER.error(
-                    f"Installed version for {req.project_name} resolved to None"
-                )
+                _LOGGER.error(f"Installed version for {req.name} resolved to None")
                 return False
-            return installed_version in req
-        except metadata.PackageNotFoundError:
+            return req.specifier is None or installed_version in req.specifier
+        except pack_req.InvalidRequirement:
+            return False
+        except imp_meta.PackageNotFoundError:
             return False
 
     def pip_kwargs(self) -> dict[str, typing.Any]:

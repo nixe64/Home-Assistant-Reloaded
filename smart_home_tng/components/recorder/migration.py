@@ -597,6 +597,7 @@ def _apply_update(
         with util.session_scope(session=session_maker()) as session:
             if session.query(model.Statistics.id).count() and (
                 last_run_string := session.query(
+                    # pylint: disable=not-callable
                     sql.func.max(model.StatisticsRuns.start)
                 ).scalar()
             ):

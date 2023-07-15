@@ -85,6 +85,7 @@ _QUERY_STATISTICS_SHORT_TERM: typing.Final = [
 ]
 
 _QUERY_STATISTICS_SUMMARY_MEAN: typing.Final = [
+    # pylint: disable=not-callable
     model.StatisticsShortTerm.metadata_id,
     sql.func.avg(model.StatisticsShortTerm.mean),
     sql.func.min(model.StatisticsShortTerm.min),
@@ -339,7 +340,7 @@ def _find_duplicates(
             sql.literal_column("1").label("is_duplicate"),
         )
         .group_by(table.metadata_id, table.start)
-        .having(sql.func.count() > 1)
+        .having(sql.func.count() > 1)  # pylint: disable=not-callable
         .subquery()
     )
     query = (
@@ -470,7 +471,7 @@ def _find_statistics_meta_duplicates(session: sql_orm.Session) -> list[int]:
             sql.literal_column("1").label("is_duplicate"),
         )
         .group_by(model.StatisticsMeta.statistic_id)
-        .having(sql.func.count() > 1)
+        .having(sql.func.count() > 1)  # pylint: disable=not-callable
         .subquery()
     )
     query = (
@@ -766,15 +767,15 @@ def get_metadata_with_session(
         return {}
 
     return {
-        meta["statistic_id"]: (
-            meta["id"],
+        meta[1]: (
+            meta[0],
             {
-                "source": meta["source"],
-                "statistic_id": meta["statistic_id"],
-                "unit_of_measurement": meta["unit_of_measurement"],
-                "has_mean": meta["has_mean"],
-                "has_sum": meta["has_sum"],
-                "name": meta["name"],
+                "source": meta[2],
+                "statistic_id": meta[1],
+                "unit_of_measurement": meta[3],
+                "has_mean": meta[4],
+                "has_sum": meta[5],
+                "name": meta[6],
             },
         )
         for meta in result
@@ -1438,6 +1439,7 @@ def _latest_short_term_statistics_stmt(
     most_recent_statistic_row = (
         sql.select(
             model.StatisticsShortTerm.metadata_id,
+            # pylint: disable=not-callable
             sql.func.max(model.StatisticsShortTerm.start).label("start_max"),
         )
         .where(model.StatisticsShortTerm.metadata_id.in_(metadata_ids))
@@ -1510,7 +1512,7 @@ def _statistics_at_time(
 
     most_recent_statistic_ids = (
         session.query(
-            sql.func.max(table.id).label("max_id"),
+            sql.func.max(table.id).label("max_id"),  # pylint: disable=not-callable
         )
         .filter(table.start < start_time)
         .filter(table.metadata_id.in_(metadata_ids))

@@ -70,10 +70,10 @@ class RecorderPool(sql_pool.SingletonThreadPool, sql_pool.NullPool):
         )
 
     # Any can be switched out for ConnectionPoolEntry in the next version of sqlalchemy
-    def _do_return_conn(self, conn: typing.Any) -> typing.Any:
+    def _do_return_conn(self, record: sql_pool.ConnectionPoolEntry) -> typing.Any:
         if self.recorder_or_dbworker:
-            return super()._do_return_conn(conn)
-        return conn.close()
+            return super()._do_return_conn(record)
+        return record.close()
 
     def shutdown(self) -> None:
         """Close the connection."""
@@ -124,14 +124,14 @@ class MutexPool(sql_pool.StaticPool):
     _reference_counter = 0
     pool_lock: threading.RLock
 
-    def _do_return_conn(self, conn: typing.Any) -> None:
+    def _do_return_conn(self, record: sql_pool.ConnectionPoolEntry) -> None:
         if _DEBUG_MUTEX_POOL_TRACE:
             trace = traceback.extract_stack()
             trace_msg = "\n" + "".join(traceback.format_list(trace[:-1]))
         else:
             trace_msg = ""
 
-        super()._do_return_conn(conn)
+        super()._do_return_conn(record)
         if _DEBUG_MUTEX_POOL:
             self._reference_counter -= 1
             _LOGGER.debug(
