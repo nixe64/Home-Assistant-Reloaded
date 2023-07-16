@@ -34,7 +34,8 @@ jobs:
 
             - name: Generate artifacts
               run: |
-                python3 -m pip install build packaging tqdm
+                python3 -m pip install -U pip build
+                script/bootstrap
                 python3 -m script.shc_from_manifests
                 python3 -m script.gen_requirements_all
 
