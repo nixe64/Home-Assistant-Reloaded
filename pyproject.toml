@@ -43,6 +43,7 @@ dependencies = [
     "pyyaml >= 6.0, < 6.1",
     "requests >= 2.31.0, < 2.32",
     "sqlalchemy>=2.0.18, < 2.1",
+    "tqdm >= 4.65.0, < 4.66",
     "urllib3 >= 1.26.16, < 1.27",
     "voluptuous >= 0.13.1, < 0.14",
     "voluptuous-serialize >= 2.6.0, < 2.7",
