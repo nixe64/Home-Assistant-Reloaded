@@ -134,7 +134,7 @@ class GlobalContextMgr:
         if generate_unique_name:
             name = self._new_name(name)
             if not global_sym_table:
-                global_sym_table = {"__name__", name}
+                global_sym_table = {"__name__": name}
             else:
                 global_sym_table = global_sym_table.copy()
                 global_sym_table["__name__"] = name
