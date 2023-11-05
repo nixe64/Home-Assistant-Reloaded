@@ -6,6 +6,6 @@
   "issue_tracker": "https://github.com/custom-components/alexa_media_player/issues",
   "dependencies": ["persistent_notification", "http"],
   "codeowners": ["@nixe64"],
-  "requirements": ["alexapy>=1.26.8, < 1.27", "packaging>=23.1, <23.2", "wrapt>=1.15.0, <1.16"],
+  "requirements": ["alexapy>=1.27.86, < 1.28", "packaging>=23.1, <23.2", "wrapt>=1.15.0, <1.16"],
   "iot_class": "cloud_polling"
 }
