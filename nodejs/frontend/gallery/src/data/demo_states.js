@@ -321,7 +321,7 @@ export default {
       shuffle: false,
       friendly_name: "Lounge room",
       entity_picture:
-        "/api/media_player_proxy/media_player.lounge_room?token=20aea624c9d6c83d44e212e60c0795633d2700cde18d60901c6d74b0d063d6bf&cache=cb9d84451faf9351",
+        "/api/media_player_proxy/media_player.lounge_room?cache=cb9d84451faf9351",
       supported_features: 117169,
     },
     last_changed: "2018-07-19T10:44:45.935593+00:00",
@@ -345,7 +345,7 @@ export default {
       shuffle: false,
       friendly_name: "Bedroom",
       entity_picture:
-        "/api/media_player_proxy/media_player.bedroom?token=b26ff1a75b0929f6ad578955689815af828229e6cffaf061b8b6fb69c4044976&cache=e4513ed94ec89151",
+        "/api/media_player_proxy/media_player.bedroom?cache=e4513ed94ec89151",
       supported_features: 115597,
     },
     last_changed: "2018-07-19T10:44:45.936499+00:00",
@@ -369,7 +369,7 @@ export default {
       shuffle: false,
       friendly_name: "Living Room",
       entity_picture:
-        "/api/media_player_proxy/media_player.living_room?token=e925f8db7f7bd1f317e4524dcb8333d60f6019219a3799a22604b5787f243567&cache=bc2ffb49c4f67034",
+        "/api/media_player_proxy/media_player.living_room?cache=bc2ffb49c4f67034",
       supported_features: 115597,
     },
     last_changed: "2018-07-19T10:44:45.937400+00:00",
@@ -393,7 +393,7 @@ export default {
       shuffle: false,
       friendly_name: "Walkman",
       entity_picture:
-        "/api/media_player_proxy/media_player.walkman?token=eda2b56fa513fa80f8d9c641941a3702b83e84e239c9ed82efc665a31e80d8fd&cache=62c0c516acbc53a9",
+        "/api/media_player_proxy/media_player.walkman?tcache=62c0c516acbc53a9",
       supported_features: 123325,
     },
     last_changed: "2018-07-19T10:44:45.938179+00:00",

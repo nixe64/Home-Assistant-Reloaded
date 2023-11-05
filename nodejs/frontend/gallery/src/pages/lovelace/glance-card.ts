@@ -28,7 +28,7 @@ const ENTITIES = [
     shuffle: false,
     friendly_name: "Living Room",
     entity_picture:
-      "/api/media_player_proxy/media_player.living_room?token=e925f8db7f7bd1f317e4524dcb8333d60f6019219a3799a22604b5787f243567&cache=bc2ffb49c4f67034",
+      "/api/media_player_proxy/media_player.living_room?cache=bc2ffb49c4f67034",
     supported_features: 115597,
   }),
   getEntity("sun", "sun", "below_horizon", {

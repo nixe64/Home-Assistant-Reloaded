@@ -18,7 +18,7 @@ const ENTITIES = [
       "2f5bb163fb91cd8770a9494fa5e7eab172d8d34f4aba806eb6b59411b8c720b8",
     friendly_name: "Demo camera",
     entity_picture:
-      "/api/camera_proxy/camera.demo_camera?token=2f5bb163fb91cd8770a9494fa5e7eab172d8d34f4aba806eb6b59411b8c720b8",
+      "/api/camera_proxy/camera.demo_camera",
   }),
   getEntity("binary_sensor", "movement_backyard", "on", {
     friendly_name: "Movement Backyard",
