@@ -32,12 +32,13 @@ jobs:
                 cache: yarn
                 cache-dependency-path: "nodejs/frontend/yarn.lock"
 
-            - name: Generate from Manifests
-              run: python3 -m script.shc_from_manifests
+            - name: Generate artifacts
+              run: |
+                python3 -m pip install -U pip build
+                script/bootstrap
+                python3 -m script.shc_from_manifests
+                python3 -m script.gen_requirements_all
 
-            - name: Update Package Constraints
-              run: python3 -m script.gen_requirements_all
-              
             - name: Install dependencies
               run: nodejs/frontend/script/bootstrap
 
@@ -48,7 +49,6 @@ jobs:
               # remove source package (about 670MB),
               # which can not be uploaded to PyPI (100MB max)
               run: |
-                python3 -m pip install build
                 python3 -m build
 
             - name: Publish package distribution to PyPI

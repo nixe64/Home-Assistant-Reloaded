@@ -7,16 +7,10 @@ import {
   mdiHomeAssistant,
 } from "@mdi/js";
 import { css, CSSResultGroup, html, LitElement, TemplateResult } from "lit";
-import { property, state } from "lit/decorators";
-import { isComponentLoaded } from "../../../common/config/is_component_loaded";
+import { property} from "lit/decorators";
 import "../../../components/ha-card";
 import "../../../components/ha-clickable-list-item";
 import "../../../components/ha-logo-svg";
-import {
-  fetchHassioHassOsInfo,
-  HassioHassOSInfo,
-} from "../../../data/hassio/host";
-import { fetchHassioInfo, HassioInfo } from "../../../data/hassio/supervisor";
 import "../../../layouts/hass-subpage";
 import { haStyle } from "../../../resources/styles";
 import type { HomeAssistant, Route } from "../../../types";
@@ -95,8 +89,8 @@ class HaConfigInfo extends LitElement {
                 target="_blank"
                 rel="noreferrer"
               >
-              <img src="/static/icons/logo.png" height="150" style="padding-right: 30px">
-              <img src="/static/images/logo.svg" height="150" alt="">
+              <img src="/static/icons/logo.png" width="30%" style="padding-right: 3%; vertical-align: middle;" />
+              <img src="/static/images/logo.svg" width="65%" alt="" style="vertical-align: middle;" />
             </a>
             </div>
             <div class="versions">
