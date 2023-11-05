@@ -7,4 +7,4 @@ will stay synchronized.
 """
 
 # pylint: disable=unused-variable
-__version__ = "2023.1.5"
+__version__ = "2023.1.6"
