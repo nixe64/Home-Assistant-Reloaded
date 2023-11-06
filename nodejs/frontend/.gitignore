@@ -18,7 +18,6 @@ dist
 node_modules
 yarn-error.log
 npm-debug.log
-yarn.lock
 
 # Python stuff
 *.py[cod]
