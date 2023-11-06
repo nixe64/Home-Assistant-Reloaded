@@ -558,7 +558,7 @@ export default {
         "2f5bb163fb91cd8770a9494fa5e7eab172d8d34f4aba806eb6b59411b8c720b8",
       friendly_name: "Demo camera",
       entity_picture:
-        "/api/camera_proxy/camera.demo_camera?token=2f5bb163fb91cd8770a9494fa5e7eab172d8d34f4aba806eb6b59411b8c720b8",
+        "/api/camera_proxy/camera.demo_camera",
     },
     last_changed: "2018-07-19T10:44:46.217296+00:00",
     last_updated: "2018-07-19T12:37:34.378986+00:00",
