@@ -5,7 +5,7 @@
 build
 hass_frontend/*
 dist
-node_modules
+#node_modules
 
 # yarn
 .yarn/*
@@ -15,9 +15,10 @@ node_modules
 !.yarn/sdks
 !.yarn/versions
 .pnp.*
-node_modules/*
+node_modules
 yarn-error.log
 npm-debug.log
+yarn.lock
 
 # Python stuff
 *.py[cod]
