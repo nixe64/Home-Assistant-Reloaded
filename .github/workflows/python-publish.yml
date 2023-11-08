@@ -33,7 +33,7 @@ jobs:
               with:
                 node-version-file: "nodejs/frontend/.nvmrc"
                 cache: yarn
-                # cache-dependency-path: "nodejs/frontend/yarn.lock"
+                cache-dependency-path: "nodejs/frontend/yarn.lock"
 
             - name: Generate artifacts
               run: |
