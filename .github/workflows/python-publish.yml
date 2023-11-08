@@ -5,6 +5,9 @@ on:
         types:
             - published
 
+env:
+  NODE_OPTIONS: --max_old_space_size=6144
+  
 permissions:
     contents: read
 
@@ -26,11 +29,11 @@ jobs:
                 python-version: "3.11"
       
             - name: Set up Node
-              uses: actions/setup-node@v3
+              uses: actions/setup-node@v4
               with:
-                node-version: 16
+                node-version-file: "nodejs/frontend/.nvmrc"
                 cache: yarn
-                cache-dependency-path: "nodejs/frontend/yarn.lock"
+                # cache-dependency-path: "nodejs/frontend/yarn.lock"
 
             - name: Generate artifacts
               run: |
