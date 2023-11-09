@@ -165,10 +165,10 @@ class Events(Base):
         sql.String(core.Const.MAX_LENGTH_EVENT_EVENT_TYPE)
     )
     event_data: sql_orm.Mapped[str] = sql_orm.mapped_column(
-        sql.Text().with_variant(sql_dialects.mysql.LONGTEXT, "mysql")
+        sql.Text().with_variant(sql_dialects.mysql.LONGTEXT, "mysql"), nullable=True
     )
     origin: sql_orm.Mapped[str] = sql_orm.mapped_column(
-        sql.String(core.Const.MAX_LENGTH_EVENT_ORIGIN)
+        sql.String(core.Const.MAX_LENGTH_EVENT_ORIGIN), nullable=True
     )  # no longer used for new rows
     origin_idx: sql_orm.Mapped[int] = sql_orm.mapped_column(sql.SmallInteger)
     time_fired: sql_orm.Mapped[dt.datetime] = sql_orm.mapped_column(
@@ -178,13 +178,13 @@ class Events(Base):
         sql.String(core.Const.MAX_LENGTH_EVENT_CONTEXT_ID), index=True
     )
     context_user_id: sql_orm.Mapped[str] = sql_orm.mapped_column(
-        sql.String(core.Const.MAX_LENGTH_EVENT_CONTEXT_ID)
+        sql.String(core.Const.MAX_LENGTH_EVENT_CONTEXT_ID), nullable=True
     )
     context_parent_id: sql_orm.Mapped[str] = sql_orm.mapped_column(
-        sql.String(core.Const.MAX_LENGTH_EVENT_CONTEXT_ID)
+        sql.String(core.Const.MAX_LENGTH_EVENT_CONTEXT_ID), nullable=True
     )
     data_id: sql_orm.Mapped[int] = sql_orm.mapped_column(
-        sql.Integer, sql.ForeignKey("event_data.data_id"), index=True
+        sql.Integer, sql.ForeignKey("event_data.data_id"), index=True, nullable=True
     )
     event_data_rel = sql_orm.relationship("EventData")
 
@@ -304,19 +304,24 @@ class States(Base):
         sql.String(core.Const.MAX_LENGTH_STATE_STATE)
     )
     attributes: sql_orm.Mapped[str] = sql_orm.mapped_column(
-        sql.Text().with_variant(sql_dialects.mysql.LONGTEXT, "mysql")
+        sql.Text().with_variant(sql_dialects.mysql.LONGTEXT, "mysql"), nullable=True
     )  # no longer used for new rows
     event_id: sql_orm.Mapped[
         int
     ] = sql_orm.mapped_column(  # no longer used for new rows
-        sql.Integer, sql.ForeignKey("events.event_id", ondelete="CASCADE"), index=True
+        sql.Integer,
+        sql.ForeignKey("events.event_id", ondelete="CASCADE"),
+        index=True,
+        nullable=True,
     )
-    last_changed: sql_orm.Mapped[dt.datetime] = sql_orm.mapped_column(_DATETIME_TYPE)
+    last_changed: sql_orm.Mapped[dt.datetime] = sql_orm.mapped_column(
+        _DATETIME_TYPE, nullable=True
+    )
     last_updated: sql_orm.Mapped[dt.datetime] = sql_orm.mapped_column(
         _DATETIME_TYPE, default=core.helpers.utcnow, index=True
     )
     old_state_id: sql_orm.Mapped[int] = sql_orm.mapped_column(
-        sql.Integer, sql.ForeignKey("states.state_id"), index=True
+        sql.Integer, sql.ForeignKey("states.state_id"), index=True, nullable=True
     )
     attributes_id: sql_orm.Mapped[int] = sql_orm.mapped_column(
         sql.Integer, sql.ForeignKey("state_attributes.attributes_id"), index=True
@@ -325,10 +330,10 @@ class States(Base):
         sql.String(core.Const.MAX_LENGTH_EVENT_CONTEXT_ID), index=True
     )
     context_user_id: sql_orm.Mapped[str] = sql_orm.mapped_column(
-        sql.String(core.Const.MAX_LENGTH_EVENT_CONTEXT_ID)
+        sql.String(core.Const.MAX_LENGTH_EVENT_CONTEXT_ID), nullable=True
     )
     context_parent_id: sql_orm.Mapped[str] = sql_orm.mapped_column(
-        sql.String(core.Const.MAX_LENGTH_EVENT_CONTEXT_ID)
+        sql.String(core.Const.MAX_LENGTH_EVENT_CONTEXT_ID), nullable=True
     )
     origin_idx: sql_orm.Mapped[int] = sql_orm.mapped_column(
         sql.SmallInteger
@@ -580,7 +585,7 @@ class RecorderRuns(Base):
         sql.DateTime(timezone=True), default=core.helpers.utcnow
     )
     end: sql_orm.Mapped[dt.datetime] = sql_orm.mapped_column(
-        sql.DateTime(timezone=True)
+        sql.DateTime(timezone=True), nullable=True
     )
     closed_incorrect: sql_orm.Mapped[bool] = sql_orm.mapped_column(
         sql.Boolean, default=False

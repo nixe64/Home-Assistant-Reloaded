@@ -1,5 +1,7 @@
-import { tsParticles } from "tsparticles";
+import { tsParticles } from "tsparticles-engine";
+import { loadFull } from "tsparticles";
 
+loadFull(tsParticles);
 tsParticles.load("particles", {
   // autoPlay: true,
   fullScreen: {
