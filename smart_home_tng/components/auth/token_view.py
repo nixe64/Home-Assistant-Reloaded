@@ -42,7 +42,7 @@ class TokenView(core.SmartHomeControllerView):
         self._retrieve_auth = retrieve_auth
 
     @core.SmartHomeController.log_invalid_auth
-    async def post(self, request):
+    async def post(self, request: web.Request):
         """Grant a token."""
         shc = request.app[core.Const.KEY_SHC]
         data = await request.post()

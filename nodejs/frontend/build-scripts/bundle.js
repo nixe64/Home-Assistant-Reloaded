@@ -86,19 +86,19 @@ module.exports.babelOptions = ({ latestBuild }) => ({
     ],
     // Part of ES2018. Converts {...a, b: 2} to Object.assign({}, a, {b: 2})
     !latestBuild && [
-      "@babel/plugin-proposal-object-rest-spread",
+      "@babel/plugin-transform-object-rest-spread",
       { loose: true, useBuiltIns: true },
     ],
     // Only support the syntax, Webpack will handle it.
     "@babel/plugin-syntax-import-meta",
     "@babel/plugin-syntax-dynamic-import",
     "@babel/plugin-syntax-top-level-await",
-    "@babel/plugin-proposal-optional-chaining",
-    "@babel/plugin-proposal-nullish-coalescing-operator",
+    "@babel/plugin-transform-optional-chaining",
+    "@babel/plugin-transform-nullish-coalescing-operator",
     ["@babel/plugin-proposal-decorators", { decoratorsBeforeExport: true }],
-    ["@babel/plugin-proposal-private-methods", { loose: true }],
-    ["@babel/plugin-proposal-private-property-in-object", { loose: true }],
-    ["@babel/plugin-proposal-class-properties", { loose: true }],
+    ["@babel/plugin-transform-private-methods", { loose: true }],
+    ["@babel/plugin-transform-private-property-in-object", { loose: true }],
+    ["@babel/plugin-transform-class-properties", { loose: true }],
   ].filter(Boolean),
   exclude: [
     // \\ for Windows, / for Mac OS and Linux

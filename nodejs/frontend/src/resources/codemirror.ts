@@ -1,16 +1,15 @@
 import { indentLess, indentMore } from "@codemirror/commands";
-import { HighlightStyle, tags } from "@codemirror/highlight";
+import { HighlightStyle, StreamLanguage } from "@codemirror/language";
+import { tags } from "@lezer/highlight";
 import { jinja2 } from "@codemirror/legacy-modes/mode/jinja2";
 import { yaml } from "@codemirror/legacy-modes/mode/yaml";
 import { Compartment } from "@codemirror/state";
-import { StreamLanguage } from "@codemirror/stream-parser";
 import { EditorView, KeyBinding } from "@codemirror/view";
 
-export { defaultKeymap } from "@codemirror/commands";
-export { lineNumbers } from "@codemirror/gutter";
-export { HighlightStyle, tags } from "@codemirror/highlight";
-export { history, historyKeymap } from "@codemirror/history";
-export { rectangularSelection } from "@codemirror/rectangular-selection";
+export { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+export { lineNumbers, rectangularSelection } from "@codemirror/view";
+export { HighlightStyle } from "@codemirror/language";
+export { tags } from "@lezer/highlight";
 export { highlightSelectionMatches, searchKeymap } from "@codemirror/search";
 export { EditorState, Prec } from "@codemirror/state";
 export { autocompletion } from "@codemirror/autocomplete";

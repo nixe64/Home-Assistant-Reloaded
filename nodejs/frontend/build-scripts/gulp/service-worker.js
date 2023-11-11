@@ -6,7 +6,7 @@ const gulp = require("gulp");
 const path = require("path");
 const fs = require("fs-extra");
 const workboxBuild = require("workbox-build");
-const sourceMapUrl = require("source-map-url");
+const convertSourceMap = require("convert-source-map");
 const paths = require("../paths.js");
 
 const swDest = path.resolve(paths.app_output_root, "service_worker.js");
@@ -85,7 +85,8 @@ gulp.task("gen-service-worker-app-prod", async () => {
   }
 
   // remove source map and add WB manifest
-  serviceWorkerContent = sourceMapUrl.removeFrom(serviceWorkerContent);
+  //serviceWorkerContent = sourceMapUrl.removeFrom(serviceWorkerContent);
+  serviceWorkerContent = convertSourceMap.removeMapFileComments(serviceWorkerContent)
   serviceWorkerContent = serviceWorkerContent.replace(
     "WB_MANIFEST",
     JSON.stringify(workboxManifest.manifestEntries)
