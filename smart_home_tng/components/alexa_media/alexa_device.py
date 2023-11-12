@@ -64,7 +64,7 @@ class AlexaDevice:
             attrib = "deviceType"
         elif attrib == "device_family":
             attrib = "deviceFamily"
-        result = self._device[attrib]
+        result = self.get(attrib)
         setattr(self, attr, result)
         return result
 

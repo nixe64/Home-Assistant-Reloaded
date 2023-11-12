@@ -301,7 +301,7 @@ class States(Base):
         sql.String(core.Const.MAX_LENGTH_STATE_ENTITY_ID)
     )
     state: sql_orm.Mapped[str] = sql_orm.mapped_column(
-        sql.String(core.Const.MAX_LENGTH_STATE_STATE)
+        sql.String(core.Const.MAX_LENGTH_STATE_STATE), nullable=True
     )
     attributes: sql_orm.Mapped[str] = sql_orm.mapped_column(
         sql.Text().with_variant(sql_dialects.mysql.LONGTEXT, "mysql"), nullable=True
