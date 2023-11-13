@@ -144,7 +144,12 @@ class SystemLogComponent(core.SmartHomeControllerComponent):
                 service.data.get(Const.CONF_LOGGER, f"{__name__}.external")
             )
             level = service.data[Const.CONF_LEVEL]
-            getattr(logger, level)(service.data[Const.CONF_MESSAGE])
+            message: str = service.data[Const.CONF_MESSAGE]
+            if (
+                message is not None
+                and message.find("ResizeObserver loop completed") <= 0
+            ):
+                getattr(logger, level)(message)
 
     async def _async_shutdown_handler(self, _event):
         """Remove logging handler when Home Assistant is shutdown."""
